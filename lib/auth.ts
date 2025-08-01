@@ -5,7 +5,7 @@ import clientPromise from "@/lib/mongodb"
 import { UserService } from "@/lib/services/userService"
 
 export const authOptions = {
-  adapter: MongoDBAdapter(clientPromise),
+  adapter: process.env.MONGODB_URI ? MongoDBAdapter(clientPromise) : undefined,
   providers: [
     CredentialsProvider({
       name: "Credentials",

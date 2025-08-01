@@ -18,27 +18,32 @@ export const authOptions = {
           return null
         }
 
-        const user = await UserService.findUserByEmail(credentials.email)
+        try {
+          const user = await UserService.findUserByEmail(credentials.email)
 
-        if (user && user.password === credentials.password) {
-          // In a real application, you would hash passwords and compare them securely.
-          // For example: const isValid = await bcrypt.compare(credentials.password, user.password);
-          // If (user && isValid) { ... }
-          const { password, ...userWithoutPassword } = user
-          return {
-            id: user._id ? user._id.toString() : "",
-            email: user.email,
-            role: user.role,
-            customerNumber: user.customerNumber,
-            fullName: user.fullName,
-            phone: user.phone,
-            address: user.address,
-            city: user.city,
-            postalCode: user.postalCode,
-            country: user.country,
-          } as any // Cast to any to match NextAuth's User type
+          if (user && user.password === credentials.password) {
+            // In a real application, you would hash passwords and compare them securely.
+            // For example: const isValid = await bcrypt.compare(credentials.password, user.password);
+            // If (user && isValid) { ... }
+            const { password, ...userWithoutPassword } = user
+            return {
+              id: user._id ? user._id.toString() : "",
+              email: user.email,
+              role: user.role,
+              customerNumber: user.customerNumber,
+              fullName: user.fullName,
+              phone: user.phone,
+              address: user.address,
+              city: user.city,
+              postalCode: user.postalCode,
+              country: user.country,
+            }
+          }
+          return null
+        } catch (error) {
+          console.error("Auth error:", error)
+          return null
         }
-        return null
       },
     }),
   ],

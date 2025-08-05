@@ -22,6 +22,8 @@ export class ProductService {
     return {
       id: result.insertedId.toString(),
       ...productData,
+      hasVariations: productData.hasVariations,
+      variations: productData.variations,
     }
   }
 
@@ -39,6 +41,8 @@ export class ProductService {
       inStock: product.inStock,
       createdAt: product.createdAt,
       updatedAt: product.updatedAt,
+      hasVariations: product.hasVariations,
+      variations: product.variations,
     }))
   }
 
@@ -58,6 +62,8 @@ export class ProductService {
       inStock: product.inStock,
       createdAt: product.createdAt,
       updatedAt: product.updatedAt,
+      hasVariations: product.hasVariations,
+      variations: product.variations,
     }
   }
 
@@ -90,6 +96,8 @@ export class ProductService {
       inStock: result.inStock,
       createdAt: result.createdAt,
       updatedAt: result.updatedAt,
+      hasVariations: result.hasVariations,
+      variations: result.variations,
     }
   }
 

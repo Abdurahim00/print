@@ -7,6 +7,11 @@ import appSlice from "./slices/appSlice"
 import usersSlice from "./slices/usersSlice" // New
 import designsSlice from "./slices/designsSlice" // New
 
+import designReducer from "@/lib/redux/designToolSlices/designSlice"
+import productsReducer from "@/lib/redux/designToolSlices/productsSlice"
+import templatesReducer from "@/lib/redux/designToolSlices/templatesSlice"
+import canvasReducer from "@/lib/redux/designToolSlices/canvasSlice"
+
 export const store = configureStore({
   reducer: {
     auth: authSlice,
@@ -16,7 +21,19 @@ export const store = configureStore({
     app: appSlice,
     users: usersSlice, // Added
     designs: designsSlice, // Added
+
+    design: designReducer,
+    designProducts: productsReducer,
+    templates: templatesReducer,
+    canvas: canvasReducer,
   },
+  middleware: (getDefaultMiddleware) =>
+    getDefaultMiddleware({
+      serializableCheck: {
+        ignoredActions: ["canvas/setFabricCanvas", "canvas/addObject"],
+        ignoredPaths: ["canvas.fabricCanvas", "canvas.objects"],
+      },
+    }),
 })
 
 export type RootState = ReturnType<typeof store.getState>

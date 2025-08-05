@@ -4,13 +4,11 @@ import { ProductService } from "@/lib/services/productService"
 export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const productData = await request.json()
-
+    // Accept hasVariations and variations in the body
     const updatedProduct = await ProductService.updateProduct(params.id, productData)
-
     if (!updatedProduct) {
       return NextResponse.json({ error: "Product not found" }, { status: 404 })
     }
-
     return NextResponse.json(updatedProduct)
   } catch (error) {
     console.error("Update product error:", error)

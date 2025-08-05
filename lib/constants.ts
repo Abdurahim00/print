@@ -48,6 +48,7 @@ export const translations = {
     savedDesigns: "Saved Designs",
     orderHistory: "Order History",
     billingShippingInfo: "Billing & Shipping Info",
+    profile: "Profile",
     adminDashboard: "Admin Dashboard",
     manageUsers: "Manage Users",
     manageProductsPrices: "Manage Products & Prices",
@@ -85,6 +86,13 @@ export const translations = {
     searchUsers: "Search users...",
     filterByRole: "Filter by role",
     allRoles: "All Roles",
+    userRole: "Role",
+    user: "User",
+    admin: "Admin",
+    operations: "Operations",
+    enterProductName: "Enter product name",
+    enterProductDescription: "Enter product description",
+    updateUser: "Update User",
 
     // Design Tool
     designTool: "Design Tool",
@@ -316,6 +324,7 @@ export const translations = {
     savedDesigns: "Sparade Designer",
     orderHistory: "Orderhistorik",
     billingShippingInfo: "Fakturerings- & Leveransinfo",
+    profile: "Profil",
     adminDashboard: "Adminpanel",
     manageUsers: "Hantera Användare",
     manageProductsPrices: "Hantera Produkter & Priser",
@@ -353,6 +362,13 @@ export const translations = {
     searchUsers: "Sök användare...",
     filterByRole: "Filtrera efter roll",
     allRoles: "Alla Roller",
+    userRole: "Roll",
+    user: "Användare",
+    admin: "Admin",
+    operations: "Drift",
+    enterProductName: "Ange produktnamn",
+    enterProductDescription: "Ange produktbeskrivning",
+    updateUser: "Uppdatera Användare",
 
     // Design Tool
     designTool: "Designverktyg",

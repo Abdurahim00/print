@@ -1,14 +1,14 @@
 import { NextRequest, NextResponse } from "next/server"
-import { ProductService } from "@/lib/services/productService"
+import { DesignProductService } from "@/lib/services/designProductService"
 
 export async function GET() {
   try {
-    const products = await ProductService.getAllProducts()
+    const products = await DesignProductService.getAllDesignProducts()
     return NextResponse.json(products)
   } catch (error) {
-    console.error("Error fetching products:", error)
+    console.error("Error fetching design products:", error)
     return NextResponse.json(
-      { error: "Failed to fetch products" },
+      { error: "Failed to fetch design products" },
       { status: 500 }
     )
   }
@@ -17,14 +17,13 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    // Accept hasVariations and variations in the body
-    const product = await ProductService.createProduct(body)
+    const product = await DesignProductService.createDesignProduct(body)
     return NextResponse.json(product, { status: 201 })
   } catch (error) {
-    console.error("Error creating product:", error)
+    console.error("Error creating design product:", error)
     return NextResponse.json(
-      { error: "Failed to create product" },
+      { error: "Failed to create design product" },
       { status: 500 }
     )
   }
-}
+} 

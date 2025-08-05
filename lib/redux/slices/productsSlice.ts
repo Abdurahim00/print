@@ -1,49 +1,34 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit"
-import type { Product } from "@/types"
+import type { Product, Variation, Color, VariationImage } from "@/lib/models/Product"
 
-interface ProductsState {
-  items: Product[]
-  loading: boolean
-  error: string | null
-}
-
-const initialState: ProductsState = {
-  items: [],
-  loading: false,
-  error: null,
-}
-
-export const fetchProducts = createAsyncThunk("products/fetchProducts", async () => {
-  const response = await fetch("/api/products")
-  if (!response.ok) {
-    throw new Error("Failed to fetch products")
+// Async thunks for database operations
+export const fetchProducts = createAsyncThunk(
+  "products/fetchProducts",
+  async () => {
+    const response = await fetch("/api/products")
+    if (!response.ok) {
+      throw new Error("Failed to fetch products")
+    }
+    return response.json()
   }
-  return response.json()
-})
+)
 
-export const addProduct = createAsyncThunk("products/addProduct", async (product: Omit<Product, "id">) => {
-  const response = await fetch("/api/products", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(product),
-  })
-  if (!response.ok) {
-    throw new Error("Failed to add product")
+export const createProduct = createAsyncThunk(
+  "products/createProduct",
+  async (productData: Omit<Product, "id" | "createdAt" | "updatedAt">) => {
+    const response = await fetch("/api/products", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(productData),
+    })
+    if (!response.ok) {
+      throw new Error("Failed to create product")
+    }
+    return response.json()
   }
-  return response.json()
-})
-
-export const updateProduct = createAsyncThunk("products/updateProduct", async (product: Product) => {
-  const response = await fetch(`/api/products/${product.id}`, {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(product),
-  })
-  if (!response.ok) {
-    throw new Error("Failed to update product")
-  }
-  return response.json()
-})
+)
 
 export const deleteProduct = createAsyncThunk("products/deleteProduct", async (id: string) => {
   const response = await fetch(`/api/products/${id}`, {
@@ -55,10 +40,34 @@ export const deleteProduct = createAsyncThunk("products/deleteProduct", async (i
   return id
 })
 
+const initialState = {
+  items: [] as Product[],
+  loading: false,
+  error: null as string | null,
+}
+
 const productsSlice = createSlice({
   name: "products",
   initialState,
   reducers: {
+    setProducts: (state, action) => {
+      state.items = action.payload
+    },
+    addProduct: (state, action) => {
+      state.items.push(action.payload)
+    },
+    updateProduct: (state, action) => {
+      const index = state.items.findIndex((p) => p.id === action.payload.id)
+      if (index !== -1) {
+        state.items[index] = action.payload
+      }
+    },
+    setLoading: (state, action) => {
+      state.loading = action.payload
+    },
+    setError: (state, action) => {
+      state.error = action.payload
+    },
     clearError: (state) => {
       state.error = null
     },
@@ -78,34 +87,18 @@ const productsSlice = createSlice({
         state.loading = false
         state.error = action.error.message || "Failed to fetch products"
       })
-      // Add product
-      .addCase(addProduct.pending, (state) => {
+      // Create product
+      .addCase(createProduct.pending, (state) => {
         state.loading = true
         state.error = null
       })
-      .addCase(addProduct.fulfilled, (state, action) => {
+      .addCase(createProduct.fulfilled, (state, action) => {
         state.loading = false
         state.items.push(action.payload)
       })
-      .addCase(addProduct.rejected, (state, action) => {
+      .addCase(createProduct.rejected, (state, action) => {
         state.loading = false
-        state.error = action.error.message || "Failed to add product"
-      })
-      // Update product
-      .addCase(updateProduct.pending, (state) => {
-        state.loading = true
-        state.error = null
-      })
-      .addCase(updateProduct.fulfilled, (state, action) => {
-        state.loading = false
-        const index = state.items.findIndex((item) => item.id === action.payload.id)
-        if (index !== -1) {
-          state.items[index] = action.payload
-        }
-      })
-      .addCase(updateProduct.rejected, (state, action) => {
-        state.loading = false
-        state.error = action.error.message || "Failed to update product"
+        state.error = action.error.message || "Failed to create product"
       })
       // Delete product
       .addCase(deleteProduct.pending, (state) => {
@@ -123,5 +116,13 @@ const productsSlice = createSlice({
   },
 })
 
-export const { clearError } = productsSlice.actions
+export const { 
+  setProducts, 
+  addProduct, 
+  updateProduct, 
+  setLoading, 
+  setError, 
+  clearError 
+} = productsSlice.actions
+
 export default productsSlice.reducer

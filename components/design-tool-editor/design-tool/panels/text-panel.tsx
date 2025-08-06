@@ -18,6 +18,9 @@ import {
   Trash2,
   Copy,
   RotateCcw,
+  Undo2,
+  Target,
+  Square,
 } from "lucide-react"
 import { useFabricCanvas } from "@/hooks/useFabricCanvas"
 import { RootState } from "@/lib/redux/store"
@@ -25,7 +28,7 @@ import { RootState } from "@/lib/redux/store"
 export function TextPanel() {
   const { selectedObject, fabricCanvas } = useSelector((state: RootState) => state.canvas)
   const { selectedTool } = useSelector((state: RootState) => state.design)
-  const { updateTextProperties, deleteSelected, duplicateSelected } = useFabricCanvas("design-canvas")
+  const { updateTextProperties, deleteSelected, duplicateSelected, getTextScalingInfo, bendText, getTextBendAmount } = useFabricCanvas("design-canvas")
 
   const [textProperties, setTextProperties] = useState({
     text: "",
@@ -37,6 +40,16 @@ export function TextPanel() {
     underline: false,
     textAlign: "left",
   })
+
+  const [scalingInfo, setScalingInfo] = useState<{
+    currentFontSize: number
+    minFontSize: number
+    maxFontSize: number
+    scaleX: number
+    scaleY: number
+  } | null>(null)
+
+  const [bendAmount, setBendAmount] = useState(0)
 
   // Update local state when selected object changes
   useEffect(() => {
@@ -51,8 +64,46 @@ export function TextPanel() {
         underline: selectedObject.underline || false,
         textAlign: selectedObject.textAlign || "left",
       })
+      
+      // Get scaling information
+      if (fabricCanvas) {
+        const info = getTextScalingInfo(fabricCanvas)
+        setScalingInfo(info)
+        
+        // Get current bend amount
+        const currentBend = getTextBendAmount(fabricCanvas)
+        setBendAmount(currentBend)
+      }
+    } else {
+      setScalingInfo(null)
+      setBendAmount(0)
     }
-  }, [selectedObject])
+  }, [selectedObject, fabricCanvas, getTextScalingInfo])
+
+  // Listen for canvas modifications to update scaling info
+  useEffect(() => {
+    if (!fabricCanvas) return
+
+    const handleObjectModified = () => {
+      if (selectedObject && (selectedObject.type === "text" || selectedObject.type === "i-text")) {
+        const info = getTextScalingInfo(fabricCanvas)
+        setScalingInfo(info)
+        
+        // Update text properties if font size changed
+        if (info && info.currentFontSize !== textProperties.fontSize) {
+          setTextProperties(prev => ({ ...prev, fontSize: info.currentFontSize }))
+        }
+      }
+    }
+
+    fabricCanvas.on('object:modified', handleObjectModified)
+    fabricCanvas.on('object:scaling', handleObjectModified)
+
+    return () => {
+      fabricCanvas.off('object:modified', handleObjectModified)
+      fabricCanvas.off('object:scaling', handleObjectModified)
+    }
+  }, [fabricCanvas, selectedObject, textProperties.fontSize, getTextScalingInfo])
 
   const handleTextChange = (value: string) => {
     if (fabricCanvas && selectedObject && (selectedObject.type === "text" || selectedObject.type === "i-text")) {
@@ -108,6 +159,18 @@ export function TextPanel() {
     handlePropertyChange("fontStyle", "normal")
     handlePropertyChange("underline", false)
     handlePropertyChange("textAlign", "left")
+    // Reset bend amount
+    if (fabricCanvas) {
+      bendText(fabricCanvas, 0)
+      setBendAmount(0)
+    }
+  }
+
+  const handleBendChange = (value: number) => {
+    if (fabricCanvas) {
+      bendText(fabricCanvas, value)
+      setBendAmount(value)
+    }
   }
 
   const enterEditMode = () => {
@@ -134,110 +197,125 @@ export function TextPanel() {
   }
 
   return (
-    <div className="p-4 lg:p-6 space-y-4 lg:space-y-6 max-h-full overflow-y-auto">
-      {/* Instructions when text tool is selected but no text is selected */}
-      {selectedTool === "text" &&
-        (!selectedObject || (selectedObject.type !== "text" && selectedObject.type !== "i-text")) && (
-          <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-4">
-            <div className="flex items-center space-x-2 text-blue-800">
-              <Type className="w-5 h-5" />
-              <span className="font-medium">Text Tool Active</span>
+    <div className="flex flex-col h-full">
+      <div className="flex-1 overflow-y-auto scrollbar-thin p-3 lg:p-4 space-y-3 lg:space-y-4">
+        {/* Instructions when text tool is selected but no text is selected */}
+        {selectedTool === "text" &&
+          (!selectedObject || (selectedObject.type !== "text" && selectedObject.type !== "i-text")) && (
+            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200/60 rounded-2xl p-5 mb-6 shadow-sm">
+              <div className="flex items-center space-x-3 text-blue-800 mb-3">
+                <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                  <Type className="w-4 h-4" />
+                </div>
+                <span className="font-semibold">Text Tool Active</span>
+              </div>
+              <p className="text-sm text-blue-700 mb-4 leading-relaxed">
+                Click the Text tool (T) again to add text to your design. Each click creates a new text element that you can customize.
+              </p>
+              <div className="bg-blue-100/50 rounded-xl p-4 border border-blue-200/40">
+                <p className="text-xs text-blue-800 font-semibold mb-2 flex items-center">
+                  <span className="text-base mr-2">💡</span>
+                  Text Editing Tips:
+                </p>
+                <ul className="text-xs text-blue-700 space-y-1.5 leading-relaxed">
+                  <li>• Drag corner handles to resize while maintaining proportions</li>
+                  <li>• Font size adjusts automatically when scaling</li>
+                  <li>• Size range: 8px - 200px</li>
+                  <li>• Double-click text to edit directly on canvas</li>
+                </ul>
+              </div>
             </div>
-            <p className="text-sm text-blue-600 mt-2">
-              Click the Text tool (T) again to add more text to the canvas. Each click adds a new text element.
-            </p>
-          </div>
-        )}
+          )}
 
       {/* Text Input and Controls - Only show when text is selected */}
       {selectedObject && (selectedObject.type === "text" || selectedObject.type === "i-text") && (
         <>
+          {/* Text Input */}
           <div className="space-y-2">
-            <Label htmlFor="text-input" className="text-sm font-medium">
-              Text Content
-            </Label>
             <Input
-              id="text-input"
               value={textProperties.text}
               onChange={(e) => handleTextChange(e.target.value)}
-              placeholder="Enter your text"
-              className="rounded-xl border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+              placeholder="Your text here"
+              className="border-gray-300 focus:border-blue-500 focus:ring-blue-500 text-center"
             />
-            <div className="flex space-x-2">
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={enterEditMode}
-                className="text-xs bg-transparent hover:bg-gray-50"
-              >
-                Edit on Canvas
-              </Button>
-            </div>
           </div>
 
-          {/* Text Formatting */}
+          {/* Formatting Controls - Single Row */}
           <div className="space-y-3">
-            <Label className="text-sm font-medium">Formatting</Label>
-            <div className="flex space-x-2">
-              <Button
-                variant={textProperties.fontWeight === "bold" ? "default" : "outline"}
-                size="sm"
-                className="rounded-xl transition-all duration-200 hover:scale-105"
-                onClick={() => handleStyleToggle("fontWeight")}
-              >
-                <Bold className="w-4 h-4" />
-              </Button>
-              <Button
-                variant={textProperties.fontStyle === "italic" ? "default" : "outline"}
-                size="sm"
-                className="rounded-xl transition-all duration-200 hover:scale-105"
-                onClick={() => handleStyleToggle("fontStyle")}
-              >
-                <Italic className="w-4 h-4" />
-              </Button>
-              <Button
-                variant={textProperties.underline ? "default" : "outline"}
-                size="sm"
-                className="rounded-xl transition-all duration-200 hover:scale-105"
-                onClick={() => handleStyleToggle("underline")}
-              >
-                <Underline className="w-4 h-4" />
-              </Button>
-            </div>
+            <div className="flex items-center justify-between gap-1">
+              {/* Color picker first */}
+              <div className="flex items-center gap-1">
+                <input
+                  type="color"
+                  value={textProperties.fill}
+                  onChange={(e) => handleColorChange(e.target.value)}
+                  className="w-8 h-8 rounded border border-gray-300 cursor-pointer"
+                  title="Text color"
+                />
+              </div>
+              
+              {/* Text style buttons */}
+              <div className="flex gap-1">
+                <Button
+                  variant={textProperties.fontWeight === "bold" ? "default" : "outline"}
+                  size="sm"
+                  className="w-8 h-8 p-0"
+                  onClick={() => handleStyleToggle("fontWeight")}
+                >
+                  <Bold className="w-4 h-4" />
+                </Button>
+                <Button
+                  variant={textProperties.fontStyle === "italic" ? "default" : "outline"}
+                  size="sm"
+                  className="w-8 h-8 p-0"
+                  onClick={() => handleStyleToggle("fontStyle")}
+                >
+                  <Italic className="w-4 h-4" />
+                </Button>
+                <Button
+                  variant={textProperties.underline ? "default" : "outline"}
+                  size="sm"
+                  className="w-8 h-8 p-0"
+                  onClick={() => handleStyleToggle("underline")}
+                >
+                  <Underline className="w-4 h-4" />
+                </Button>
+              </div>
 
-            <div className="flex space-x-2">
-              <Button
-                variant={textProperties.textAlign === "left" ? "default" : "outline"}
-                size="sm"
-                className="rounded-xl transition-all duration-200 hover:scale-105"
-                onClick={() => handleAlignChange("left")}
-              >
-                <AlignLeft className="w-4 h-4" />
-              </Button>
-              <Button
-                variant={textProperties.textAlign === "center" ? "default" : "outline"}
-                size="sm"
-                className="rounded-xl transition-all duration-200 hover:scale-105"
-                onClick={() => handleAlignChange("center")}
-              >
-                <AlignCenter className="w-4 h-4" />
-              </Button>
-              <Button
-                variant={textProperties.textAlign === "right" ? "default" : "outline"}
-                size="sm"
-                className="rounded-xl transition-all duration-200 hover:scale-105"
-                onClick={() => handleAlignChange("right")}
-              >
-                <AlignRight className="w-4 h-4" />
-              </Button>
+              {/* Alignment buttons */}
+              <div className="flex gap-1">
+                <Button
+                  variant={textProperties.textAlign === "left" ? "default" : "outline"}
+                  size="sm"
+                  className="w-8 h-8 p-0"
+                  onClick={() => handleAlignChange("left")}
+                >
+                  <AlignLeft className="w-4 h-4" />
+                </Button>
+                <Button
+                  variant={textProperties.textAlign === "center" ? "default" : "outline"}
+                  size="sm"
+                  className="w-8 h-8 p-0"
+                  onClick={() => handleAlignChange("center")}
+                >
+                  <AlignCenter className="w-4 h-4" />
+                </Button>
+                <Button
+                  variant={textProperties.textAlign === "right" ? "default" : "outline"}
+                  size="sm"
+                  className="w-8 h-8 p-0"
+                  onClick={() => handleAlignChange("right")}
+                >
+                  <AlignRight className="w-4 h-4" />
+                </Button>
+              </div>
             </div>
           </div>
 
-          {/* Font Family */}
+          {/* Font Family - Compact */}
           <div className="space-y-2">
-            <Label className="text-sm font-medium">Font Family</Label>
             <Select value={textProperties.fontFamily} onValueChange={handleFontFamilyChange}>
-              <SelectTrigger className="rounded-xl border-gray-300 focus:border-blue-500">
+              <SelectTrigger className="border-gray-300 focus:border-blue-500 h-10">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -253,103 +331,91 @@ export function TextPanel() {
             </Select>
           </div>
 
-          {/* Font Size */}
+          {/* Font Size - Compact */}
           <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <Label className="text-sm font-medium">Font Size</Label>
-              <span className="text-sm text-gray-600 font-mono">{textProperties.fontSize}px</span>
+            <div className="flex items-center gap-3">
+              <Label className="text-sm font-medium flex-shrink-0">Font Size</Label>
+              <div className="flex items-center gap-2 flex-1">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => handlePropertyChange("fontSize", Math.max(textProperties.fontSize - 1, scalingInfo?.minFontSize || 8))}
+                  className="w-8 h-8 p-0"
+                >
+                  −
+                </Button>
+                <span className="text-sm font-mono min-w-[2rem] text-center">{textProperties.fontSize}</span>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => handlePropertyChange("fontSize", Math.min(textProperties.fontSize + 1, scalingInfo?.maxFontSize || 120))}
+                  className="w-8 h-8 p-0"
+                >
+                  +
+                </Button>
+              </div>
             </div>
-            <Slider
-              value={[textProperties.fontSize]}
-              onValueChange={handleFontSizeChange}
-              max={120}
-              min={8}
-              step={1}
-              className="w-full"
+          </div>
+
+          {/* Color Selection with Slider */}
+          <div className="space-y-3">
+            <div className="bg-blue-500 text-white px-3 py-1 rounded text-sm font-medium inline-block">
+              Text Effect
+            </div>
+            <input
+              type="range"
+              min="-50"
+              max="50"
+              value={bendAmount}
+              onChange={(e) => handleBendChange(Number(e.target.value))}
+              className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
             />
           </div>
 
-          {/* Color Palette */}
-          <div className="space-y-3">
-            <Label className="text-sm font-medium">Text Color</Label>
-            <div className="grid grid-cols-6 gap-2">
-              {[
-                "#000000",
-                "#ffffff",
-                "#ff0000",
-                "#00ff00",
-                "#0000ff",
-                "#ffff00",
-                "#ff00ff",
-                "#00ffff",
-                "#ffa500",
-                "#800080",
-                "#008000",
-                "#ffc0cb",
-                "#8b4513",
-                "#ff69b4",
-                "#40e0d0",
-                "#ee82ee",
-                "#90ee90",
-                "#ffd700",
-                "#dc143c",
-                "#4169e1",
-                "#32cd32",
-                "#ff1493",
-                "#00ced1",
-                "#ff6347",
-                "#9370db",
-                "#3cb371",
-                "#ff4500",
-                "#da70d6",
-                "#00fa9a",
-                "#ff8c00",
-              ].map((color) => (
-                <button
-                  key={color}
-                  className={`w-8 h-8 lg:w-10 lg:h-10 rounded-full border-2 transition-all duration-200 hover:scale-110 ${
-                    textProperties.fill === color
-                      ? "border-blue-500 ring-2 ring-blue-200 scale-110"
-                      : "border-gray-300 hover:border-gray-400"
-                  }`}
-                  style={{ backgroundColor: color }}
-                  onClick={() => handleColorChange(color)}
-                />
-              ))}
-            </div>
-          </div>
-
-          {/* Action Buttons */}
-          <div className="pt-4 border-t space-y-2">
-            <div className="grid grid-cols-2 gap-2">
+          {/* Action Buttons - Compact */}
+          <div className="pt-4 border-t border-gray-100">
+            <div className="grid grid-cols-4 gap-2">
               <Button
                 variant="outline"
-                className="rounded-xl transition-all duration-200 hover:scale-105 bg-transparent"
-                onClick={() => duplicateSelected(fabricCanvas)} // Pass fabricCanvas
-              >
-                <Copy className="w-4 h-4 mr-2" />
-                Copy
-              </Button>
-              <Button
-                variant="outline"
-                className="rounded-xl transition-all duration-200 hover:scale-105 bg-transparent"
+                size="sm"
+                className="flex flex-col items-center p-2 h-auto text-xs"
                 onClick={resetText}
               >
-                <RotateCcw className="w-4 h-4 mr-2" />
-                Reset
+                <RotateCcw className="w-4 h-4 mb-1" />
+                <span className="text-xs">Forward</span>
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="flex flex-col items-center p-2 h-auto text-xs"
+                onClick={resetText}
+              >
+                <Undo2 className="w-4 h-4 mb-1" />
+                <span className="text-xs">Back</span>
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="flex flex-col items-center p-2 h-auto text-xs"
+                onClick={() => duplicateSelected(fabricCanvas)}
+              >
+                <Copy className="w-4 h-4 mb-1" />
+                <span className="text-xs">Duplicate</span>
+              </Button>
+              <Button
+                variant="destructive"
+                size="sm"
+                className="flex flex-col items-center p-2 h-auto text-xs"
+                onClick={() => deleteSelected(fabricCanvas)}
+              >
+                <Trash2 className="w-4 h-4 mb-1" />
+                <span className="text-xs">Delete</span>
               </Button>
             </div>
-            <Button
-              variant="destructive"
-              className="w-full rounded-xl transition-all duration-200 hover:scale-105"
-              onClick={() => deleteSelected(fabricCanvas)} // Pass fabricCanvas
-            >
-              <Trash2 className="w-4 h-4 mr-2" />
-              Delete Text
-            </Button>
           </div>
         </>
       )}
+      </div>
     </div>
   )
 }

@@ -6,36 +6,47 @@ import { Input } from "@/components/ui/input"
 import { Search } from "lucide-react"
 import { setSelectedCategory, setSearchTerm } from "@/lib/redux/designToolSlices/templatesSlice"
 import { useFabricCanvas } from "@/hooks/useFabricCanvas"
-import { RootState } from "@/lib/redux/store"
+import { RootState, AppDispatch } from "@/lib/redux/store"
+import { useEffect } from "react"
+import { fetchTemplates } from "@/lib/redux/slices/templatesSlice"
+import { toast } from "sonner"
+import { setSelectedTemplate } from "@/lib/redux/designToolSlices/designSlice"
 
 interface Template {
   id: string
   name: string
   category: string
   image: string
+  price: number | "free"
 }
 
 interface TemplateModalProps {
   isOpen: boolean
   onClose: () => void
-  templates: Template[]
+  loading?: boolean
 }
 
-export function TemplateModal({ isOpen, onClose, templates }: TemplateModalProps) {
-  const dispatch = useDispatch()
+export function TemplateModal({ isOpen, onClose, loading = false }: TemplateModalProps) {
+  const dispatch = useDispatch<AppDispatch>()
   const { selectedCategory, searchTerm, categories } = useSelector((state: RootState) => state.templates)
+  const { items: templates, loading: templatesLoading } = useSelector((state: RootState) => state.templatesManagement)
+  const { fabricCanvas } = useSelector((state: RootState) => state.canvas)
   const { addImage } = useFabricCanvas("design-canvas")
 
-  const handleSelectTemplate = (template: Template) => {
-    // Get fabricCanvas from Redux state
-    const { fabricCanvas } = useSelector((state: RootState) => state.canvas)
-    if (fabricCanvas) {
-      addImage(fabricCanvas, template.image, {
-        scaleX: 0.4,
-        scaleY: 0.4,
-      })
+  // Fetch templates when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      dispatch(fetchTemplates())
     }
-    onClose()
+  }, [isOpen, dispatch])
+
+  const handleSelectTemplate = (template: Template) => {
+    if (fabricCanvas) {
+      dispatch(setSelectedTemplate(template))
+      onClose()
+    } else {
+      toast.warning("Canvas is not ready yet. Please wait a moment and try again.")
+    }
   }
 
   const filteredTemplates = templates.filter((template: Template) => {
@@ -76,34 +87,45 @@ export function TemplateModal({ isOpen, onClose, templates }: TemplateModalProps
             ))}
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {filteredTemplates.map((template: Template) => (
-              <div
-                key={template.id}
-                className="border rounded-xl p-3 hover:shadow-lg transition-all duration-200 cursor-pointer group"
-                onClick={() => handleSelectTemplate(template)}
-              >
-                <div className="aspect-square bg-gray-100 rounded-lg mb-3 flex items-center justify-center group-hover:bg-gray-200 transition-colors overflow-hidden">
-                  <img
-                    src={template.image || "/placeholder.svg"}
-                    alt={template.name}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-
-                <h3 className="font-medium text-sm text-gray-900 mb-1 truncate">{template.name}</h3>
-                <p className="text-xs text-gray-600 mb-2">{template.category}</p>
-
-                <Button size="sm" className="w-full rounded-lg text-xs" onClick={() => handleSelectTemplate(template)}>
-                  Use Template
-                </Button>
-              </div>
-            ))}
-          </div>
-
-          {filteredTemplates.length === 0 && (
+          {templatesLoading || loading ? (
+            <div className="flex items-center justify-center p-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+              <span className="ml-2 text-gray-600">Loading templates...</span>
+            </div>
+          ) : filteredTemplates.length === 0 ? (
             <div className="text-center py-8 text-gray-500">
               <p>No templates found matching your criteria</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+              {filteredTemplates.map((template: Template) => (
+                <div
+                  key={template.id}
+                  className="border rounded-xl p-3 hover:shadow-lg transition-all duration-200 cursor-pointer group"
+                  onClick={() => handleSelectTemplate(template)}
+                >
+                  <div className="aspect-square bg-gray-100 rounded-lg mb-3 flex items-center justify-center group-hover:bg-gray-200 transition-colors overflow-hidden">
+                    <img
+                      src={template.image || "/placeholder.svg"}
+                      alt={template.name}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+
+                  <h3 className="font-medium text-sm text-gray-900 mb-1 truncate">{template.name}</h3>
+                  <p className="text-xs text-gray-600 mb-2">{template.category}</p>
+                  
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-xs text-gray-500">
+                      {template.price === "free" ? "Free" : `$${template.price.toFixed(2)}`}
+                    </span>
+                  </div>
+
+                  <Button size="sm" className="w-full rounded-lg text-xs" onClick={() => handleSelectTemplate(template)} disabled={!fabricCanvas}>
+                    Use Template
+                  </Button>
+                </div>
+              ))}
             </div>
           )}
         </div>

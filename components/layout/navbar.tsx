@@ -74,13 +74,13 @@ export function Navbar() {
         {/* Desktop Navigation */}
         <nav className="hidden md:flex items-center gap-1">
           <Button variant="ghost" asChild>
-            <Link href="/products">{t.products}</Link>
+            <Link href="/products" className="flex items-center">{t.products}</Link>
           </Button>
           <Button variant="ghost" asChild>
-            <Link href="/design-tool">{t.designTool}</Link>
+            <Link href="/design-tool" className="flex items-center">{t.designTool}</Link>
           </Button>
           <Button variant="ghost" asChild>
-            <Link href="/car-mockup">{t.carWrapDesigner}</Link>
+            <Link href="/car-mockup" className="flex items-center">{t.carWrapDesigner}</Link>
           </Button>
         </nav>
 
@@ -99,7 +99,7 @@ export function Navbar() {
 
           {/* Cart Icon - Always visible */}
           <Button variant="outline" asChild>
-            <Link href="/cart">
+            <Link href="/cart" className="flex items-center">
               <ShoppingCart className="mr-2 h-4 w-4" />
               {t.cart}
               {cartItemCount > 0 && (
@@ -111,7 +111,7 @@ export function Navbar() {
           {status === "authenticated" ? (
             <>
               <Button variant="ghost" asChild className="hidden lg:inline-flex">
-                <Link href="/dashboard">
+                <Link href="/dashboard" className="flex items-center">
                   <LayoutDashboard className="mr-2 h-4 w-4" /> {t.dashboard}
                 </Link>
               </Button>
@@ -123,12 +123,12 @@ export function Navbar() {
           ) : (
             <>
               <Button variant="outline" asChild>
-                <Link href="/login">
+                <Link href="/login" className="flex items-center">
                   <LogIn className="mr-2 h-4 w-4" /> {t.login}
                 </Link>
               </Button>
               <Button asChild className="bg-sky-600 hover:bg-sky-700 text-white">
-                <Link href="/signup">
+                <Link href="/signup" className="flex items-center">
                   <UserPlus className="mr-2 h-4 w-4" /> {t.signup}
                 </Link>
               </Button>

@@ -1,10 +1,19 @@
 import { NextRequest, NextResponse } from "next/server"
 import { DesignService } from "@/lib/services/designService"
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    // TODO: Get user ID from session
-    const userId = "user-123" // Placeholder
+    // Get userId from query parameter
+    const { searchParams } = new URL(request.url)
+    const userId = searchParams.get('userId')
+    
+    if (!userId) {
+      return NextResponse.json(
+        { error: "User ID is required" },
+        { status: 400 }
+      )
+    }
+    
     const designs = await DesignService.getDesignsByUserId(userId)
     return NextResponse.json(designs)
   } catch (error) {

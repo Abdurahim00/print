@@ -48,8 +48,17 @@ export interface Product {
   updatedAt?: Date;
 }
 
+export interface CartItemSize {
+  size: string;
+  quantity: number;
+  price: number;
+}
+
 export interface CartItem extends Product {
-  quantity: number
+  quantity: number;
+  selectedSizes?: CartItemSize[];
+  designPreview?: string; // For custom designs
+  designId?: string; // Reference to saved design
 }
 
 export interface Order {
@@ -62,6 +71,9 @@ export interface Order {
     name: string
     quantity: number
     price: number
+    size?: string
+    designPreview?: string
+    designId?: string
   }>
   shippingOption: "standard" | "express"
   paymentMethod: "card" | "swish" | "klarna"
@@ -108,4 +120,29 @@ export interface AppState {
   orders: Order[]
   users: User[]
   designs: Design[]
+}
+
+export interface Template {
+  id: string
+  name: string
+  image: string
+  price: number | "free"
+  category: string
+  createdAt?: Date
+  updatedAt?: Date
+}
+
+export interface CreateTemplateData {
+  name: string
+  image: string
+  price: number | "free"
+  category: string
+}
+
+export interface UpdateTemplateData {
+  id: string
+  name?: string
+  image?: string
+  price?: number | "free"
+  category?: string
 }

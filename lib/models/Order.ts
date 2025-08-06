@@ -11,6 +11,9 @@ export interface OrderDocument {
     name: string
     quantity: number
     price: number
+    size?: string
+    designPreview?: string
+    designId?: string
   }>
   shippingOption: "standard" | "express"
   paymentMethod: "card" | "swish" | "klarna"
@@ -37,6 +40,9 @@ export interface Order {
     name: string
     quantity: number
     price: number
+    size?: string
+    designPreview?: string
+    designId?: string
   }>
   shippingOption: "standard" | "express"
   paymentMethod: "card" | "swish" | "klarna"

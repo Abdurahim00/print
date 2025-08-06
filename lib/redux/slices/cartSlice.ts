@@ -1,18 +1,47 @@
 import { createSlice, type PayloadAction } from "@reduxjs/toolkit"
-import type { CartItem, Product } from "@/types"
+import type { CartItem, Product, CartItemSize } from "@/types"
 
 interface CartState {
   items: CartItem[]
 }
 
+// Helper function to load cart from localStorage
+const loadCartFromStorage = (): CartItem[] => {
+  if (typeof window === 'undefined') {
+    return []
+  }
+  
+  try {
+    const savedCart = localStorage.getItem('cart')
+    return savedCart ? JSON.parse(savedCart) : []
+  } catch (error) {
+    console.error('Failed to load cart from localStorage:', error)
+    return []
+  }
+}
+
+// Helper function to save cart to localStorage
+const saveCartToStorage = (items: CartItem[]) => {
+  if (typeof window === 'undefined') {
+    return
+  }
+  
+  try {
+    localStorage.setItem('cart', JSON.stringify(items))
+  } catch (error) {
+    console.error('Failed to save cart to localStorage:', error)
+  }
+}
+
 const initialState: CartState = {
-  items: [],
+  items: loadCartFromStorage(),
 }
 
 const cartSlice = createSlice({
   name: "cart",
   initialState,
   reducers: {
+    // Standard add to cart (legacy)
     addToCart: (state, action: PayloadAction<Product>) => {
       const existingItem = state.items.find((item) => item.id === action.payload.id)
       if (existingItem) {
@@ -20,8 +49,45 @@ const cartSlice = createSlice({
       } else {
         state.items.push({ ...action.payload, quantity: 1 })
       }
+      // Save to localStorage
+      saveCartToStorage(state.items)
     },
-    updateQuantity: (state, action: PayloadAction<{ id: number; quantity: number }>) => {
+    
+    // Add to cart with size information
+    addToCartWithSizes: (state, action: PayloadAction<{
+      product: Product, 
+      selectedSizes: CartItemSize[],
+      designPreview?: string,
+      designId?: string
+    }>) => {
+      const { product, selectedSizes, designPreview, designId } = action.payload
+      
+      // Generate a unique ID for this specific product + design combination
+      const uniqueId = designId 
+        ? `${product.id}-${designId}` 
+        : `${product.id}-${Date.now()}`
+      
+      // Calculate total quantity across all sizes
+      const totalQuantity = selectedSizes.reduce((sum, size) => sum + size.quantity, 0)
+      
+      // Create cart item with size information
+      const newItem: CartItem = {
+        ...product,
+        id: uniqueId,
+        quantity: totalQuantity,
+        selectedSizes,
+        designPreview,
+        designId
+      }
+      
+      state.items.push(newItem)
+      
+      // Save to localStorage
+      saveCartToStorage(state.items)
+    },
+    
+    // Update quantity for standard cart items
+    updateQuantity: (state, action: PayloadAction<{ id: string; quantity: number }>) => {
       const { id, quantity } = action.payload
       if (quantity <= 0) {
         state.items = state.items.filter((item) => item.id !== id)
@@ -31,15 +97,54 @@ const cartSlice = createSlice({
           item.quantity = quantity
         }
       }
+      // Save to localStorage
+      saveCartToStorage(state.items)
     },
-    removeFromCart: (state, action: PayloadAction<number>) => {
+    
+    // Update size quantities for a cart item
+    updateSizeQuantities: (state, action: PayloadAction<{ 
+      id: string; 
+      selectedSizes: CartItemSize[] 
+    }>) => {
+      const { id, selectedSizes } = action.payload
+      const item = state.items.find((item) => item.id === id)
+      
+      if (item) {
+        // Update the selected sizes
+        item.selectedSizes = selectedSizes
+        
+        // Recalculate total quantity
+        item.quantity = selectedSizes.reduce((sum, size) => sum + size.quantity, 0)
+        
+        // Remove item if all sizes have 0 quantity
+        if (item.quantity <= 0) {
+          state.items = state.items.filter((i) => i.id !== id)
+        }
+      }
+      // Save to localStorage
+      saveCartToStorage(state.items)
+    },
+    
+    removeFromCart: (state, action: PayloadAction<string>) => {
       state.items = state.items.filter((item) => item.id !== action.payload)
+      // Save to localStorage
+      saveCartToStorage(state.items)
     },
+    
     clearCart: (state) => {
       state.items = []
+      // Save to localStorage
+      saveCartToStorage(state.items)
     },
   },
 })
 
-export const { addToCart, updateQuantity, removeFromCart, clearCart } = cartSlice.actions
+export const { 
+  addToCart, 
+  addToCartWithSizes,
+  updateQuantity, 
+  updateSizeQuantities,
+  removeFromCart, 
+  clearCart 
+} = cartSlice.actions
 export default cartSlice.reducer

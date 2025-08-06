@@ -18,7 +18,23 @@ export default function CartPage() {
   const { language } = useAppSelector((state) => state.app)
   const t = translations[language]
 
-  const subtotal = cart.reduce((total, item) => total + item.price * item.quantity, 0)
+  const subtotal = cart.reduce((total, item) => {
+    let itemPrice = 0;
+    
+    // Handle different price formats
+    if (typeof item.price === 'number') {
+      itemPrice = item.price;
+    } else if (typeof item.price === 'string') {
+      // Remove any non-numeric characters except decimal point
+      const cleanPrice = item.price.replace(/[^\d.-]/g, '');
+      itemPrice = parseFloat(cleanPrice) || 0;
+    } else if (item.selectedSizes && item.selectedSizes.length > 0) {
+      // If we have selectedSizes, calculate from those
+      itemPrice = item.selectedSizes.reduce((sum, size) => sum + (size.price * size.quantity), 0) / item.quantity;
+    }
+    
+    return total + (itemPrice * item.quantity);
+  }, 0)
   const vatAmount = subtotal * 0.25
   const cartTotal = subtotal + vatAmount
 
@@ -37,8 +53,12 @@ export default function CartPage() {
         <ShoppingCart className="mx-auto h-20 w-20 text-slate-400 dark:text-slate-500 mb-6" />
         <h1 className="text-4xl font-bold mb-4 text-slate-900 dark:text-white">{t.cart}</h1>
         <p className="text-lg text-slate-600 dark:text-slate-300 mb-8">{t.yourCartIsEmpty}</p>
-        <Button size="lg" asChild className="bg-sky-600 hover:bg-sky-700 text-white shadow-lg">
-          <Link href="/products">{t.browseProducts}</Link>
+        <Button 
+          size="lg" 
+          className="bg-sky-600 hover:bg-sky-700 text-white shadow-lg"
+          onClick={() => router.push('/products')}
+        >
+          <span className="flex items-center">{t.browseProducts}</span>
         </Button>
       </div>
     )
@@ -77,7 +97,24 @@ export default function CartPage() {
                       />
                       <span className="text-slate-900 dark:text-white">{item.name}</span>
                     </TableCell>
-                    <TableCell className="text-slate-700 dark:text-slate-300">{item.price.toFixed(2)} SEK</TableCell>
+                    <TableCell className="text-slate-700 dark:text-slate-300">
+                      {(() => {
+                        let displayPrice;
+                        if (typeof item.price === 'number') {
+                          displayPrice = item.price.toFixed(2);
+                        } else if (typeof item.price === 'string') {
+                          const cleanPrice = item.price.replace(/[^\d.-]/g, '');
+                          displayPrice = (parseFloat(cleanPrice) || 0).toFixed(2);
+                        } else if (item.selectedSizes && item.selectedSizes.length > 0) {
+                          // Calculate average price per item from selected sizes
+                          const totalPrice = item.selectedSizes.reduce((sum, size) => sum + (size.price * size.quantity), 0);
+                          displayPrice = (totalPrice / item.quantity).toFixed(2);
+                        } else {
+                          displayPrice = "0.00";
+                        }
+                        return `${displayPrice} SEK`;
+                      })()}
+                    </TableCell>
                     <TableCell>
                       <div className="flex items-center justify-center gap-2">
                         <Button
@@ -114,7 +151,21 @@ export default function CartPage() {
                       </div>
                     </TableCell>
                     <TableCell className="text-right font-semibold text-slate-900 dark:text-white">
-                      {(item.price * item.quantity).toFixed(2)} SEK
+                      {(() => {
+                        let totalPrice;
+                        if (typeof item.price === 'number') {
+                          totalPrice = (item.price * item.quantity).toFixed(2);
+                        } else if (typeof item.price === 'string') {
+                          const cleanPrice = item.price.replace(/[^\d.-]/g, '');
+                          totalPrice = ((parseFloat(cleanPrice) || 0) * item.quantity).toFixed(2);
+                        } else if (item.selectedSizes && item.selectedSizes.length > 0) {
+                          // Sum of all selected sizes
+                          totalPrice = item.selectedSizes.reduce((sum, size) => sum + (size.price * size.quantity), 0).toFixed(2);
+                        } else {
+                          totalPrice = "0.00";
+                        }
+                        return `${totalPrice} SEK`;
+                      })()}
                     </TableCell>
                   </TableRow>
                 ))}
@@ -138,10 +189,14 @@ export default function CartPage() {
               <span>{cartTotal.toFixed(2)} SEK</span>
             </div>
           </div>
-          <Button size="lg" asChild className="w-full sm:w-auto bg-sky-600 hover:bg-sky-700 text-white shadow-lg">
-            <Link href="/checkout">
+          <Button 
+            size="lg" 
+            className="w-full sm:w-auto bg-sky-600 hover:bg-sky-700 text-white shadow-lg"
+            onClick={() => router.push('/checkout')}
+          >
+            <span className="flex items-center">
               {t.checkout} <Truck className="ml-2 h-5 w-5" />
-            </Link>
+            </span>
           </Button>
         </CardFooter>
       </Card>

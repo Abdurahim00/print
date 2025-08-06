@@ -5,14 +5,16 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Upload, ImageIcon, FileText, Loader2 } from "lucide-react"
 import { useFabricCanvas } from "@/hooks/useFabricCanvas"
-import { useSelector } from "react-redux"
+import { useSelector, useDispatch } from "react-redux"
 import { RootState } from "@/lib/redux/store"
+import { addImageLayer } from "@/lib/redux/designToolSlices/designSlice"
 
 export function UploadPanel() {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const { addImage } = useFabricCanvas("design-canvas")
   const { fabricCanvas } = useSelector((state: RootState) => state.canvas)
   const [isUploading, setIsUploading] = useState(false)
+  const dispatch = useDispatch()
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
@@ -77,12 +79,12 @@ export function UploadPanel() {
         const imageUrl = e.target?.result as string
         if (imageUrl) {
           // Add image to canvas with proper scaling
-          addImage(fabricCanvas, imageUrl, {
-            scaleX: 0.3,
-            scaleY: 0.3,
-            left: 200,
-            top: 200,
-          })
+          dispatch(addImageLayer({
+            id: `upload_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+            src: imageUrl,
+            type: "upload",
+            name: file.name,
+          }))
         }
         setIsUploading(false)
       }

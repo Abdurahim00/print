@@ -6,6 +6,7 @@ import * as Yup from "yup"
 import { useAppSelector, useAppDispatch } from "@/lib/redux/hooks"
 import { fetchProducts, createProduct, updateProduct, deleteProduct } from "@/lib/redux/slices/productsSlice"
 import { fetchUsers, updateUser, deleteUser } from "@/lib/redux/slices/usersSlice" // New imports for users
+import { fetchTemplates, createTemplate, updateTemplate, deleteTemplate } from "@/lib/redux/slices/templatesSlice" // New imports for templates
 import { translations, productCategories } from "@/lib/constants"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
@@ -20,16 +21,19 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Separator } from "@/components/ui/separator"
 import { Skeleton } from "@/components/ui/skeleton"
 import { FileUpload } from "@/components/ui/file-upload"
-import { Users, Package, Plus, Edit3, Trash2, Search, Settings } from "lucide-react"
+import { Users, Package, Plus, Edit3, Trash2, Search, Settings, ImageIcon } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
-import type { Product, User } from "@/types"
+import type { Product, User, Template } from "@/types"
 import Image from "next/image"
 import { ProductAnglesSelector } from "@/components/dashboard/common/ProductAnglesSelector"
 import { UserTable } from "./common/UserTable"
 import { ProductTable } from "./common/ProductTable"
 import { ProductFormDialog } from "./common/ProductFormDialog"
 import { UserFormDialog } from "./common/UserFormDialog"
+import { TemplateTable } from "./common/TemplateTable"
+import { TemplateFormDialog } from "./common/TemplateFormDialog"
 import type { FormikHelpers } from "formik"
+import type { CreateTemplateData, UpdateTemplateData } from "@/types"
 
 const productSchema = Yup.object().shape({
   name: Yup.string().required("productNameRequired").min(2, "nameMinLength"),
@@ -45,10 +49,22 @@ const userSchema = Yup.object().shape({
   role: Yup.string().oneOf(["user", "admin", "operations"]).required("Role is required"),
 })
 
+const templateSchema = Yup.object().shape({
+  name: Yup.string().required("Template name is required").min(2, "Name must be at least 2 characters"),
+  category: Yup.string().required("Category is required"),
+  image: Yup.string().required("Image is required"),
+  price: Yup.mixed().test("price-validation", "Price must be a valid number or 'free'", function (value) {
+    if (value === "free") return true
+    if (typeof value === "number" && value >= 0) return true
+    return false
+  }),
+})
+
 export function AdminDashboard() {
   const dispatch = useAppDispatch()
   const { items: products, loading: productsLoading } = useAppSelector((state) => state.products)
   const { items: users, loading: usersLoading } = useAppSelector((state) => state.users) // Get users from Redux
+  const { items: templates, loading: templatesLoading } = useAppSelector((state) => state.templatesManagement) // Get templates from Redux
   const { language } = useAppSelector((state) => state.app)
   const { toast } = useToast()
   const t = translations[language]
@@ -64,9 +80,17 @@ export function AdminDashboard() {
   const [userSearchTerm, setUserSearchTerm] = useState("") // New state for user search
   const [selectedUserRole, setSelectedUserRole] = useState("all") // New state for user role filter
 
+  // Template state
+  const [isAddTemplateDialogOpen, setIsAddTemplateDialogOpen] = useState(false)
+  const [isEditTemplateDialogOpen, setIsEditTemplateDialogOpen] = useState(false)
+  const [editingTemplate, setEditingTemplate] = useState<Template | null>(null)
+  const [templateSearchTerm, setTemplateSearchTerm] = useState("")
+  const [selectedTemplateCategory, setSelectedTemplateCategory] = useState("all")
+
   useEffect(() => {
     dispatch(fetchProducts())
     dispatch(fetchUsers()) // Fetch users on component mount
+    dispatch(fetchTemplates()) // Fetch templates on component mount
   }, [dispatch])
 
   // Filter products based on search and category
@@ -83,6 +107,13 @@ export function AdminDashboard() {
       (user.email.toLowerCase().includes(userSearchTerm.toLowerCase()) ||
         user.fullName?.toLowerCase().includes(userSearchTerm.toLowerCase()) ||
         user.customerNumber.toLowerCase().includes(userSearchTerm.toLowerCase())),
+  )
+
+  // Filter templates based on search and category
+  const filteredTemplates = templates.filter(
+    (template) =>
+      (selectedTemplateCategory === "all" || template.category === selectedTemplateCategory) &&
+      template.name.toLowerCase().includes(templateSearchTerm.toLowerCase()),
   )
 
   // Add these handlers before the formiks
@@ -170,6 +201,141 @@ export function AdminDashboard() {
     }
   }
 
+  // Template handlers
+  const handleAddTemplate = async (
+    values: CreateTemplateData,
+    { setSubmitting, resetForm }: FormikHelpers<any>
+  ) => {
+    try {
+      await dispatch(createTemplate(values))
+      toast({
+        title: "Success!",
+        description: `Template "${values.name}" created successfully`,
+        variant: "success",
+      })
+      setIsAddTemplateDialogOpen(false)
+      resetForm()
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to create template",
+        variant: "destructive",
+      })
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  const handleEditTemplate = async (
+    values: UpdateTemplateData,
+    { setSubmitting }: FormikHelpers<any>
+  ) => {
+    try {
+      await dispatch(updateTemplate(values))
+      toast({
+        title: "Success!",
+        description: `Template "${values.name}" updated successfully`,
+        variant: "success",
+      })
+      setIsEditTemplateDialogOpen(false)
+      setEditingTemplate(null)
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update template",
+        variant: "destructive",
+      })
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  const handleDeleteProduct = async (id: string, name: string) => {
+    if (confirm(t.confirmDeleteProduct.replace("{productName}", name))) {
+      try {
+        await dispatch(deleteProduct(id))
+        toast({
+          title: "Deleted!",
+          description: t.productDeleted.replace("{productName}", name),
+          variant: "success",
+        })
+      } catch (error) {
+        toast({
+          title: "Error",
+          description: t.failedToDeleteProduct,
+          variant: "destructive",
+        })
+      }
+    }
+  }
+
+  const handleDeleteUser = async (id: string, email: string) => {
+    if (confirm(t.confirmDeleteUser)) {
+      try {
+        await dispatch(deleteUser(id))
+        toast({
+          title: "Deleted!",
+          description: t.userDeleted,
+          variant: "success",
+        })
+      } catch (error) {
+        toast({
+          title: "Error",
+          description: t.failedToDeleteUser,
+          variant: "destructive",
+        })
+      }
+    }
+  }
+
+  const handleDeleteTemplate = async (id: string, name: string) => {
+    if (confirm(`Are you sure you want to delete template "${name}"?`)) {
+      try {
+        await dispatch(deleteTemplate(id))
+        toast({
+          title: "Deleted!",
+          description: `Template "${name}" deleted successfully`,
+          variant: "success",
+        })
+      } catch (error) {
+        toast({
+          title: "Error",
+          description: "Failed to delete template",
+          variant: "destructive",
+        })
+      }
+    }
+  }
+
+  const openEditProductDialog = (product: Product) => {
+    setEditingProduct(product)
+    editProductFormik.setValues({
+      name: product.name,
+      price: product.price.toString(),
+      categoryId: product.categoryId,
+      description: product.description || "",
+      image: product.image,
+    })
+    setIsEditProductDialogOpen(true)
+  }
+
+  const openEditUserDialog = (user: User) => {
+    setEditingUser(user)
+    editUserFormik.setValues({
+      id: user.id,
+      email: user.email,
+      fullName: user.fullName || "",
+      role: user.role,
+      customerNumber: user.customerNumber,
+    })
+    setIsEditUserDialogOpen(true)
+  }
+
+  const openEditTemplateDialog = (template: Template) => {
+    setEditingTemplate(template)
+    setIsEditTemplateDialogOpen(true)
+  }
+
   const addProductFormik = useFormik({
     initialValues: {
       name: "",
@@ -194,37 +360,6 @@ export function AdminDashboard() {
     onSubmit: handleEditProduct,
   })
 
-  const handleDeleteProduct = async (id: string, name: string) => {
-    if (confirm(t.confirmDeleteProduct.replace("{productName}", name))) {
-      try {
-        await dispatch(deleteProduct(id))
-        toast({
-          title: "Deleted!",
-          description: t.productDeleted.replace("{productName}", name),
-          variant: "success",
-        })
-      } catch (error) {
-        toast({
-          title: "Error",
-          description: t.failedToDeleteProduct,
-          variant: "destructive",
-        })
-      }
-    }
-  }
-
-  const openEditProductDialog = (product: Product) => {
-    setEditingProduct(product)
-    editProductFormik.setValues({
-      name: product.name,
-      price: product.price.toString(),
-      categoryId: product.categoryId,
-      description: product.description || "",
-      image: product.image,
-    })
-    setIsEditProductDialogOpen(true)
-  }
-
   const editUserFormik = useFormik({
     initialValues: {
       id: "",
@@ -237,36 +372,27 @@ export function AdminDashboard() {
     onSubmit: handleEditUser,
   })
 
-  const openEditUserDialog = (user: User) => {
-    setEditingUser(user)
-    editUserFormik.setValues({
-      id: user.id,
-      email: user.email,
-      fullName: user.fullName || "",
-      role: user.role,
-      customerNumber: user.customerNumber,
-    })
-    setIsEditUserDialogOpen(true)
-  }
+  const addTemplateFormik = useFormik({
+    initialValues: {
+      name: "",
+      category: "",
+      image: "",
+      price: "free" as number | "free",
+    },
+    validationSchema: templateSchema,
+    onSubmit: handleAddTemplate,
+  })
 
-  const handleDeleteUser = async (id: string, email: string) => {
-    if (confirm(t.confirmDeleteUser)) {
-      try {
-        await dispatch(deleteUser(id))
-        toast({
-          title: "Deleted!",
-          description: t.userDeleted,
-          variant: "success",
-        })
-      } catch (error) {
-        toast({
-          title: "Error",
-          description: t.failedToDeleteUser,
-          variant: "destructive",
-        })
-      }
-    }
-  }
+  const editTemplateFormik = useFormik({
+    initialValues: {
+      name: "",
+      category: "",
+      image: "",
+      price: "free" as number | "free",
+    },
+    validationSchema: templateSchema,
+    onSubmit: handleEditTemplate,
+  })
 
   const getRoleColor = (role: string) => {
     switch (role) {
@@ -283,7 +409,7 @@ export function AdminDashboard() {
 
   return (
     <Tabs defaultValue="users" className="w-full">
-      <TabsList className="grid w-full grid-cols-2 h-auto">
+      <TabsList className="grid w-full grid-cols-3 h-auto">
         <TabsTrigger value="users" className="flex items-center gap-2 py-3">
           <Users className="h-4 w-4" />
           {t.manageUsers}
@@ -291,6 +417,10 @@ export function AdminDashboard() {
         <TabsTrigger value="products" className="flex items-center gap-2 py-3">
           <Settings className="h-4 w-4" />
           {t.manageProductsPrices}
+        </TabsTrigger>
+        <TabsTrigger value="templates" className="flex items-center gap-2 py-3">
+          <ImageIcon className="h-4 w-4" />
+          Manage Templates
         </TabsTrigger>
       </TabsList>
 
@@ -426,6 +556,92 @@ export function AdminDashboard() {
           t={t}
           productCategories={productCategories}
           isSubmitting={editProductFormik.isSubmitting}
+          isEdit={true}
+        />
+      </TabsContent>
+
+      {/* Manage Templates Tab */}
+      <TabsContent value="templates" className="mt-6">
+        <Card className="shadow-lg border-0 bg-white dark:bg-slate-900">
+          <CardHeader className="border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 space-y-4">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <CardTitle className="flex items-center gap-2 text-slate-900 dark:text-slate-100">
+                <ImageIcon className="h-5 w-5 text-sky-600" />
+                Manage Templates
+              </CardTitle>
+              <Dialog open={isAddTemplateDialogOpen} onOpenChange={setIsAddTemplateDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button
+                    className="bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-700 hover:to-blue-700 text-white shadow-lg hover:shadow-xl transition-all duration-200"
+                    onClick={() => addTemplateFormik.resetForm()}
+                  >
+                    <Plus className="mr-2 h-4 w-4" />
+                    Add Template
+                  </Button>
+                </DialogTrigger>
+                <TemplateFormDialog
+                  open={isAddTemplateDialogOpen}
+                  onOpenChange={setIsAddTemplateDialogOpen}
+                  initialValues={addTemplateFormik.initialValues}
+                  onSubmit={handleAddTemplate}
+                  t={t}
+                  isSubmitting={addTemplateFormik.isSubmitting}
+                  isEdit={false}
+                />
+              </Dialog>
+            </div>
+            {/* Search and Filter for Templates */}
+            <div className="flex flex-col sm:flex-row gap-4">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
+                <Input
+                  type="search"
+                  placeholder="Search templates..."
+                  value={templateSearchTerm}
+                  onChange={(e) => setTemplateSearchTerm(e.target.value)}
+                  className="pl-10 border-slate-300 focus:border-sky-500 focus:ring-sky-200"
+                />
+              </div>
+              <Select value={selectedTemplateCategory} onValueChange={setSelectedTemplateCategory}>
+                <SelectTrigger className="w-full sm:w-[200px] border-slate-300 focus:border-sky-500 focus:ring-sky-200">
+                  <SelectValue placeholder="Filter by category" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Categories</SelectItem>
+                  <SelectItem value="Business">Business</SelectItem>
+                  <SelectItem value="Abstract">Abstract</SelectItem>
+                  <SelectItem value="Outdoor">Outdoor</SelectItem>
+                  <SelectItem value="Text">Text</SelectItem>
+                  <SelectItem value="Sports">Sports</SelectItem>
+                  <SelectItem value="Music">Music</SelectItem>
+                  <SelectItem value="Art">Art</SelectItem>
+                  <SelectItem value="Technology">Technology</SelectItem>
+                  <SelectItem value="Nature">Nature</SelectItem>
+                  <SelectItem value="Geometric">Geometric</SelectItem>
+                  <SelectItem value="Vintage">Vintage</SelectItem>
+                  <SelectItem value="Modern">Modern</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </CardHeader>
+          <CardContent className="p-0">
+            <TemplateTable
+              templates={filteredTemplates}
+              loading={templatesLoading}
+              t={t}
+              onEdit={openEditTemplateDialog}
+              onDelete={handleDeleteTemplate}
+            />
+          </CardContent>
+        </Card>
+        {/* Edit Template Dialog */}
+        <TemplateFormDialog
+          open={isEditTemplateDialogOpen}
+          onOpenChange={setIsEditTemplateDialogOpen}
+          initialValues={editingTemplate || { name: "", category: "", image: "", price: "free" }}
+          onSubmit={handleEditTemplate}
+          t={t}
+          isSubmitting={editTemplateFormik.isSubmitting}
           isEdit={true}
         />
       </TabsContent>

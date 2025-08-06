@@ -23,6 +23,10 @@ export function LeftToolbar() {
   ]
 
   const handleToolSelect = (tool: string) => {
+    // First, set the selected tool (this visually highlights the tool)
+    dispatch(setSelectedTool(tool))
+    
+    // Then perform the tool-specific action
     if (tool === "product") {
       dispatch(setShowProductModal(true))
     } else if (tool === "template") {
@@ -34,51 +38,54 @@ export function LeftToolbar() {
         console.warn("Fabric canvas not yet initialized. Please wait a moment or try again.")
       }
     }
-    dispatch(setSelectedTool(tool))
   }
 
   return (
-    <div className="w-16 lg:w-20 bg-white border-r border-gray-200 flex flex-col items-center py-3 lg:py-4 shadow-sm">
+    <div className="w-16 lg:w-20 bg-white/95 backdrop-blur-sm border-r border-gray-200/80 flex flex-col items-center py-4 lg:py-6 shadow-lg">
       <TooltipProvider>
-        <div className="space-y-1 lg:space-y-2">
+        {/* Main Tools */}
+        <div className="space-y-2 lg:space-y-3">
           {tools.map((tool) => (
             <Tooltip key={tool.id}>
               <TooltipTrigger asChild>
                 <Button
                   variant={selectedTool === tool.id ? "default" : "ghost"}
                   size="icon"
-                  className="w-10 h-10 lg:w-12 lg:h-12 flex flex-col items-center justify-center p-1 lg:p-2 rounded-xl transition-all duration-200 hover:scale-105 shadow-sm"
+                  className={`w-11 h-11 lg:w-14 lg:h-14 flex flex-col items-center justify-center rounded-2xl transition-all duration-300 shadow-sm hover:shadow-md ${
+                    selectedTool === tool.id 
+                      ? "bg-blue-600 hover:bg-blue-700 text-white shadow-lg scale-105 hover:scale-110" 
+                      : "hover:bg-gray-50 hover:scale-105 text-gray-600 hover:text-gray-800"
+                  }`}
                   onClick={() => handleToolSelect(tool.id)}
                 >
-                  <tool.icon className="w-4 h-4 lg:w-6 lg:h-6 mb-0.5 lg:mb-0" />
-                  {/* <span className="text-[10px] hidden lg:block">{tool.label}</span> */}
+                  <tool.icon className="w-5 h-5 lg:w-6 lg:h-6" />
                 </Button>
               </TooltipTrigger>
-              <TooltipContent side="right" className="lg:hidden">
-                <p>{tool.label}</p>
+              <TooltipContent side="right" className="bg-gray-900 text-white border-gray-700">
+                <p className="font-medium">{tool.label}</p>
               </TooltipContent>
             </Tooltip>
           ))}
         </div>
 
-        <Separator className="my-3 lg:my-4 w-6 lg:w-8" />
+        <Separator className="my-4 lg:my-6 w-8 lg:w-10 bg-gradient-to-r from-transparent via-gray-300 to-transparent" />
 
-        <div className="space-y-1 lg:space-y-2">
+        {/* History Controls */}
+        <div className="space-y-2 lg:space-y-3">
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
                 variant="ghost"
                 size="icon"
-                className="w-10 h-10 lg:w-12 lg:h-12 flex flex-col items-center justify-center p-1 lg:p-2 rounded-xl transition-all duration-200 hover:scale-105 disabled:opacity-50 disabled:hover:scale-100 shadow-sm"
-                onClick={() => handleUndo(fabricCanvas)} // Pass fabricCanvas
-                disabled={!canUndo || !fabricCanvas} // Also disable if canvas not ready
+                className="w-11 h-11 lg:w-14 lg:h-14 flex flex-col items-center justify-center rounded-2xl transition-all duration-300 hover:bg-gray-50 hover:scale-105 disabled:opacity-30 disabled:hover:scale-100 disabled:hover:bg-transparent text-gray-600 hover:text-gray-800 shadow-sm hover:shadow-md"
+                onClick={() => handleUndo(fabricCanvas)}
+                disabled={!canUndo || !fabricCanvas}
               >
-                <Undo2 className="w-4 h-4 lg:w-5 lg:h-5 mb-0.5 lg:mb-1" />
-                <span className="text-xs hidden lg:block">Undo</span>
+                <Undo2 className="w-4 h-4 lg:w-5 lg:h-5" />
               </Button>
             </TooltipTrigger>
-            <TooltipContent side="right" className="lg:hidden">
-              <p>Undo (Ctrl+Z)</p>
+            <TooltipContent side="right" className="bg-gray-900 text-white border-gray-700">
+              <p className="font-medium">Undo (Ctrl+Z)</p>
             </TooltipContent>
           </Tooltip>
 
@@ -87,16 +94,15 @@ export function LeftToolbar() {
               <Button
                 variant="ghost"
                 size="icon"
-                className="w-10 h-10 lg:w-12 lg:h-12 flex flex-col items-center justify-center p-1 lg:p-2 rounded-xl transition-all duration-200 hover:scale-105 disabled:opacity-50 disabled:hover:scale-100 shadow-sm"
-                onClick={() => handleRedo(fabricCanvas)} // Pass fabricCanvas
-                disabled={!canRedo || !fabricCanvas} // Also disable if canvas not ready
+                className="w-11 h-11 lg:w-14 lg:h-14 flex flex-col items-center justify-center rounded-2xl transition-all duration-300 hover:bg-gray-50 hover:scale-105 disabled:opacity-30 disabled:hover:scale-100 disabled:hover:bg-transparent text-gray-600 hover:text-gray-800 shadow-sm hover:shadow-md"
+                onClick={() => handleRedo(fabricCanvas)}
+                disabled={!canRedo || !fabricCanvas}
               >
-                <Redo2 className="w-4 h-4 lg:w-5 lg:h-5 mb-0.5 lg:mb-1" />
-                <span className="text-xs hidden lg:block">Redo</span>
+                <Redo2 className="w-4 h-4 lg:w-5 lg:h-5" />
               </Button>
             </TooltipTrigger>
-            <TooltipContent side="right" className="lg:hidden">
-              <p>Redo (Ctrl+Y)</p>
+            <TooltipContent side="right" className="bg-gray-900 text-white border-gray-700">
+              <p className="font-medium">Redo (Ctrl+Y)</p>
             </TooltipContent>
           </Tooltip>
         </div>

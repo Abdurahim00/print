@@ -14,10 +14,19 @@ export interface Color {
   swatch_image?: string;
 }
 
+export interface SizePrice {
+  size: string;
+  price: number;
+  inStock: boolean;
+  stockQuantity: number;
+  useBasePrice?: boolean; // If true, use product's base price
+}
+
 export interface Variation {
   id: string;
   color: Color;
-  price: number;
+  price: number; // Base price
+  sizePrices?: SizePrice[]; // Size-specific pricing
   inStock: boolean;
   stockQuantity: number;
   images: VariationImage[];

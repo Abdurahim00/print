@@ -15,6 +15,10 @@ export default function DashboardPage() {
   const { data: session, status } = useSession() // Get session data
   const { language } = useAppSelector((state) => state.app)
   const t = translations[language]
+  
+  // Get tab from URL query parameter
+  const searchParams = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '')
+  const defaultTab = searchParams.get('tab') || 'orders'
 
   // Redirect if not authenticated
   useEffect(() => {
@@ -53,7 +57,7 @@ export default function DashboardPage() {
   const renderDashboardContent = () => {
     switch (user.role) {
       case "user":
-        return <UserDashboard />
+        return <UserDashboard defaultTab={defaultTab} />
       case "admin":
         return <AdminDashboard />
       case "operations":

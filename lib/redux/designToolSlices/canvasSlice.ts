@@ -98,6 +98,7 @@ const canvasSlice = createSlice({
   },
 })
 
+// Export the actions
 export const {
   setFabricCanvas,
   addObject,
@@ -111,5 +112,10 @@ export const {
   clearCanvas,
   setLoading,
 } = canvasSlice.actions
+
+// Create properly typed action creators for TypeScript
+export const setFabricCanvasAction = (canvas: any) => setFabricCanvas(canvas);
+export const addObjectAction = (object: CanvasObject) => addObject(object);
+export const setSelectedObjectAction = (object: CanvasObject | null) => setSelectedObject(object);
 
 export default canvasSlice.reducer

@@ -27,12 +27,12 @@ export default function HomePage() {
       </p>
       <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
         <Button size="lg" asChild className="bg-sky-600 hover:bg-sky-700 text-white shadow-lg">
-          <Link href="/design-tool">
+          <Link href="/design-tool" className="flex items-center">
             <Palette className="mr-2 h-5 w-5" /> {t.startDesigning}
           </Link>
         </Button>
         <Button size="lg" variant="outline" asChild className="shadow-lg bg-transparent">
-          <Link href="/products">
+          <Link href="/products" className="flex items-center">
             <Package className="mr-2 h-5 w-5" /> {t.viewProducts}
           </Link>
         </Button>

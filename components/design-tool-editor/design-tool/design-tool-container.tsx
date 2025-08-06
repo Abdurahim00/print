@@ -15,7 +15,6 @@ export function DesignToolContainer() {
   const dispatch = useDispatch()
   const { showProductModal, showTemplateModal } = useSelector((state: RootState) => state.design)
   const { items: products, loading } = useSelector((state: RootState) => state.products)
-  const { templates } = useSelector((state: RootState) => state.templates)
 
   // Fetch regular products on mount for the product modal
   useEffect(() => {
@@ -23,20 +22,21 @@ export function DesignToolContainer() {
   }, [dispatch])
 
   return (
-    <div className="flex flex-col h-screen bg-white overflow-hidden">
+    <div className="flex flex-col h-screen bg-gray-50 overflow-hidden">
       <div className="flex flex-1 overflow-hidden">
         <LeftToolbar />
 
-        <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
+        <div className="flex-1 flex flex-col xl:flex-row overflow-hidden">
           <CentralCanvas />
 
-          <div className="hidden lg:block">
+          <div className="hidden xl:block flex-shrink-0">
             <RightPanel />
           </div>
         </div>
       </div>
 
-      <div className="lg:hidden">
+      {/* Mobile and tablet right panel */}
+      <div className="xl:hidden border-t border-gray-200 bg-white flex-shrink-0">
         <RightPanel isMobile={true} />
       </div>
 
@@ -50,7 +50,6 @@ export function DesignToolContainer() {
       <TemplateModal
         isOpen={showTemplateModal}
         onClose={() => dispatch(setShowTemplateModal(false))}
-        templates={templates}
       />
     </div>
   )

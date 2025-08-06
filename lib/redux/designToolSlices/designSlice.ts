@@ -1,32 +1,33 @@
 import { createSlice } from "@reduxjs/toolkit"
 
-const initialState = {
+// Define types for our state
+interface ImageLayer {
+  id: string;
+  src: string;
+  type: 'template' | 'upload';
+  name: string;
+}
+
+interface DesignState {
+  selectedTool: string;
+  viewMode: string;
+  selectedProduct: any | null;
+  productColor: string;
+  selectedTemplate: any | null;
+  imageLayers: ImageLayer[];
+  showProductModal: boolean;
+  showTemplateModal: boolean;
+  isLoading: boolean;
+  error: string | null;
+}
+
+const initialState: DesignState = {
   selectedTool: "product",
   viewMode: "front",
-  selectedProduct: {
-    id: "tshirt-classic",
-    name: "Classic T-Shirt",
-    type: "tshirt",
-    baseColor: "#1f2937",
-    angles: ["front", "back", "left", "right"],
-    colors: [
-      "#1f2937",
-      "#374151",
-      "#d1d5db",
-      "#f3f4f6",
-      "#ffffff",
-      "#fef3c7",
-      "#065f46",
-      "#1e40af",
-      "#dc2626",
-      "#ea580c",
-    ],
-    price: "$19.99",
-    image: "/placeholder.svg?height=300&width=300&text=T-Shirt",
-    description: "Premium cotton t-shirt perfect for custom designs",
-    inStock: true,
-  },
-  productColor: "#1f2937",
+  selectedProduct: null,
+  productColor: "",
+  selectedTemplate: null,
+  imageLayers: [], // { id, src, type: 'template' | 'upload', name }
   showProductModal: false,
   showTemplateModal: false,
   isLoading: false,
@@ -45,10 +46,30 @@ const designSlice = createSlice({
     },
     setSelectedProduct: (state, action) => {
       state.selectedProduct = action.payload
-      state.productColor = action.payload.baseColor
+      // Only set product color if a product is selected
+      if (action.payload) {
+        state.productColor = action.payload.baseColor
+      } else {
+        state.productColor = ""
+      }
     },
     setProductColor: (state, action) => {
       state.productColor = action.payload
+    },
+    setSelectedTemplate: (state, action) => {
+      state.selectedTemplate = action.payload
+      // Optionally add to imageLayers for rendering
+      if (action.payload) {
+        state.imageLayers.push({
+          id: `template_${action.payload.id}`,
+          src: action.payload.image,
+          type: "template",
+          name: action.payload.name,
+        })
+      }
+    },
+    addImageLayer: (state, action) => {
+      state.imageLayers.push(action.payload)
     },
     setShowProductModal: (state, action) => {
       state.showProductModal = action.payload
@@ -70,6 +91,8 @@ export const {
   setViewMode,
   setSelectedProduct,
   setProductColor,
+  setSelectedTemplate,
+  addImageLayer,
   setShowProductModal,
   setShowTemplateModal,
   setLoading,

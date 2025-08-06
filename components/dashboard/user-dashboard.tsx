@@ -1,9 +1,20 @@
 "use client"
 
-import { useEffect } from "react"
+import { useState, useEffect } from "react"
 import { useAppSelector, useAppDispatch } from "@/lib/redux/hooks"
 import { fetchOrders } from "@/lib/redux/slices/ordersSlice"
-import { fetchDesigns } from "@/lib/redux/slices/designsSlice" // New import
+import { fetchDesigns, deleteDesign } from "@/lib/redux/slices/designsSlice"
+import { useToast } from "@/components/ui/use-toast"
+import { 
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { translations } from "@/lib/constants"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
@@ -17,26 +28,68 @@ import { FileText, Palette, MapPin, Package, Edit3, Copy, Trash2 } from "lucide-
 import Image from "next/image"
 import { useSession } from "next-auth/react" // Import useSession
 
-export function UserDashboard() {
+export function UserDashboard({ defaultTab = "orders" }: { defaultTab?: string }) {
   const dispatch = useAppDispatch()
+  const { toast } = useToast()
   const { data: session } = useSession() // Get session data
   const { items: orders, loading: ordersLoading } = useAppSelector((state) => state.orders)
   const { items: designs, loading: designsLoading } = useAppSelector((state) => state.designs) // New designs state
   const { language } = useAppSelector((state) => state.app)
   const t = translations[language]
+  
+  // State for delete confirmation
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [designToDelete, setDesignToDelete] = useState<string | null>(null)
+  const [isDeleting, setIsDeleting] = useState(false)
+  
+  // Handle delete design
+  const handleDeleteDesign = async () => {
+    if (!designToDelete) return
+    
+    try {
+      setIsDeleting(true)
+      const resultAction = await dispatch(deleteDesign(designToDelete) as any)
+      
+      if (deleteDesign.fulfilled.match(resultAction)) {
+        toast({
+          title: "Success",
+          description: "Design deleted successfully",
+          variant: "default",
+          className: "bg-green-50 border-green-200 text-green-800"
+        })
+      } else {
+        toast({
+          title: "Error",
+          description: "Failed to delete design",
+          variant: "destructive"
+        })
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred",
+        variant: "destructive"
+      })
+    } finally {
+      setIsDeleting(false)
+      setDeleteDialogOpen(false)
+      setDesignToDelete(null)
+    }
+  }
 
   const user = session?.user
 
   // Filter orders for current user
   const userOrders = orders.filter((order) => order.customer === user?.customerNumber)
-  const userDesigns = designs.filter((design) => design.userId === user?.id) // Filter designs by user ID
+  // Filter designs by user ID - cast user to any to access id property
+  const userDesigns = designs.filter((design) => design.userId === (user as any)?.id)
 
   useEffect(() => {
     if (user?.customerNumber) {
       dispatch(fetchOrders())
     }
-    if (user?.id) {
-      dispatch(fetchDesigns(user.id)) // Fetch designs for the current user
+    if ((user as any)?.id) {
+      dispatch(fetchDesigns((user as any).id)) // Fetch designs for the current user
     }
   }, [dispatch, user])
 
@@ -148,7 +201,7 @@ export function UserDashboard() {
         </CardContent>
       </Card>
 
-      <Tabs defaultValue="orders" className="w-full">
+      <Tabs defaultValue={defaultTab} className="w-full">
         <TabsList className="grid w-full grid-cols-1 sm:grid-cols-3 h-auto">
           <TabsTrigger value="orders" className="flex items-center gap-2 py-3">
             <FileText className="h-4 w-4" />
@@ -243,7 +296,10 @@ export function UserDashboard() {
                 <Palette className="h-5 w-5 text-sky-600" />
                 {t.savedDesigns}
               </CardTitle>
-              <Button className="bg-sky-600 hover:bg-sky-700 text-white">
+              <Button 
+                className="bg-sky-600 hover:bg-sky-700 text-white"
+                onClick={() => window.location.href = '/design-tool'}
+              >
                 <Palette className="h-4 w-4 mr-2" />
                 {t.createNewDesign}
               </Button>
@@ -264,7 +320,8 @@ export function UserDashboard() {
                           alt={design.name}
                           width={300}
                           height={180}
-                          className="w-full h-32 object-cover"
+                          className="w-full h-32 object-cover bg-white"
+                          priority
                         />
                         <Badge className={`absolute top-2 right-2 ${getDesignStatusColor(design.status)}`}>
                           {t[design.status.toLowerCase() as keyof typeof t] || design.status}
@@ -281,20 +338,18 @@ export function UserDashboard() {
                             variant="outline"
                             size="sm"
                             className="flex-1 bg-transparent hover:bg-slate-100 dark:hover:bg-slate-700"
+                            onClick={() => window.location.href = `/design-tool?designId=${design.id}`}
                           >
                             <Edit3 className="h-3 w-3 mr-1" /> {t.edit}
                           </Button>
                           <Button
                             variant="outline"
                             size="sm"
-                            className="flex-1 bg-transparent hover:bg-slate-100 dark:hover:bg-slate-700"
-                          >
-                            <Copy className="h-3 w-3 mr-1" /> {t.duplicate}
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
                             className="flex-1 bg-transparent hover:bg-red-50 hover:text-red-700 hover:border-red-300 dark:hover:bg-red-900/20 text-red-600 border-red-200"
+                            onClick={() => {
+                              setDesignToDelete(design.id)
+                              setDeleteDialogOpen(true)
+                            }}
                           >
                             <Trash2 className="h-3 w-3 mr-1" /> {t.delete}
                           </Button>
@@ -308,8 +363,12 @@ export function UserDashboard() {
                   <Palette className="h-16 w-16 text-slate-400 dark:text-slate-500 mx-auto mb-4" />
                   <h3 className="text-lg font-semibold text-slate-700 dark:text-slate-300 mb-2">{t.noDesignsFound}</h3>
                   <p className="text-slate-500 dark:text-slate-400 mb-4">{t.startDesigningNow}</p>
-                  <Button asChild className="bg-sky-600 hover:bg-sky-700 text-white">
-                    <a href="/design-tool">{t.createNewDesign}</a>
+                  <Button 
+                    className="bg-sky-600 hover:bg-sky-700 text-white"
+                    onClick={() => window.location.href = '/design-tool'}
+                  >
+                    <Palette className="h-4 w-4 mr-2" />
+                    {t.createNewDesign}
                   </Button>
                 </div>
               )}
@@ -364,6 +423,41 @@ export function UserDashboard() {
           </Card>
         </TabsContent>
       </Tabs>
+      
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete your design.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault()
+                handleDeleteDesign()
+              }}
+              className="bg-red-600 hover:bg-red-700 text-white focus:ring-red-600"
+              disabled={isDeleting}
+            >
+              {isDeleting ? (
+                <>
+                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Deleting...
+                </>
+              ) : (
+                "Delete"
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

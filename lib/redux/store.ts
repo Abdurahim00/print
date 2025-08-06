@@ -6,6 +6,7 @@ import ordersSlice from "./slices/ordersSlice"
 import appSlice from "./slices/appSlice"
 import usersSlice from "./slices/usersSlice" // New
 import designsSlice from "./slices/designsSlice" // New
+import templatesSlice from "./slices/templatesSlice" // New
 
 import designReducer from "@/lib/redux/designToolSlices/designSlice"
 import productsReducer from "@/lib/redux/designToolSlices/productsSlice"
@@ -21,6 +22,7 @@ export const store = configureStore({
     app: appSlice,
     users: usersSlice, // Added
     designs: designsSlice, // Added
+    templatesManagement: templatesSlice, // Added
 
     design: designReducer,
     designProducts: productsReducer,

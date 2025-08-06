@@ -8,7 +8,7 @@ if (!process.env.STRIPE_SECRET_KEY) {
 
 const stripe = process.env.STRIPE_SECRET_KEY 
   ? new Stripe(process.env.STRIPE_SECRET_KEY, {
-      apiVersion: "2024-12-18.acacia" as any,
+      apiVersion: "2023-10-16" as any, // Use a valid API version with type assertion
     })
   : null
 
@@ -24,16 +24,19 @@ export async function POST(request: NextRequest) {
 
     const { amount, currency = "sek", metadata = {} } = await request.json()
 
-    if (!amount || amount <= 0) {
+    // Validate amount is a valid number and greater than 0
+    const numericAmount = parseFloat(amount);
+    if (isNaN(numericAmount) || numericAmount <= 0) {
+      console.error("Invalid payment amount:", amount);
       return NextResponse.json(
-        { error: "Invalid amount" },
+        { error: "Invalid amount. Please provide a valid payment amount." },
         { status: 400 }
       )
     }
 
     // Create a PaymentIntent with the order amount and currency
     const paymentIntent = await stripe.paymentIntents.create({
-      amount: Math.round(amount * 100), // Convert to cents
+      amount: Math.round(numericAmount * 100), // Convert to cents using validated numeric amount
       currency: currency.toLowerCase(),
       automatic_payment_methods: {
         enabled: true,

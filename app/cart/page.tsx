@@ -11,8 +11,10 @@ import { Separator } from "@/components/ui/separator"
 import { ShoppingCart, Plus, Minus, Trash2, Truck } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 
 export default function CartPage() {
+  const router = useRouter()
   const dispatch = useAppDispatch()
   const { items: cart } = useAppSelector((state) => state.cart)
   const { language } = useAppSelector((state) => state.app)

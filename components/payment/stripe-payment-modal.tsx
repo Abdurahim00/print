@@ -202,18 +202,25 @@ export default function StripePaymentModal({
   const createPaymentIntent = async () => {
     setIsLoading(true)
     try {
+      // Make sure amount is a valid number
+      if (isNaN(amount) || amount <= 0) {
+        throw new Error(`Invalid payment amount: ${amount}. Please check your cart for correct pricing.`);
+      }
+      
+      console.log("Creating payment intent with amount:", amount);
+      
       const response = await fetch("/api/payment/create-payment-intent", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          amount,
+          amount: amount,
           currency,
           metadata: {
-            orderId: orderData?.orderId,
-            customerEmail: orderData?.customerEmail,
-            customerName: orderData?.customerName,
+            orderId: orderData?.orderId || "no-order-id",
+            customerEmail: orderData?.customerEmail || "no-email",
+            customerName: orderData?.customerName || "no-name",
           },
         }),
       })
@@ -221,6 +228,7 @@ export default function StripePaymentModal({
       const data = await response.json()
 
       if (!response.ok) {
+        console.error("Payment intent creation failed:", data);
         throw new Error(data.error || "Failed to create payment intent")
       }
 

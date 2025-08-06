@@ -42,7 +42,25 @@ export default function CheckoutPage() {
   const [postalCode, setPostalCode] = useState("")
   const [country, setCountry] = useState("")
 
-  const subtotal = cart.reduce((total, item) => total + item.price * item.quantity, 0)
+  const subtotal = cart.reduce((total, item) => {
+    let itemPrice = 0;
+    
+    // Handle different price formats
+    if (typeof item.price === 'number') {
+      itemPrice = item.price;
+    } else if (typeof item.price === 'string') {
+      // Remove any non-numeric characters except decimal point
+      const cleanPrice = item.price.replace(/[^\d.-]/g, '');
+      itemPrice = parseFloat(cleanPrice) || 0;
+    }
+    
+    // If we have selectedSizes, calculate from those instead
+    if (item.selectedSizes && item.selectedSizes.length > 0) {
+      return total + item.selectedSizes.reduce((sum, size) => sum + (size.price * size.quantity), 0);
+    }
+    
+    return total + (itemPrice * item.quantity);
+  }, 0)
   const vatAmount = subtotal * 0.25
   const shippingCost = shippingOption === "express" ? 149 : 79
   const grandTotal = subtotal + vatAmount + shippingCost
@@ -87,11 +105,31 @@ useEffect(() => {
     const orderData = {
       customer: (session?.user as any)?.customerNumber || "Guest",
       total: grandTotal,
-      items: cart.map((item) => ({
-        name: item.name,
-        quantity: item.quantity,
-        price: item.price,
-      })),
+      items: cart.map((item) => {
+        // Calculate correct price for the item
+        let itemPrice;
+        
+        if (item.selectedSizes && item.selectedSizes.length > 0) {
+          // For items with size variations, use the size-based price
+          itemPrice = item.selectedSizes.reduce((total, size) => total + (size.price * size.quantity), 0) / item.quantity;
+        } else if (typeof item.price === 'number') {
+          itemPrice = item.price;
+        } else if (typeof item.price === 'string') {
+          const cleanPrice = item.price.replace(/[^\d.-]/g, '');
+          itemPrice = parseFloat(cleanPrice) || 0;
+        } else {
+          itemPrice = 0;
+        }
+        
+        return {
+          name: item.name,
+          quantity: item.quantity,
+          price: itemPrice,
+          designId: item.designId,
+          designPreview: item.designPreview,
+          selectedSizes: item.selectedSizes,
+        };
+      }),
       shippingOption: shippingOption as "standard" | "express",
       paymentMethod: paymentMethod as "card" | "swish" | "klarna",
       status: "Queued" as const, // Default status for new orders
@@ -283,7 +321,23 @@ useEffect(() => {
                   <span>
                     {item.name} x {item.quantity}
                   </span>
-                  <span>{(item.price * item.quantity).toFixed(2)} SEK</span>
+                  <span>
+                    {(() => {
+                      let totalPrice;
+                      if (item.selectedSizes && item.selectedSizes.length > 0) {
+                        // Calculate from selected sizes
+                        totalPrice = item.selectedSizes.reduce((sum, size) => sum + (size.price * size.quantity), 0);
+                      } else if (typeof item.price === 'number') {
+                        totalPrice = item.price * item.quantity;
+                      } else if (typeof item.price === 'string') {
+                        const cleanPrice = item.price.replace(/[^\d.-]/g, '');
+                        totalPrice = (parseFloat(cleanPrice) || 0) * item.quantity;
+                      } else {
+                        totalPrice = 0;
+                      }
+                      return `${totalPrice.toFixed(2)} SEK`;
+                    })()}
+                  </span>
                 </div>
               ))}
               <Separator className="bg-slate-200 dark:bg-slate-700" />

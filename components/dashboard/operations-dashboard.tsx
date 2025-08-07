@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
 import { useAppSelector, useAppDispatch } from "@/lib/redux/hooks"
 import { fetchOrders, updateOrderStatus } from "@/lib/redux/slices/ordersSlice"
 import { translations } from "@/lib/constants"
@@ -11,42 +11,75 @@ import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Skeleton } from "@/components/ui/skeleton"
 import { FileArchive, Package, Clock, Printer, Truck, CheckCircle } from "lucide-react"
-import { useToast } from "@/hooks/use-toast"
+import { toast } from "sonner"
 import type { Order } from "@/types"
 
 export function OperationsDashboard() {
   const dispatch = useAppDispatch()
   const { items: orders, loading } = useAppSelector((state) => state.orders)
   const { language } = useAppSelector((state) => state.app)
-  const { toast } = useToast()
   const t = translations[language]
 
+  // Use document visibility API to prevent unnecessary API calls
+  const [isVisible, setIsVisible] = useState(!document.hidden);
+  const [lastFetch, setLastFetch] = useState(0);
+  const REFRESH_THRESHOLD = 300000; // 5 minutes in milliseconds
+
   useEffect(() => {
-    dispatch(fetchOrders())
-  }, [dispatch])
+    const handleVisibilityChange = () => {
+      const isNowVisible = !document.hidden;
+      setIsVisible(isNowVisible);
+      
+      // Only refetch if becoming visible AND the threshold time has passed
+      if (isNowVisible && Date.now() - lastFetch > REFRESH_THRESHOLD) {
+        dispatch(fetchOrders());
+        setLastFetch(Date.now());
+      }
+    };
+
+    // Initial fetch when component mounts
+    if (lastFetch === 0) {
+      dispatch(fetchOrders());
+      setLastFetch(Date.now());
+    }
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
+    // Cleanup
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [dispatch, lastFetch])
 
   const handleStatusUpdate = async (orderId: string, newStatus: Order["status"]) => {
     try {
       await dispatch(updateOrderStatus({ id: orderId, status: newStatus })).unwrap()
-      toast({
-        title: t.statusUpdated,
-        description: t.orderStatusChanged.replace("{orderId}", orderId).replace("{newStatus}", newStatus),
-        variant: "success",
+      toast.success(t.orderStatusChanged.replace("{orderId}", orderId).replace("{newStatus}", newStatus), {
+        style: { 
+          backgroundColor: "#634c9e15", 
+          borderColor: "#634c9e40",
+          color: "#634c9e"
+        },
+        position: "top-center",
+        duration: 3000,
       })
     } catch (error) {
-      toast({
-        title: "Error",
-        description: t.failedToUpdateOrder,
-        variant: "destructive",
+      toast.error(t.failedToUpdateOrder, {
+        position: "top-center",
+        duration: 3000,
       })
     }
   }
 
   const handleExportPrintFile = (orderId: string) => {
-    toast({
-      title: t.exportStarted,
-      description: t.printFilePrepared.replace("{orderId}", orderId),
-      variant: "success",
+    toast.success(t.printFilePrepared.replace("{orderId}", orderId), {
+      style: { 
+        backgroundColor: "#634c9e15", 
+        borderColor: "#634c9e40",
+        color: "#634c9e"
+      },
+      position: "top-center",
+      duration: 3000,
     })
     // Simulate file download
     setTimeout(() => {

@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react"
 import { useSearchParams } from "next/navigation"
 import { useDispatch } from "react-redux"
-import { setSelectedProduct, setProductColor, setViewMode } from "@/lib/redux/designToolSlices/designSlice"
+import { setSelectedProduct, setProductColor, setViewMode, setSelectedTemplate } from "@/lib/redux/designToolSlices/designSlice"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { AlertCircle } from "lucide-react"
@@ -38,9 +38,59 @@ export function LoadSavedDesign({ onDesignLoaded }: LoadSavedDesignProps) {
         const design = await response.json()
         console.log("Design loaded:", design)
         
-        // Set product info from saved design
-        if (design.designData) {
-          // Find product by ID
+        // Validate design data
+        if (!design.designData) {
+          throw new Error("Design data is missing or corrupted")
+        }
+        
+        // Check if we have enhanced design data with complete product reference
+        if (design.designData.product) {
+          console.log("Loading design with complete product reference")
+          
+          // Use the saved complete product reference (new format)
+          const savedProduct = design.designData.product
+          const savedState = design.designData.selectedState
+          
+          console.log("Saved product:", savedProduct)
+          console.log("Saved state:", savedState)
+          
+          // Restore the complete product
+          dispatch(setSelectedProduct(savedProduct))
+          
+          // Restore the selected state
+          if (savedState) {
+            if (savedState.productColor) {
+              console.log("Restoring product color:", savedState.productColor)
+              dispatch(setProductColor(savedState.productColor))
+            }
+            
+            if (savedState.viewMode) {
+              console.log("Restoring view mode:", savedState.viewMode)
+              dispatch(setViewMode(savedState.viewMode))
+            }
+            
+            if (savedState.selectedTemplate) {
+              console.log("Restoring selected template:", savedState.selectedTemplate)
+              dispatch(setSelectedTemplate(savedState.selectedTemplate))
+            }
+          }
+          
+          // Load canvas data after product state is restored
+          if (design.designData.canvasJSON) {
+            console.log("Preparing to load canvas JSON with restored product state...")
+            
+            setTimeout(() => {
+              console.log("Loading canvas JSON:", design.designData.canvasJSON)
+              onDesignLoaded(design.designData.canvasJSON)
+            }, 800)
+          } else {
+            console.warn("No canvas JSON data found in design")
+          }
+          
+        } else {
+          // Legacy design format - fetch product by ID
+          console.log("Loading legacy design format, fetching product by ID")
+          
           const productId = design.designData.productId
           if (productId) {
             console.log("Fetching product:", productId)
@@ -48,30 +98,38 @@ export function LoadSavedDesign({ onDesignLoaded }: LoadSavedDesignProps) {
             if (productResponse.ok) {
               const product = await productResponse.json()
               console.log("Product loaded:", product)
+              
+              // Dispatch product selection
               dispatch(setSelectedProduct(product))
               
-              // Set product color if available
+              // Set product color if available (legacy format)
               if (design.designData.productColor) {
                 console.log("Setting product color:", design.designData.productColor)
                 dispatch(setProductColor(design.designData.productColor))
               }
               
-              // Set view mode if available
+              // Set view mode if available (legacy format)
               if (design.designData.viewMode) {
                 console.log("Setting view mode:", design.designData.viewMode)
                 dispatch(setViewMode(design.designData.viewMode))
               }
+              
+              // Load canvas data after product is set
+              if (design.designData.canvasJSON) {
+                console.log("Preparing to load canvas JSON...")
+                
+                setTimeout(() => {
+                  console.log("Loading canvas JSON:", design.designData.canvasJSON)
+                  onDesignLoaded(design.designData.canvasJSON)
+                }, 800)
+              } else {
+                console.warn("No canvas JSON data found in design")
+              }
+            } else {
+              throw new Error(`Failed to load product: ${productResponse.statusText}`)
             }
-          }
-          
-          // Load canvas data
-          if (design.designData.canvasJSON) {
-            console.log("Loading canvas JSON")
-            // Pass the canvas JSON to parent for loading
-            // Add a small delay to ensure product is loaded first
-            setTimeout(() => {
-              onDesignLoaded(design.designData.canvasJSON)
-            }, 300)
+          } else {
+            console.warn("No product ID found in design data")
           }
         }
       } catch (error) {

@@ -26,10 +26,10 @@ export default function CartPage() {
     // Handle different price formats
     if (typeof item.price === 'number') {
       itemPrice = item.price;
-    } else if (typeof item.price === 'string') {
-      // Remove any non-numeric characters except decimal point
-      const cleanPrice = item.price.replace(/[^\d.-]/g, '');
-      itemPrice = parseFloat(cleanPrice) || 0;
+            } else if (typeof item.price === 'string') {
+          // Remove any non-numeric characters except decimal point
+          const cleanPrice = String(item.price).replace(/[^\d.-]/g, '');
+          itemPrice = parseFloat(cleanPrice) || 0;
     } else if (item.selectedSizes && item.selectedSizes.length > 0) {
       // If we have selectedSizes, calculate from those
       itemPrice = item.selectedSizes.reduce((sum, size) => sum + (size.price * size.quantity), 0) / item.quantity;
@@ -82,30 +82,103 @@ export default function CartPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {cart.map((item, index) => (
-                  <TableRow
-                    key={item.id}
-                    className={`${
-                      index % 2 === 0 ? "bg-white dark:bg-slate-800" : "bg-slate-50/50 dark:bg-slate-800/20"
-                    } border-slate-100 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700/70 transition-colors`}
-                  >
-                    <TableCell className="font-medium flex items-center gap-3 py-4">
-                      <Image
-                        src={item.image || "/placeholder.svg"}
-                        alt={item.name}
-                        width={80}
-                        height={60}
-                        className="rounded-md object-cover border border-slate-200 dark:border-slate-700"
-                      />
-                      <span className="text-slate-900 dark:text-white">{item.name}</span>
-                    </TableCell>
+                {cart.map((item, index) => {
+                  // Get the correct product image based on design context
+                  const getProductDisplayImage = () => {
+                    // If we have a design preview from the design tool, use that
+                    if (item.designPreview) {
+                      return item.designPreview
+                    }
+                    
+                    // If we have design context with variation info, use the specific variation image
+                    if ((item as any).designContext?.selectedVariation) {
+                      const variation = (item as any).designContext.selectedVariation
+                      const viewMode = (item as any).designContext.viewMode || "front"
+                      
+                      // Find image for the specific angle
+                      const imageForAngle = variation.variationImages?.find((img: any) => 
+                        img.angle === viewMode && img.url
+                      )
+                      if (imageForAngle) {
+                        return imageForAngle.url
+                      }
+                      
+                      // Fallback to front view
+                      const frontImage = variation.variationImages?.find((img: any) => 
+                        img.angle === "front" && img.url
+                      )
+                      if (frontImage) {
+                        return frontImage.url
+                      }
+                      
+                      // Fallback to swatch image
+                      if (variation.colorSwatchImage) {
+                        return variation.colorSwatchImage
+                      }
+                    }
+                    
+                    // Ultimate fallback to default product image
+                    return item.image || "/placeholder.svg"
+                  }
+
+                  // Get product display name with variation info
+                  const getProductDisplayName = () => {
+                    let displayName = item.name
+                    
+                    // Add variation color info if available
+                    if ((item as any).designContext?.selectedVariation) {
+                      const variation = (item as any).designContext.selectedVariation
+                      displayName += ` (${variation.colorName})`
+                    }
+                    
+                    return displayName
+                  }
+
+                  return (
+                    <TableRow
+                      key={item.id}
+                      className={`${
+                        index % 2 === 0 ? "bg-white dark:bg-slate-800" : "bg-slate-50/50 dark:bg-slate-800/20"
+                      } border-slate-100 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700/70 transition-colors`}
+                    >
+                      <TableCell className="font-medium flex items-center gap-3 py-4">
+                        <div className="relative">
+                          <Image
+                            src={getProductDisplayImage()}
+                            alt={getProductDisplayName()}
+                            width={80}
+                            height={60}
+                            className="rounded-md object-cover border border-slate-200 dark:border-slate-700"
+                          />
+                          {/* Show a design indicator if this is a custom design */}
+                          {item.designPreview && (
+                            <div className="absolute -top-1 -right-1 bg-blue-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                              ✨
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="text-slate-900 dark:text-white">{getProductDisplayName()}</span>
+                          {/* Show design context info */}
+                          {(item as any).designContext && (
+                            <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                              {(item as any).designContext.viewMode && (
+                                <span className="mr-2">View: {(item as any).designContext.viewMode}</span>
+                              )}
+                              {(item as any).designContext.selectedTemplate && (
+                                <span>Template: {(item as any).designContext.selectedTemplate.name}</span>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </TableCell>
                     <TableCell className="text-slate-700 dark:text-slate-300">
                       {(() => {
                         let displayPrice;
                         if (typeof item.price === 'number') {
                           displayPrice = item.price.toFixed(2);
                         } else if (typeof item.price === 'string') {
-                          const cleanPrice = item.price.replace(/[^\d.-]/g, '');
+                          const cleanPrice = String(item.price).replace(/[^\d.-]/g, '');
                           displayPrice = (parseFloat(cleanPrice) || 0).toFixed(2);
                         } else if (item.selectedSizes && item.selectedSizes.length > 0) {
                           // Calculate average price per item from selected sizes
@@ -158,7 +231,7 @@ export default function CartPage() {
                         if (typeof item.price === 'number') {
                           totalPrice = (item.price * item.quantity).toFixed(2);
                         } else if (typeof item.price === 'string') {
-                          const cleanPrice = item.price.replace(/[^\d.-]/g, '');
+                          const cleanPrice = String(item.price).replace(/[^\d.-]/g, '');
                           totalPrice = ((parseFloat(cleanPrice) || 0) * item.quantity).toFixed(2);
                         } else if (item.selectedSizes && item.selectedSizes.length > 0) {
                           // Sum of all selected sizes
@@ -170,7 +243,8 @@ export default function CartPage() {
                       })()}
                     </TableCell>
                   </TableRow>
-                ))}
+                  )
+                })}
               </TableBody>
             </Table>
           </div>

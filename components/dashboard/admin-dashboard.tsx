@@ -22,7 +22,7 @@ import { Separator } from "@/components/ui/separator"
 import { Skeleton } from "@/components/ui/skeleton"
 import { FileUpload } from "@/components/ui/file-upload"
 import { Users, Package, Plus, Edit3, Trash2, Search, Settings, ImageIcon } from "lucide-react"
-import { useToast } from "@/hooks/use-toast"
+import { toast } from "sonner"
 import type { Product, User, Template } from "@/types"
 import Image from "next/image"
 import { ProductAnglesSelector } from "@/components/dashboard/common/ProductAnglesSelector"
@@ -66,7 +66,6 @@ export function AdminDashboard() {
   const { items: users, loading: usersLoading } = useAppSelector((state) => state.users) // Get users from Redux
   const { items: templates, loading: templatesLoading } = useAppSelector((state) => state.templatesManagement) // Get templates from Redux
   const { language } = useAppSelector((state) => state.app)
-  const { toast } = useToast()
   const t = translations[language]
 
   const [isAddProductDialogOpen, setIsAddProductDialogOpen] = useState(false)
@@ -273,16 +272,19 @@ export function AdminDashboard() {
     if (confirm(t.confirmDeleteUser)) {
       try {
         await dispatch(deleteUser(id))
-        toast({
-          title: "Deleted!",
-          description: t.userDeleted,
-          variant: "success",
+        toast.success(t.userDeleted, {
+          style: { 
+            backgroundColor: "#634c9e15", 
+            borderColor: "#634c9e40",
+            color: "#634c9e"
+          },
+          position: "top-center",
+          duration: 3000,
         })
       } catch (error) {
-        toast({
-          title: "Error",
-          description: t.failedToDeleteUser,
-          variant: "destructive",
+        toast.error(t.failedToDeleteUser, {
+          position: "top-center",
+          duration: 3000,
         })
       }
     }
@@ -292,16 +294,19 @@ export function AdminDashboard() {
     if (confirm(`Are you sure you want to delete template "${name}"?`)) {
       try {
         await dispatch(deleteTemplate(id))
-        toast({
-          title: "Deleted!",
-          description: `Template "${name}" deleted successfully`,
-          variant: "success",
+        toast.success(`Template "${name}" deleted successfully`, {
+          style: { 
+            backgroundColor: "#634c9e15", 
+            borderColor: "#634c9e40",
+            color: "#634c9e"
+          },
+          position: "top-center",
+          duration: 3000,
         })
       } catch (error) {
-        toast({
-          title: "Error",
-          description: "Failed to delete template",
-          variant: "destructive",
+        toast.error("Failed to delete template", {
+          position: "top-center",
+          duration: 3000,
         })
       }
     }
@@ -459,7 +464,12 @@ export function AdminDashboard() {
           </CardHeader>
           <CardContent className="p-0">
             <UserTable
-              users={filteredUsers}
+              users={filteredUsers.sort((a, b) => {
+                // Sort by creation date in descending order (newest first)
+                const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+                const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+                return dateB - dateA;
+              })}
               loading={usersLoading}
               t={t}
               getRoleColor={getRoleColor}

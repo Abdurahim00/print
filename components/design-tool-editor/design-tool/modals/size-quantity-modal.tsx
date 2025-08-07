@@ -32,7 +32,7 @@ export interface SelectedSizeQuantity {
 
 export function SizeQuantityModal({ open, onOpenChange, onAddToCart }: SizeQuantityModalProps) {
   const dispatch = useDispatch()
-  const { selectedProduct, productColor } = useSelector((state: RootState) => state.design)
+  const { selectedProduct, productColor, viewMode, selectedTemplate } = useSelector((state: RootState) => state.design)
   
   // Default sizes if not provided in product data
   const defaultSizes = [
@@ -122,8 +122,96 @@ export function SizeQuantityModal({ open, onOpenChange, onAddToCart }: SizeQuant
     return selectedSizes.reduce((total, item) => total + item.quantity, 0)
   }
   
+  // Create composite preview image with product background and design elements
+  const createCompositePreview = async (canvas: HTMLCanvasElement, product: any): Promise<string> => {
+    try {
+      // Create a new canvas for compositing
+      const compositeCanvas = document.createElement('canvas')
+      const ctx = compositeCanvas.getContext('2d')
+      if (!ctx) throw new Error('Could not get canvas context')
+
+      // Set canvas size (adjust as needed for preview)
+      const width = 400
+      const height = 400
+      compositeCanvas.width = width
+      compositeCanvas.height = height
+
+      // Fill with white background
+      ctx.fillStyle = '#ffffff'
+      ctx.fillRect(0, 0, width, height)
+
+      // Get current product image URL
+      const getProductImageUrl = () => {
+        if (!product) return null
+        
+        // Handle products with variations
+        if (product.hasVariations && product.variations) {
+          const currentVariation = product.variations.find((v: any) => v.color.hex_code === productColor)
+          if (currentVariation) {
+            const imageForAngle = currentVariation.images?.find((img: any) => img.angle === viewMode && img.url)
+            if (imageForAngle) {
+              return imageForAngle.url
+            }
+            // Fallback to front view if current view mode not available
+            const frontImage = currentVariation.images?.find((img: any) => img.angle === "front" && img.url)
+            if (frontImage) {
+              return frontImage.url
+            }
+            return currentVariation.color.swatch_image || product.image
+          }
+        }
+        return product.image
+      }
+
+      const productImageUrl = getProductImageUrl()
+
+      // Load and draw product background image if available
+      if (productImageUrl) {
+        try {
+          const productImg = new Image()
+          productImg.crossOrigin = 'anonymous'
+          
+          await new Promise((resolve, reject) => {
+            productImg.onload = resolve
+            productImg.onerror = reject
+            productImg.src = productImageUrl
+          })
+
+          // Calculate scaling to fit the product image in the canvas while maintaining aspect ratio
+          const scale = Math.min(width / productImg.width, height / productImg.height) * 0.8 // 0.8 to leave some margin
+          const scaledWidth = productImg.width * scale
+          const scaledHeight = productImg.height * scale
+          const x = (width - scaledWidth) / 2
+          const y = (height - scaledHeight) / 2
+
+          ctx.drawImage(productImg, x, y, scaledWidth, scaledHeight)
+        } catch (error) {
+          console.warn('Could not load product image for preview:', error)
+        }
+      }
+
+      // Draw the design canvas on top
+      if (canvas) {
+        // Calculate scaling for the design canvas
+        const canvasScale = Math.min(width / canvas.width, height / canvas.height) * 0.6 // Smaller scale for design overlay
+        const scaledCanvasWidth = canvas.width * canvasScale
+        const scaledCanvasHeight = canvas.height * canvasScale
+        const canvasX = (width - scaledCanvasWidth) / 2
+        const canvasY = (height - scaledCanvasHeight) / 2
+
+        ctx.drawImage(canvas, canvasX, canvasY, scaledCanvasWidth, scaledCanvasHeight)
+      }
+
+      return compositeCanvas.toDataURL('image/png', 0.9)
+    } catch (error) {
+      console.error('Error creating composite preview:', error)
+      // Fallback to just the canvas if composite creation fails
+      return canvas.toDataURL('image/png')
+    }
+  }
+
   // Handle add to cart
-  const handleAddToCart = () => {
+  const handleAddToCart = async () => {
     // Filter out sizes with quantity 0
     const sizesToAdd = selectedSizes.filter(item => item.quantity > 0)
     
@@ -132,13 +220,53 @@ export function SizeQuantityModal({ open, onOpenChange, onAddToCart }: SizeQuant
       return
     }
     
-    // Get canvas preview if available
+    // Get canvas and create composite preview
     const canvas = document.getElementById('design-canvas') as HTMLCanvasElement
-    const designPreview = canvas?.toDataURL('image/png')
+    const designPreview = canvas ? await createCompositePreview(canvas, selectedProduct) : undefined
     
-    // Dispatch action to add to cart with sizes
+    // Get the selected variation details if applicable
+    const getSelectedVariationDetails = () => {
+      if (!selectedProduct.hasVariations || !selectedProduct.variations) {
+        return null
+      }
+      
+      const selectedVariation = selectedProduct.variations.find((v: any) => 
+        v.color.hex_code === productColor
+      )
+      
+      return selectedVariation ? {
+        variationId: selectedVariation.id,
+        colorName: selectedVariation.color.name,
+        colorHexCode: selectedVariation.color.hex_code,
+        colorSwatchImage: selectedVariation.color.swatch_image,
+        variationPrice: selectedVariation.price,
+        variationImages: selectedVariation.images,
+      } : null
+    }
+
+    const selectedVariationDetails = getSelectedVariationDetails()
+
+    // Create enhanced product with complete context
+    const productWithContext = {
+      ...selectedProduct,
+      // Add design context
+      designContext: {
+        viewMode: viewMode,
+        productColor: productColor,
+        selectedVariation: selectedVariationDetails,
+        selectedTemplate: selectedTemplate ? {
+          id: selectedTemplate.id,
+          name: selectedTemplate.name,
+          category: selectedTemplate.category,
+          image: selectedTemplate.image,
+          price: selectedTemplate.price,
+        } : null,
+      }
+    }
+    
+    // Dispatch action to add to cart with sizes and complete product context
     dispatch(addToCartWithSizes({
-      product: selectedProduct,
+      product: productWithContext,
       selectedSizes: sizesToAdd,
       designPreview,
       // If we have a saved design, we could include its ID here

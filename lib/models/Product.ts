@@ -44,6 +44,10 @@ export interface ProductDocument {
   updatedAt: Date;
   hasVariations?: boolean;
   variations?: Variation[];
+  type?: string; // Product type (e.g., 'stickers', 't-shirt', etc.)
+  baseColor?: string; // Default/base color for the product
+  angles?: string[]; // Available viewing angles (e.g., ['front', 'back', 'left', 'right'])
+  colors?: string[]; // Available colors for non-variation products
 }
 
 export interface Product {
@@ -58,4 +62,8 @@ export interface Product {
   updatedAt?: Date;
   hasVariations?: boolean;
   variations?: Variation[];
+  type?: string; // Product type (e.g., 'stickers', 't-shirt', etc.)
+  baseColor?: string; // Default/base color for the product
+  angles?: string[]; // Available viewing angles (e.g., ['front', 'back', 'left', 'right'])
+  colors?: string[]; // Available colors for non-variation products
 }

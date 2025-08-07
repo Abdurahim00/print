@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { useAppSelector, useAppDispatch } from "@/lib/redux/hooks"
 import { fetchOrders } from "@/lib/redux/slices/ordersSlice"
 import { fetchDesigns, deleteDesign } from "@/lib/redux/slices/designsSlice"
-import { useToast } from "@/components/ui/use-toast"
+import { toast } from "sonner"
 import { 
   AlertDialog,
   AlertDialogAction,
@@ -30,7 +30,6 @@ import { useSession } from "next-auth/react" // Import useSession
 
 export function UserDashboard({ defaultTab = "orders" }: { defaultTab?: string }) {
   const dispatch = useAppDispatch()
-  const { toast } = useToast()
   const { data: session } = useSession() // Get session data
   const { items: orders, loading: ordersLoading } = useAppSelector((state) => state.orders)
   const { items: designs, loading: designsLoading } = useAppSelector((state) => state.designs) // New designs state
@@ -51,24 +50,25 @@ export function UserDashboard({ defaultTab = "orders" }: { defaultTab?: string }
       const resultAction = await dispatch(deleteDesign(designToDelete) as any)
       
       if (deleteDesign.fulfilled.match(resultAction)) {
-        toast({
-          title: "Success",
-          description: "Design deleted successfully",
-          variant: "default",
-          className: "bg-green-50 border-green-200 text-green-800"
+        toast.success("Design deleted successfully", {
+          style: { 
+            backgroundColor: "#634c9e15", 
+            borderColor: "#634c9e40",
+            color: "#634c9e"
+          },
+          position: "top-center",
+          duration: 3000,
         })
       } else {
-        toast({
-          title: "Error",
-          description: "Failed to delete design",
-          variant: "destructive"
+        toast.error("Failed to delete design", {
+          position: "top-center",
+          duration: 3000,
         })
       }
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "An unexpected error occurred",
-        variant: "destructive"
+      toast.error("An unexpected error occurred", {
+        position: "top-center",
+        duration: 3000,
       })
     } finally {
       setIsDeleting(false)
@@ -84,14 +84,47 @@ export function UserDashboard({ defaultTab = "orders" }: { defaultTab?: string }
   // Filter designs by user ID - cast user to any to access id property
   const userDesigns = designs.filter((design) => design.userId === (user as any)?.id)
 
+  // Use document visibility API to prevent unnecessary API calls
+  const [isVisible, setIsVisible] = useState(!document.hidden);
+  const [lastFetch, setLastFetch] = useState(0);
+  const REFRESH_THRESHOLD = 300000; // 5 minutes in milliseconds
+
+  // Only fetch on mount, visibility change, and user change - with time threshold
   useEffect(() => {
-    if (user?.customerNumber) {
-      dispatch(fetchOrders())
+    const handleVisibilityChange = () => {
+      const isNowVisible = !document.hidden;
+      setIsVisible(isNowVisible);
+      
+      // Only refetch if becoming visible AND the threshold time has passed
+      if (isNowVisible && Date.now() - lastFetch > REFRESH_THRESHOLD) {
+        if (user?.customerNumber) {
+          dispatch(fetchOrders());
+        }
+        if ((user as any)?.id) {
+          dispatch(fetchDesigns((user as any).id));
+        }
+        setLastFetch(Date.now());
+      }
+    };
+
+    // Initial fetch when component mounts
+    if (lastFetch === 0) {
+      if (user?.customerNumber) {
+        dispatch(fetchOrders());
+      }
+      if ((user as any)?.id) {
+        dispatch(fetchDesigns((user as any).id));
+      }
+      setLastFetch(Date.now());
     }
-    if ((user as any)?.id) {
-      dispatch(fetchDesigns((user as any).id)) // Fetch designs for the current user
-    }
-  }, [dispatch, user])
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
+    // Cleanup
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [dispatch, user, lastFetch]);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -155,17 +188,22 @@ export function UserDashboard({ defaultTab = "orders" }: { defaultTab?: string }
   )
 
   const DesignsSkeleton = () => (
-    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
       {[...Array(6)].map((_, i) => (
-        <Card key={i} className="overflow-hidden">
-          <Skeleton className="w-full h-32" />
-          <CardContent className="p-4 space-y-2">
-            <Skeleton className="h-4 w-3/4" />
-            <Skeleton className="h-3 w-1/2" />
+        <Card key={i} className="overflow-hidden border-primary/10 dark:border-primary/20">
+          <div className="relative">
+            <Skeleton className="w-full h-40" />
+            <div className="absolute top-3 right-3">
+              <Skeleton className="h-5 w-16 rounded-full" />
+            </div>
+          </div>
+          <CardContent className="p-5 space-y-3">
+            <Skeleton className="h-5 w-3/4" />
+            <Skeleton className="h-4 w-1/2" />
             <Skeleton className="h-3 w-1/3" />
-            <div className="flex gap-2 pt-2">
-              <Skeleton className="h-8 flex-1" />
-              <Skeleton className="h-8 flex-1" />
+            <div className="flex gap-3 pt-2">
+              <Skeleton className="h-9 flex-1 rounded-md" />
+              <Skeleton className="h-9 flex-1 rounded-md" />
             </div>
           </CardContent>
         </Card>
@@ -176,24 +214,24 @@ export function UserDashboard({ defaultTab = "orders" }: { defaultTab?: string }
   return (
     <div className="space-y-6">
       {/* Welcome Section */}
-      <Card className="bg-gradient-to-r from-sky-50 to-blue-50 dark:from-sky-900/20 dark:to-blue-900/20 border-sky-200 dark:border-sky-800">
+      <Card className="bg-gradient-to-r from-primary/5 to-primary/10 dark:from-primary/10 dark:to-primary/20 border-primary/20 dark:border-primary/30 shadow-md">
         <CardContent className="p-6">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-2xl font-bold text-sky-900 dark:text-sky-100">
-                {t.welcomeBackUser.replace("{name}", user?.fullName || user?.email || "")}
+              <h2 className="text-2xl font-bold text-primary dark:text-primary/90">
+                {t.clientDashboard}
               </h2>
-              <p className="text-sky-700 dark:text-sky-300 mt-1">
+              <p className="text-primary/70 dark:text-primary/60 mt-1">
                 {t.customerNumber}: <span className="font-mono font-semibold">{user?.customerNumber}</span>
               </p>
             </div>
-            <div className="hidden sm:flex items-center gap-4 text-sm text-sky-600 dark:text-sky-400">
+            <div className="hidden sm:flex items-center gap-6 text-sm text-primary/70 dark:text-primary/60">
               <div className="text-center">
-                <div className="text-2xl font-bold text-sky-900 dark:text-sky-100">{userOrders.length}</div>
+                <div className="text-2xl font-bold text-primary dark:text-primary/90">{userOrders.length}</div>
                 <div>{t.totalOrders}</div>
               </div>
               <div className="text-center">
-                <div className="text-2xl font-bold text-sky-900 dark:text-sky-100">{userDesigns.length}</div>
+                <div className="text-2xl font-bold text-primary dark:text-primary/90">{userDesigns.length}</div>
                 <div>{t.savedDesigns}</div>
               </div>
             </div>
@@ -223,9 +261,9 @@ export function UserDashboard({ defaultTab = "orders" }: { defaultTab?: string }
         {/* Order History Tab */}
         <TabsContent value="orders" className="mt-6">
           <Card className="shadow-lg border-0 bg-white dark:bg-slate-900">
-            <CardHeader className="border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50">
-              <CardTitle className="flex items-center gap-2 text-slate-900 dark:text-slate-100">
-                <FileText className="h-5 w-5 text-sky-600" />
+            <CardHeader className="border-b border-primary/10 dark:border-primary/20 bg-primary/5 dark:bg-primary/10">
+              <CardTitle className="flex items-center gap-2 text-primary dark:text-primary/90">
+                <FileText className="h-5 w-5 text-primary" />
                 {t.orderHistory}
               </CardTitle>
             </CardHeader>
@@ -238,17 +276,17 @@ export function UserDashboard({ defaultTab = "orders" }: { defaultTab?: string }
                 <div className="overflow-x-auto">
                   <Table>
                     <TableHeader>
-                      <TableRow className="border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50">
-                        <TableHead className="min-w-[100px] font-semibold text-slate-700 dark:text-slate-300">
+                      <TableRow className="border-primary/10 dark:border-primary/20 bg-primary/5 dark:bg-primary/10">
+                        <TableHead className="min-w-[100px] font-bold text-primary py-4 text-sm uppercase tracking-wider">
                           {t.orderId}
                         </TableHead>
-                        <TableHead className="min-w-[100px] font-semibold text-slate-700 dark:text-slate-300">
+                        <TableHead className="min-w-[100px] font-bold text-primary py-4 text-sm uppercase tracking-wider">
                           {t.date}
                         </TableHead>
-                        <TableHead className="min-w-[100px] font-semibold text-slate-700 dark:text-slate-300">
+                        <TableHead className="min-w-[100px] font-bold text-primary py-4 text-sm uppercase tracking-wider">
                           {t.status}
                         </TableHead>
-                        <TableHead className="min-w-[100px] font-semibold text-slate-700 dark:text-slate-300">
+                        <TableHead className="min-w-[100px] font-bold text-primary py-4 text-sm uppercase tracking-wider">
                           {t.total}
                         </TableHead>
                       </TableRow>
@@ -257,16 +295,16 @@ export function UserDashboard({ defaultTab = "orders" }: { defaultTab?: string }
                       {userOrders.map((order, index) => (
                         <TableRow
                           key={order.id}
-                          className={`border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50 ${
+                          className={`border-b transition-colors hover:bg-primary/5 dark:hover:bg-primary/10 ${
                             index % 2 === 0 ? "bg-white dark:bg-slate-900" : "bg-slate-50/50 dark:bg-slate-800/20"
                           }`}
                         >
-                          <TableCell className="font-medium text-slate-900 dark:text-slate-100">{order.id}</TableCell>
-                          <TableCell className="text-slate-700 dark:text-slate-300">{order.date}</TableCell>
-                          <TableCell>
-                            <Badge className={`${getStatusColor(order.status)} font-medium`}>{order.status}</Badge>
+                          <TableCell className="font-medium text-slate-900 dark:text-slate-100 py-4">{order.id}</TableCell>
+                          <TableCell className="text-slate-700 dark:text-slate-300 py-4">{order.date}</TableCell>
+                          <TableCell className="py-4">
+                            <Badge className={`${getStatusColor(order.status)} font-medium px-3 py-1 rounded-full text-xs`}>{order.status}</Badge>
                           </TableCell>
-                          <TableCell className="font-semibold text-slate-900 dark:text-slate-100">
+                          <TableCell className="font-semibold text-primary py-4">
                             {order.total.toLocaleString()} SEK
                           </TableCell>
                         </TableRow>
@@ -279,7 +317,7 @@ export function UserDashboard({ defaultTab = "orders" }: { defaultTab?: string }
                   <Package className="h-16 w-16 text-slate-400 dark:text-slate-500 mx-auto mb-4" />
                   <h3 className="text-lg font-semibold text-slate-700 dark:text-slate-300 mb-2">{t.noOrdersYet}</h3>
                   <p className="text-slate-500 dark:text-slate-400 mb-4">{t.startShopping}</p>
-                  <Button asChild className="bg-sky-600 hover:bg-sky-700 text-white">
+                  <Button asChild className="bg-primary hover:bg-primary/90 text-white">
                     <a href="/products">{t.browseProducts}</a>
                   </Button>
                 </div>
@@ -291,13 +329,13 @@ export function UserDashboard({ defaultTab = "orders" }: { defaultTab?: string }
         {/* My Designs Tab */}
         <TabsContent value="designs" className="mt-6">
           <Card className="shadow-lg border-0 bg-white dark:bg-slate-900">
-            <CardHeader className="flex flex-row items-center justify-between border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50">
-              <CardTitle className="flex items-center gap-2 text-slate-900 dark:text-slate-100">
-                <Palette className="h-5 w-5 text-sky-600" />
+            <CardHeader className="flex flex-row items-center justify-between border-b border-primary/10 dark:border-primary/20 bg-primary/5 dark:bg-primary/10">
+              <CardTitle className="flex items-center gap-2 text-primary dark:text-primary/90">
+                <Palette className="h-5 w-5 text-primary" />
                 {t.savedDesigns}
               </CardTitle>
               <Button 
-                className="bg-sky-600 hover:bg-sky-700 text-white"
+                className="bg-primary hover:bg-primary/90 text-white"
                 onClick={() => window.location.href = '/design-tool'}
               >
                 <Palette className="h-4 w-4 mr-2" />
@@ -308,50 +346,51 @@ export function UserDashboard({ defaultTab = "orders" }: { defaultTab?: string }
               {designsLoading ? (
                 <DesignsSkeleton />
               ) : userDesigns.length > 0 ? (
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                   {userDesigns.map((design) => (
                     <Card
                       key={design.id}
-                      className="overflow-hidden hover:shadow-md transition-shadow border-slate-200 dark:border-slate-700"
+                      className="overflow-hidden hover:shadow-lg transition-all border-primary/10 dark:border-primary/20 group"
                     >
                       <div className="relative">
+                        <div className="absolute inset-0 bg-primary/5 group-hover:bg-primary/10 transition-colors z-0"></div>
                         <Image
                           src={design.preview || "/placeholder.svg"}
                           alt={design.name}
                           width={300}
                           height={180}
-                          className="w-full h-32 object-cover bg-white"
+                          className="w-full h-40 object-cover bg-white z-10 relative"
                           priority
                         />
-                        <Badge className={`absolute top-2 right-2 ${getDesignStatusColor(design.status)}`}>
+                        <Badge className={`absolute top-3 right-3 ${getDesignStatusColor(design.status)} px-3 py-1 rounded-full text-xs font-medium z-20`}>
                           {t[design.status.toLowerCase() as keyof typeof t] || design.status}
                         </Badge>
                       </div>
-                      <CardContent className="p-4">
-                        <h3 className="font-semibold text-sm mb-1 text-slate-900 dark:text-white">{design.name}</h3>
-                        <p className="text-xs text-slate-500 dark:text-slate-400 mb-2">{design.type}</p>
-                        <p className="text-xs text-slate-400 dark:text-slate-500 mb-3">
+                      <CardContent className="p-5">
+                        <h3 className="font-semibold text-base mb-1 text-slate-900 dark:text-white">{design.name}</h3>
+                        <p className="text-sm text-primary mb-2">{design.type}</p>
+                        <p className="text-xs text-slate-400 dark:text-slate-500 mb-4">
                           {t.modified}: {new Date(design.updatedAt || design.createdAt!).toLocaleDateString()}
                         </p>
-                        <div className="flex gap-2">
+                        <div className="flex gap-3">
                           <Button
                             variant="outline"
                             size="sm"
-                            className="flex-1 bg-transparent hover:bg-slate-100 dark:hover:bg-slate-700"
+                            className="flex-1 border-primary/30 hover:bg-primary/5 hover:border-primary dark:hover:bg-primary/20 transition-colors text-primary"
                             onClick={() => window.location.href = `/design-tool?designId=${design.id}`}
                           >
-                            <Edit3 className="h-3 w-3 mr-1" /> {t.edit}
+                            <Edit3 className="h-4 w-4 mr-1.5" /> {t.edit}
                           </Button>
                           <Button
                             variant="outline"
                             size="sm"
-                            className="flex-1 bg-transparent hover:bg-red-50 hover:text-red-700 hover:border-red-300 dark:hover:bg-red-900/20 text-red-600 border-red-200"
+                            className="flex-1 bg-transparent hover:bg-red-50 hover:text-red-700 hover:border-red-300 dark:hover:bg-red-900/20 text-red-600 border-red-200 transition-colors"
                             onClick={() => {
                               setDesignToDelete(design.id)
                               setDeleteDialogOpen(true)
                             }}
                           >
-                            <Trash2 className="h-3 w-3 mr-1" /> {t.delete}
+                            <Trash2 className="h-4 w-4 mr-1.5" /> {t.delete}
                           </Button>
                         </div>
                       </CardContent>
@@ -364,7 +403,7 @@ export function UserDashboard({ defaultTab = "orders" }: { defaultTab?: string }
                   <h3 className="text-lg font-semibold text-slate-700 dark:text-slate-300 mb-2">{t.noDesignsFound}</h3>
                   <p className="text-slate-500 dark:text-slate-400 mb-4">{t.startDesigningNow}</p>
                   <Button 
-                    className="bg-sky-600 hover:bg-sky-700 text-white"
+                    className="bg-primary hover:bg-primary/90 text-white"
                     onClick={() => window.location.href = '/design-tool'}
                   >
                     <Palette className="h-4 w-4 mr-2" />
@@ -379,9 +418,9 @@ export function UserDashboard({ defaultTab = "orders" }: { defaultTab?: string }
         {/* Profile & Billing Tab */}
         <TabsContent value="profile" className="mt-6">
           <Card className="shadow-lg border-0 bg-white dark:bg-slate-900">
-            <CardHeader className="border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50">
-              <CardTitle className="flex items-center gap-2 text-slate-900 dark:text-slate-100">
-                <MapPin className="h-5 w-5 text-sky-600" />
+            <CardHeader className="border-b border-primary/10 dark:border-primary/20 bg-primary/5 dark:bg-primary/10">
+              <CardTitle className="flex items-center gap-2 text-primary dark:text-primary/90">
+                <MapPin className="h-5 w-5 text-primary" />
                 {t.billingShippingInfo}
               </CardTitle>
             </CardHeader>
@@ -418,7 +457,7 @@ export function UserDashboard({ defaultTab = "orders" }: { defaultTab?: string }
                   <Input id="country" defaultValue={user?.country || ""} />
                 </div>
               </div>
-              <Button className="bg-sky-600 hover:bg-sky-700 text-white shadow-md">{t.saveChanges}</Button>
+              <Button className="bg-primary hover:bg-primary/90 text-white shadow-md">{t.saveChanges}</Button>
             </CardContent>
           </Card>
         </TabsContent>

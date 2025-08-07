@@ -51,6 +51,14 @@ export function CentralCanvas() {
     dispatch(setViewMode(view))
   }
 
+  // Determine if canvas border should be visible based on selected tool
+  const shouldShowCanvasBorder = () => {
+    // Only show border when design tools are actively selected
+    // This provides clean UI when browsing products and clear feedback when designing
+    return selectedProduct !== null && 
+           (selectedTool === "text" || selectedTool === "template" || selectedTool === "upload")
+  }
+
   // Get product angles from the selected product
   const getProductAngles = () => {
     if (!selectedProduct || !(selectedProduct as Product).angles) {
@@ -119,62 +127,67 @@ export function CentralCanvas() {
       {/* Main Canvas Area - Full height with minimal padding */}
       <div className="flex-1 flex items-center justify-center p-2 lg:p-4">
         <div className="relative w-full h-full max-w-4xl max-h-full flex flex-col">
-          {/* Canvas container - maximized space */}
+          {/* Main Container - Relative positioning with base/product image */}
           <div className="flex-1 relative bg-white rounded-xl overflow-hidden border border-gray-200/60 shadow-sm min-h-0">
-            {/* Always show the fabric canvas, so text can be added even without a product */}
-            <div className="absolute inset-0 flex items-center justify-center p-4 lg:p-8">
-              <div className="w-full h-full relative max-w-2xl max-h-full">
-                <canvas
-                  ref={canvasRef}
-                  id="design-canvas"
-                  className="absolute inset-0 w-full h-full cursor-crosshair"
-                  style={{ zIndex: 10 }}
-                />
-              </div>
-            </div>
-
-            {selectedProduct ? (
-              /* Product content is only shown when a product is selected */
-              <div className="absolute inset-0 flex items-center justify-center p-4 lg:p-8" style={{ zIndex: 5 }}>
+            
+            {/* Base/Product Image - Background layer */}
+            {selectedProduct && currentImage ? (
+              <div className="absolute inset-0 flex items-center justify-center p-4 lg:p-8">
                 <div className="w-full h-full relative max-w-2xl max-h-full">
-                  {/* Product Image */}
-                  {currentImage && (
-                    <div className="w-full h-full relative">
-                      <Image
-                        src={currentImage}
-                        alt={(selectedProduct as Product).name}
-                        fill
-                        className="object-contain drop-shadow-lg"
-                        style={{ 
-                          filter: viewMode === "back" ? "brightness(0.85) saturate(1.1)" : "saturate(1.1)",
-                          transform: viewMode === "left" ? "rotateY(25deg)" : 
-                                  viewMode === "right" ? "rotateY(-25deg)" : "none"
-                        }}
-                      />
-                      {/* Render all image layers (templates, uploads) */}
-                      {imageLayers.map((layer: any) => (
-                        <Image
-                          key={layer.id}
-                          src={layer.src}
-                          alt={layer.name || "Layer"}
-                          fill
-                          className="object-contain absolute inset-0 pointer-events-none"
-                          style={{ zIndex: 20 }}
-                        />
-                      ))}
-                    </div>
-                  )}
+                  <Image
+                    src={currentImage}
+                    alt={(selectedProduct as Product).name}
+                    fill
+                    className="object-contain drop-shadow-lg"
+                    style={{ 
+                      filter: viewMode === "back" ? "brightness(0.85) saturate(1.1)" : "saturate(1.1)",
+                      transform: viewMode === "left" ? "rotateY(25deg)" : 
+                              viewMode === "right" ? "rotateY(-25deg)" : "none",
+                      zIndex: 1
+                    }}
+                  />
                 </div>
               </div>
             ) : (
-              /* Show instructions when no product selected, but keep canvas visible */
-              <div className="absolute inset-0 flex items-center justify-center p-4 lg:p-8" style={{ zIndex: 5 }}>
+              /* Show instructions when no product selected */
+              <div className="absolute inset-0 flex items-center justify-center p-4 lg:p-8" style={{ zIndex: 1 }}>
                 <div className="text-center text-gray-400">
                   <p className="text-xl font-medium mb-2">Start by selecting a product</p>
                   <p className="text-sm text-gray-400 max-w-md">Click the product icon in the left toolbar to browse available products</p>
                 </div>
               </div>
             )}
+
+            {/* Sub Container - Contains canvas and all design layers */}
+            <div className="absolute inset-0 flex items-center justify-center p-4 lg:p-8" style={{ zIndex: 10 }}>
+              <div className="w-full h-full relative max-w-xs max-h-xs">
+                
+                {/* Canvas Container - Absolutely positioned and centered */}
+                <div className="absolute inset-0 flex items-center justify-center" style={{ zIndex: 20 }}>
+                  <canvas
+                    ref={canvasRef}
+                    id="design-canvas"
+                    className="cursor-crosshair bg-transparent transition-all duration-300 ease-in-out"
+                    style={{ 
+                      border: shouldShowCanvasBorder() 
+                        ? "2px dashed #3b82f6" 
+                        : "2px dashed transparent",
+                      borderRadius: "8px",
+                      boxShadow: shouldShowCanvasBorder() 
+                        ? "0 0 0 1px rgba(59, 130, 246, 0.1), 0 4px 6px -1px rgba(0, 0, 0, 0.1)" 
+                        : "0 0 0 1px transparent, 0 2px 4px -1px rgba(0, 0, 0, 0.02)",
+                      backgroundColor: shouldShowCanvasBorder() 
+                        ? "rgba(255, 255, 255, 0.05)" 
+                        : "transparent"
+                    }}
+                    width={300}
+                    height={300}
+                  />
+                </div>
+
+                {/* We don't need to render image layers here anymore since they're handled by Fabric.js canvas */}
+              </div>
+            </div>
           </div>
           
           {/* Product Angles - Compact design at bottom */}

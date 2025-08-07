@@ -3,6 +3,7 @@ import { useSelector, useDispatch } from "react-redux"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Skeleton } from "@/components/ui/skeleton"
 import { Search } from "lucide-react"
 import { setSelectedCategory, setSearchTerm } from "@/lib/redux/designToolSlices/templatesSlice"
 import { useFabricCanvas } from "@/hooks/useFabricCanvas"
@@ -31,7 +32,7 @@ export function TemplateModal({ isOpen, onClose, loading = false }: TemplateModa
   const { selectedCategory, searchTerm, categories } = useSelector((state: RootState) => state.templates)
   const { items: templates, loading: templatesLoading } = useSelector((state: RootState) => state.templatesManagement)
   const { fabricCanvas } = useSelector((state: RootState) => state.canvas)
-  const { addImage } = useFabricCanvas("design-canvas")
+  
 
   // Fetch templates when modal opens
   useEffect(() => {
@@ -40,8 +41,16 @@ export function TemplateModal({ isOpen, onClose, loading = false }: TemplateModa
     }
   }, [isOpen, dispatch])
 
+  const { addImage } = useFabricCanvas("design-canvas")
+
   const handleSelectTemplate = (template: Template) => {
     if (fabricCanvas) {
+      // Add the template directly to the Fabric canvas
+      addImage(fabricCanvas, template.image, {
+        isTemplate: true, // Flag that it's a template, not an uploaded image
+      })
+      
+      // Also update the Redux state
       dispatch(setSelectedTemplate(template))
       onClose()
     } else {
@@ -88,9 +97,16 @@ export function TemplateModal({ isOpen, onClose, loading = false }: TemplateModa
           </div>
 
           {templatesLoading || loading ? (
-            <div className="flex items-center justify-center p-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-              <span className="ml-2 text-gray-600">Loading templates...</span>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+              {[...Array(8)].map((_, i) => (
+                <div key={i} className="border rounded-xl p-3">
+                  <Skeleton className="aspect-square w-full mb-3" />
+                  <Skeleton className="h-4 w-3/4 mb-2" />
+                  <Skeleton className="h-3 w-1/2 mb-2" />
+                  <Skeleton className="h-3 w-1/3 mb-3" />
+                  <Skeleton className="h-8 w-full rounded-lg" />
+                </div>
+              ))}
             </div>
           ) : filteredTemplates.length === 0 ? (
             <div className="text-center py-8 text-gray-500">

@@ -77,8 +77,13 @@ export function UploadPanel() {
       
       reader.onload = (e) => {
         const imageUrl = e.target?.result as string
-        if (imageUrl) {
-          // Add image to canvas with proper scaling
+        if (imageUrl && fabricCanvas) {
+          // Add the image directly to the Fabric canvas
+          addImage(fabricCanvas, imageUrl, {
+            isTemplate: false, // Flag that it's an uploaded image, not a template
+          })
+          
+          // Still keep track in Redux state for persistence
           dispatch(addImageLayer({
             id: `upload_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
             src: imageUrl,

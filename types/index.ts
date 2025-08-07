@@ -54,11 +54,34 @@ export interface CartItemSize {
   price: number;
 }
 
+export interface SelectedVariationDetails {
+  variationId: string;
+  colorName: string;
+  colorHexCode: string;
+  colorSwatchImage?: string;
+  variationPrice: number;
+  variationImages: VariationImage[];
+}
+
+export interface DesignContext {
+  viewMode: string; // "front" | "back" | "left" | "right"
+  productColor: string; // Hex code of selected color
+  selectedVariation?: SelectedVariationDetails; // Details of selected variation
+  selectedTemplate?: {
+    id: string;
+    name: string;
+    category: string;
+    image: string;
+    price: number | "free";
+  };
+}
+
 export interface CartItem extends Product {
   quantity: number;
   selectedSizes?: CartItemSize[];
-  designPreview?: string; // For custom designs
+  designPreview?: string; // For custom designs (composite image)
   designId?: string; // Reference to saved design
+  designContext?: DesignContext; // Complete design context from design tool
 }
 
 export interface Order {

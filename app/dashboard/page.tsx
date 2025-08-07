@@ -73,24 +73,6 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-6 bg-white dark:bg-slate-800 shadow-lg rounded-lg border border-slate-200 dark:border-slate-700">
-        <div>
-          <h1 className="text-3xl font-bold text-slate-900 dark:text-white">{getDashboardTitle()}</h1>
-          <p className="text-slate-600 dark:text-slate-400 mt-1">
-            {t.welcomeBackUser.replace("{name}", user.fullName || user.email)}
-          </p>
-        </div>
-        <div className="text-right text-sm">
-          <div className="flex items-center gap-2">
-            <span className="px-2 py-1 bg-sky-100 text-sky-800 dark:bg-sky-900 dark:text-sky-200 rounded-full text-xs font-medium uppercase">
-              {user.role}
-            </span>
-          </div>
-          <p className="font-semibold text-slate-700 dark:text-slate-300 mt-1">
-            {t.customerNumber}: {user.customerNumber}
-          </p>
-        </div>
-      </div>
       {renderDashboardContent()}
     </div>
   )

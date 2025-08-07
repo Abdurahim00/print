@@ -29,8 +29,8 @@ export const useFabricCanvas = (canvasId: string) => {
     if (!canvasRef.current) return
 
     const canvas = new fabric.Canvas(canvasRef.current, {
-      width: 600,
-      height: 600,
+      width: 300,
+      height: 300,
       backgroundColor: "transparent",
       selection: true,
       preserveObjectStacking: true,
@@ -50,7 +50,7 @@ export const useFabricCanvas = (canvasId: string) => {
       hasBorders: true,
       cornerColor: "#ffffff",
       cornerStrokeColor: "#3b82f6",
-      cornerStyle: 'circle',
+      cornerStyle: 'rect', // Simple rectangle corners like in image
       borderScaleFactor: 1.5, // Slightly thicker borders
       borderDashArray: [0], // Solid borders for cleaner look
     }
@@ -249,7 +249,7 @@ export const useFabricCanvas = (canvasId: string) => {
         },
       } as any),
 
-      // Corner controls for resizing - these are the standard fabric.js resize controls
+      // Simple corner controls for resizing (like in your image)
       tl: new fabric.Control({
         x: -0.5,
         y: -0.5,
@@ -431,8 +431,8 @@ export const useFabricCanvas = (canvasId: string) => {
   const addText = useCallback(
     (canvasInstance: fabric.Canvas, text = "Your text here", options: any = {}) => {
       const textObj = new fabric.IText(text, {
-        left: 200,
-        top: 200,
+        left: 150,
+        top: 150,
         fontFamily: "Arial",
         fontSize: 24,
         fill: "#000000",
@@ -528,59 +528,7 @@ export const useFabricCanvas = (canvasId: string) => {
     },
     [dispatch, saveState],
   )
-
-  // addImage now accepts the canvas instance as its first argument
-  const addImage = useCallback(
-    (canvasInstance: fabric.Canvas, imageUrl: string, options: any = {}) => {
-      // Extract whether this is a template or upload
-      const isTemplate = options.isTemplate || false;
-      const imageType = isTemplate ? "template" : "upload";
-      
-      // Remove isTemplate from options before setting on fabric.Image
-      const { isTemplate: _, ...imgOptions } = options;
-      
-      (fabric.Image as any).fromURL(
-        imageUrl,
-        (img: fabric.Image & { isTemplate?: boolean }) => {
-          img.set({
-            left: 200,
-            top: 200,
-            scaleX: 0.5,
-            scaleY: 0.5,
-            selectable: true,
-            evented: true,
-            originX: "center",
-            originY: "center",
-            // Add the isTemplate flag to identify templates
-            isTemplate: isTemplate,
-            ...imgOptions,
-          })
-
-          canvasInstance.add(img)
-          canvasInstance.setActiveObject(img)
-          canvasInstance.requestRenderAll()
-
-          // Also update the selected tool
-          dispatch(setSelectedTool(imageType));
-
-          // Add object to Redux store
-          dispatch({ 
-            type: 'canvas/addObject', 
-            payload: {
-              id: Date.now().toString(),
-              type: "image",
-              subType: imageType,
-              object: img,
-            }
-          });
-
-          setTimeout(() => saveState(canvasInstance), 50)
-        },
-        { crossOrigin: "anonymous" } as any,
-      )
-    },
-    [dispatch, saveState],
-  )
+ 
 
   // deleteSelected now accepts the canvas instance as its first argument
   const deleteSelected = useCallback(
@@ -816,18 +764,187 @@ export const useFabricCanvas = (canvasId: string) => {
   const loadFromJSON = useCallback((json: any) => {
     // Access the fabric canvas instance from the global window object
     const fabricCanvas = (window as any).fabricCanvas
-    if (!fabricCanvas) return
+    if (!fabricCanvas) {
+      console.warn('Fabric canvas not available for loading')
+      return
+    }
     
     try {
+      console.log('Loading canvas from JSON:', json)
+      
       fabricCanvas.clear()
+      
+      // Load from JSON with custom property preservation
       fabricCanvas.loadFromJSON(json, () => {
+        console.log('Canvas loaded from JSON, processing objects...')
+        
+        // After loading the canvas, make sure all objects have proper event handlers and custom properties
+        fabricCanvas.getObjects().forEach((obj: fabric.Object, index: number) => {
+          console.log(`Processing object ${index}:`, obj.type, obj)
+          
+          // Restore custom properties that might have been lost
+          const objData = json.objects?.[index]
+          if (objData) {
+            // Restore custom properties
+            if (objData.isTemplate !== undefined) {
+              (obj as any).isTemplate = objData.isTemplate
+            }
+            if (objData._originalFontSize !== undefined) {
+              (obj as any)._originalFontSize = objData._originalFontSize
+            }
+            if (objData._bendAmount !== undefined) {
+              (obj as any)._bendAmount = objData._bendAmount
+            }
+            if (objData.minFontSize !== undefined) {
+              (obj as any).minFontSize = objData.minFontSize
+            }
+            if (objData.maxFontSize !== undefined) {
+              (obj as any).maxFontSize = objData.maxFontSize
+            }
+          }
+          
+          // Check if it's a text object and apply special text scaling behavior
+          if (obj.type === "i-text" || obj.type === "text") {
+            const textObj = obj as fabric.IText & { minFontSize?: number; maxFontSize?: number; _originalFontSize?: number; _bendAmount?: number }
+            
+            // Ensure original font size is set
+            if (textObj._originalFontSize === undefined) {
+              textObj._originalFontSize = textObj.fontSize || 24
+            }
+            
+            // Set default constraints if not present
+            if (textObj.minFontSize === undefined) {
+              textObj.minFontSize = 8
+            }
+            if (textObj.maxFontSize === undefined) {
+              textObj.maxFontSize = 200
+            }
+            
+            // Remove any existing event listeners to prevent duplicates
+            textObj.off('scaling')
+            textObj.off('modified')
+            
+            // Apply the text scaling behavior
+            textObj.on('scaling', function(e: any) {
+              const target = e.target as fabric.IText & { minFontSize?: number; maxFontSize?: number; _originalFontSize?: number }
+              if (!target) return
+      
+              if (!target._originalFontSize) {
+                target._originalFontSize = target.fontSize || 24
+              }
+      
+              const scaleX = target.scaleX || 1
+              const scaleY = target.scaleY || 1
+              const scale = Math.min(scaleX, scaleY)
+              
+              const newFontSize = Math.round(target._originalFontSize * scale)
+              const minSize = target.minFontSize || 8
+              const maxSize = target.maxFontSize || 200
+              const constrainedFontSize = Math.max(minSize, Math.min(newFontSize, maxSize))
+              
+              target.set({
+                fontSize: constrainedFontSize,
+                scaleX: 1,
+                scaleY: 1,
+              })
+              
+              fabricCanvas.requestRenderAll()
+            })
+            
+            // Handle when scaling is finished
+            textObj.on('modified', function(e: any) {
+              const target = e.target as fabric.IText & { _originalFontSize?: number }
+              if (!target) return
+              
+              // Update the original font size to the new font size
+              target._originalFontSize = target.fontSize || 24
+              
+              // Save state after scaling is complete
+              setTimeout(() => saveState(fabricCanvas), 100)
+            })
+            
+            console.log('Applied text scaling behavior to text object:', textObj.text)
+          }
+          
+          // For image objects, ensure they have proper properties
+          if (obj.type === "image") {
+            const imageObj = obj as fabric.Image & { isTemplate?: boolean }
+            console.log('Loaded image object:', { isTemplate: imageObj.isTemplate, src: (imageObj as any).src })
+          }
+        })
+        
+        console.log('All objects processed, rendering canvas')
         fabricCanvas.renderAll()
-        saveState(fabricCanvas)
+        
+        // Set the active object to null initially
+        fabricCanvas.discardActiveObject()
+        fabricCanvas.requestRenderAll()
+        
+        // Save the initial state after loading
+        setTimeout(() => {
+          saveState(fabricCanvas)
+          console.log('Canvas state saved after loading')
+        }, 100)
       })
     } catch (error) {
       console.error('Error loading canvas from JSON:', error)
+      // Try to display a user-friendly error
+      if (fabricCanvas) {
+        fabricCanvas.clear()
+        fabricCanvas.requestRenderAll()
+      }
     }
   }, [saveState])
+
+    // Add image to canvas
+  const addImage = useCallback(
+    (canvasInstance: fabric.Canvas, imageUrl: string, options: any = {}) => {
+      // Use regular JS Image to load first to avoid TypeScript issues with fabric.Image.fromURL
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = function() {
+        // Create fabric image from the loaded JS image
+        const fabricImage = new fabric.Image(img, {
+          left: 150,
+          top: 150,
+          originX: "center",
+          originY: "center",
+          ...options
+        });
+        
+        // Scale the image to fit within a reasonable size while maintaining aspect ratio
+        const maxDimension = 250; // Maximum width or height
+        if (fabricImage.width && fabricImage.height) {
+          if (fabricImage.width > fabricImage.height) {
+            if (fabricImage.width > maxDimension) {
+              fabricImage.scaleToWidth(maxDimension);
+            }
+          } else {
+            if (fabricImage.height > maxDimension) {
+              fabricImage.scaleToHeight(maxDimension);
+            }
+          }
+        }
+        
+        // Add the image to the canvas
+        canvasInstance.add(fabricImage);
+        canvasInstance.setActiveObject(fabricImage);
+        canvasInstance.requestRenderAll();
+        
+        // Dispatch to Redux store
+        dispatch({
+          type: 'canvas/setSelectedObject',
+          payload: fabricImage
+        });
+        
+        // Save canvas state
+        setTimeout(() => saveState(canvasInstance), 50);
+      };
+      
+      img.src = imageUrl;
+    },
+    [dispatch, saveState],
+  );
 
   return {
     canvasRef,

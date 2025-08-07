@@ -24,6 +24,10 @@ export class ProductService {
       ...productData,
       hasVariations: productData.hasVariations,
       variations: productData.variations,
+      type: productData.type,
+      baseColor: productData.baseColor,
+      angles: productData.angles,
+      colors: productData.colors,
     }
   }
 
@@ -43,6 +47,10 @@ export class ProductService {
       updatedAt: product.updatedAt,
       hasVariations: product.hasVariations,
       variations: product.variations,
+      type: product.type,
+      baseColor: product.baseColor,
+      angles: product.angles,
+      colors: product.colors,
     }))
   }
 
@@ -64,6 +72,10 @@ export class ProductService {
       updatedAt: product.updatedAt,
       hasVariations: product.hasVariations,
       variations: product.variations,
+      type: product.type,
+      baseColor: product.baseColor,
+      angles: product.angles,
+      colors: product.colors,
     }
   }
 
@@ -98,6 +110,10 @@ export class ProductService {
       updatedAt: result.updatedAt,
       hasVariations: result.hasVariations,
       variations: result.variations,
+      type: result.type,
+      baseColor: result.baseColor,
+      angles: result.angles,
+      colors: result.colors,
     }
   }
 

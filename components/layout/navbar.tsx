@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import Logo from "@/public/logo.png"
 import { useAppSelector, useAppDispatch } from "@/lib/redux/hooks"
 import { setLanguage } from "@/lib/redux/slices/appSlice"
 import { setSessionUser } from "@/lib/redux/slices/authSlice" // New import
@@ -25,6 +26,7 @@ import {
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useSession, signOut } from "next-auth/react" // New NextAuth imports
+import Image from "next/image"
 
 export function Navbar() {
   const dispatch = useAppDispatch()
@@ -67,8 +69,7 @@ export function Navbar() {
       <div className="container mx-auto flex h-16 items-center justify-between px-4 sm:px-6 lg:px-8">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2 cursor-pointer">
-          <Palette className="h-8 w-8 text-sky-600 dark:text-sky-500" />
-          <h1 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">{t.platformName}</h1>
+          <Image src={Logo} alt="Logo" width={120} height={120} />
         </Link>
 
         {/* Desktop Navigation */}
@@ -127,7 +128,7 @@ export function Navbar() {
                   <LogIn className="mr-2 h-4 w-4" /> {t.login}
                 </Link>
               </Button>
-              <Button asChild className="bg-sky-600 hover:bg-sky-700 text-white">
+              <Button asChild className="bg-primary hover:bg-primary/90 text-white">
                 <Link href="/signup" className="flex items-center">
                   <UserPlus className="mr-2 h-4 w-4" /> {t.signup}
                 </Link>

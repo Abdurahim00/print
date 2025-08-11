@@ -7,6 +7,7 @@ import { createOrder } from "@/lib/redux/slices/ordersSlice"
 import { clearCart } from "@/lib/redux/slices/cartSlice"
 import { translations } from "@/lib/constants"
 import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -42,6 +43,12 @@ export default function CheckoutPage() {
   const [postalCode, setPostalCode] = useState("")
   const [country, setCountry] = useState("")
 
+  // Coupon state
+  const [couponCode, setCouponCode] = useState("")
+  const [appliedCoupon, setAppliedCoupon] = useState<any>(null)
+  const [couponLoading, setCouponLoading] = useState(false)
+  const [couponError, setCouponError] = useState("")
+
   const subtotal = cart.reduce((total, item) => {
     let itemPrice = 0;
     
@@ -61,9 +68,12 @@ export default function CheckoutPage() {
     
     return total + (itemPrice * item.quantity);
   }, 0)
-  const vatAmount = subtotal * 0.25
+  
+  const discountAmount = appliedCoupon?.discountAmount || 0
+  const subtotalAfterDiscount = Math.max(0, subtotal - discountAmount)
+  const vatAmount = subtotalAfterDiscount * 0.25
   const shippingCost = shippingOption === "express" ? 149 : 79
-  const grandTotal = subtotal + vatAmount + shippingCost
+  const grandTotal = subtotalAfterDiscount + vatAmount + shippingCost
 
 
 
@@ -80,6 +90,56 @@ useEffect(() => {
     if (!country && user.country) setCountry(user.country);
   }
 }, [session, fullName, email, phone, address, city, postalCode, country]);
+
+  const handleApplyCoupon = async () => {
+    if (!couponCode.trim()) {
+      setCouponError("Please enter a coupon code")
+      return
+    }
+
+    setCouponLoading(true)
+    setCouponError("")
+
+    try {
+      const response = await fetch("/api/coupons/validate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          code: couponCode.trim(),
+          orderTotal: subtotal,
+          cartItems: cart,
+        }),
+      })
+
+      const result = await response.json()
+
+      if (result.isValid) {
+        setAppliedCoupon(result)
+        toast({
+          title: "Coupon Applied!",
+          description: `You saved ${result.discountAmount.toFixed(2)} SEK with coupon "${couponCode.toUpperCase()}"`,
+          variant: "success",
+        })
+        setCouponCode("")
+      } else {
+        setCouponError(result.message || "Invalid coupon code")
+      }
+    } catch (error) {
+      setCouponError("Failed to apply coupon. Please try again.")
+    } finally {
+      setCouponLoading(false)
+    }
+  }
+
+  const handleRemoveCoupon = () => {
+    setAppliedCoupon(null)
+    setCouponCode("")
+    setCouponError("")
+    toast({
+      title: "Coupon Removed",
+      description: "The coupon discount has been removed from your order.",
+    })
+  }
 
   const handlePayment = async () => {
     if (cart.length === 0) {
@@ -141,6 +201,12 @@ useEffect(() => {
       customerCity: city,
       customerPostalCode: postalCode,
       customerCountry: country,
+      // Coupon information
+      appliedCoupon: appliedCoupon ? {
+        code: appliedCoupon.coupon.code,
+        discountAmount: appliedCoupon.discountAmount,
+        discountType: appliedCoupon.coupon.discountType,
+      } : null,
     }
 
     setOrderData(orderData)
@@ -345,6 +411,12 @@ useEffect(() => {
                 <span>Subtotal:</span>
                 <span>{subtotal.toFixed(2)} SEK</span>
               </div>
+              {appliedCoupon && (
+                <div className="flex justify-between text-green-600 dark:text-green-400">
+                  <span>Discount ({appliedCoupon.coupon.code}):</span>
+                  <span>-{discountAmount.toFixed(2)} SEK</span>
+                </div>
+              )}
               <div className="flex justify-between text-slate-700 dark:text-slate-300">
                 <span>{t.vat}:</span>
                 <span>{vatAmount.toFixed(2)} SEK</span>
@@ -358,6 +430,77 @@ useEffect(() => {
                 <span>{t.total}:</span>
                 <span>{grandTotal.toFixed(2)} SEK</span>
               </div>
+            </CardContent>
+          </Card>
+
+          {/* Coupon Code Section */}
+          <Card className="shadow-lg border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
+            <CardHeader className="border-b border-slate-100 dark:border-slate-700 pb-4">
+              <CardTitle className="text-2xl font-semibold text-slate-900 dark:text-white">Coupon Code</CardTitle>
+            </CardHeader>
+            <CardContent className="p-6">
+              {appliedCoupon ? (
+                <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono font-bold text-green-800 dark:text-green-200">
+                          {appliedCoupon.coupon.code}
+                        </span>
+                        <Badge className="bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100">
+                          Applied
+                        </Badge>
+                      </div>
+                      <p className="text-sm text-green-700 dark:text-green-300 mt-1">
+                        You're saving {discountAmount.toFixed(2)} SEK on this order!
+                      </p>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleRemoveCoupon}
+                      className="text-red-600 border-red-200 hover:bg-red-50 dark:text-red-400 dark:border-red-800 dark:hover:bg-red-900/20"
+                    >
+                      Remove
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div className="flex gap-2">
+                    <div className="flex-1">
+                      <Input
+                        placeholder="Enter coupon code"
+                        value={couponCode}
+                        onChange={(e) => {
+                          setCouponCode(e.target.value.toUpperCase())
+                          setCouponError("")
+                        }}
+                        className={couponError ? "border-red-500 focus:border-red-500" : ""}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            e.preventDefault()
+                            handleApplyCoupon()
+                          }
+                        }}
+                      />
+                    </div>
+                    <Button
+                      onClick={handleApplyCoupon}
+                      disabled={couponLoading || !couponCode.trim()}
+                      className="bg-slate-600 hover:bg-slate-700 text-white"
+                    >
+                      {couponLoading ? "Applying..." : "Apply"}
+                    </Button>
+                  </div>
+                  {couponError && (
+                    <p className="text-sm text-red-600 dark:text-red-400">{couponError}</p>
+                  )}
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                    Have a coupon code? Enter it above to apply your discount.
+                  </p>
+                </div>
+              )}
             </CardContent>
           </Card>
 

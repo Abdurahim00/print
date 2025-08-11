@@ -54,33 +54,14 @@ export function OperationsDashboard() {
   const handleStatusUpdate = async (orderId: string, newStatus: Order["status"]) => {
     try {
       await dispatch(updateOrderStatus({ id: orderId, status: newStatus })).unwrap()
-      toast.success(t.orderStatusChanged.replace("{orderId}", orderId).replace("{newStatus}", newStatus), {
-        style: { 
-          backgroundColor: "#634c9e15", 
-          borderColor: "#634c9e40",
-          color: "#634c9e"
-        },
-        position: "top-center",
-        duration: 3000,
-      })
+      toast.success(t.orderStatusChanged.replace("{orderId}", orderId).replace("{newStatus}", newStatus))
     } catch (error) {
-      toast.error(t.failedToUpdateOrder, {
-        position: "top-center",
-        duration: 3000,
-      })
+      toast.error(t.failedToUpdateOrder)
     }
   }
 
   const handleExportPrintFile = (orderId: string) => {
-    toast.success(t.printFilePrepared.replace("{orderId}", orderId), {
-      style: { 
-        backgroundColor: "#634c9e15", 
-        borderColor: "#634c9e40",
-        color: "#634c9e"
-      },
-      position: "top-center",
-      duration: 3000,
-    })
+    toast.success(t.printFilePrepared.replace("{orderId}", orderId))
     // Simulate file download
     setTimeout(() => {
       const link = document.createElement("a")
@@ -308,7 +289,7 @@ export function OperationsDashboard() {
                           value={order.status}
                           onValueChange={(value) => handleStatusUpdate(order.id, value as Order["status"])}
                         >
-                          <SelectTrigger className="w-full min-w-[140px] border-slate-300 focus:border-sky-500 focus:ring-sky-200">
+                          <SelectTrigger className="w-full min-w-[140px] border-slate-300 focus:border-[#634c9e] focus:ring-[#634c9e20]">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
@@ -328,7 +309,7 @@ export function OperationsDashboard() {
                           variant="outline"
                           size="sm"
                           onClick={() => handleExportPrintFile(order.id)}
-                          className="w-full min-w-[140px] bg-transparent hover:bg-sky-50 hover:text-sky-700 hover:border-sky-300 dark:hover:bg-sky-900/20"
+                          className="w-full min-w-[140px] bg-transparent hover:bg-[#634c9e15] hover:text-[#634c9e] hover:border-[#634c9e40] dark:hover:bg-[#634c9e30]"
                         >
                           <FileArchive className="mr-2 h-4 w-4" />
                           {t.exportPrintFile}

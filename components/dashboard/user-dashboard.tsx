@@ -24,7 +24,8 @@ import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { FileText, Palette, MapPin, Package, Edit3, Copy, Trash2 } from "lucide-react" // Added Edit3, Copy, Trash2
+import { FileText, Palette, MapPin, Package, Edit3, Copy, Trash2, Heart, ArrowUpRight } from "lucide-react" // Added Edit3, Copy, Trash2
+import { FavoritesSection } from "./favorites-section"
 import Image from "next/image"
 import { useSession } from "next-auth/react" // Import useSession
 
@@ -50,26 +51,12 @@ export function UserDashboard({ defaultTab = "orders" }: { defaultTab?: string }
       const resultAction = await dispatch(deleteDesign(designToDelete) as any)
       
       if (deleteDesign.fulfilled.match(resultAction)) {
-        toast.success("Design deleted successfully", {
-          style: { 
-            backgroundColor: "#634c9e15", 
-            borderColor: "#634c9e40",
-            color: "#634c9e"
-          },
-          position: "top-center",
-          duration: 3000,
-        })
+        toast.success("Design deleted successfully")
       } else {
-        toast.error("Failed to delete design", {
-          position: "top-center",
-          duration: 3000,
-        })
+        toast.error("Failed to delete design")
       }
     } catch (error) {
-      toast.error("An unexpected error occurred", {
-        position: "top-center",
-        duration: 3000,
-      })
+      toast.error("An unexpected error occurred")
     } finally {
       setIsDeleting(false)
       setDeleteDialogOpen(false)
@@ -77,7 +64,7 @@ export function UserDashboard({ defaultTab = "orders" }: { defaultTab?: string }
     }
   }
 
-  const user = session?.user
+  const user = session?.user as any
 
   // Filter orders for current user
   const userOrders = orders.filter((order) => order.customer === user?.customerNumber)
@@ -240,16 +227,21 @@ export function UserDashboard({ defaultTab = "orders" }: { defaultTab?: string }
       </Card>
 
       <Tabs defaultValue={defaultTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-1 sm:grid-cols-3 h-auto">
+        <TabsList className="grid w-full grid-cols-1 sm:grid-cols-4 h-auto">
           <TabsTrigger value="orders" className="flex items-center gap-2 py-3">
             <FileText className="h-4 w-4" />
             <span className="hidden sm:inline">{t.orderHistory}</span>
-            <span className="sm:hidden">{t.orders}</span>
+            <span className="sm:hidden">{t.orderHistory}</span>
           </TabsTrigger>
           <TabsTrigger value="designs" className="flex items-center gap-2 py-3">
             <Palette className="h-4 w-4" />
             <span className="hidden sm:inline">{t.savedDesigns}</span>
-            <span className="sm:hidden">{t.designs}</span>
+            <span className="sm:hidden">{t.savedDesigns}</span>
+          </TabsTrigger>
+          <TabsTrigger value="favorites" className="flex items-center gap-2 py-3">
+            <Heart className="h-4 w-4" />
+            <span className="hidden sm:inline">Favorites</span>
+            <span className="sm:hidden">Favs</span>
           </TabsTrigger>
           <TabsTrigger value="profile" className="flex items-center gap-2 py-3">
             <MapPin className="h-4 w-4" />
@@ -257,6 +249,10 @@ export function UserDashboard({ defaultTab = "orders" }: { defaultTab?: string }
             <span className="sm:hidden">{t.profile}</span>
           </TabsTrigger>
         </TabsList>
+        {/* Favorites Tab */}
+        <TabsContent value="favorites" className="mt-6">
+          <FavoritesSection />
+        </TabsContent>
 
         {/* Order History Tab */}
         <TabsContent value="orders" className="mt-6">
@@ -370,7 +366,7 @@ export function UserDashboard({ defaultTab = "orders" }: { defaultTab?: string }
                         <h3 className="font-semibold text-base mb-1 text-slate-900 dark:text-white">{design.name}</h3>
                         <p className="text-sm text-primary mb-2">{design.type}</p>
                         <p className="text-xs text-slate-400 dark:text-slate-500 mb-4">
-                          {t.modified}: {new Date(design.updatedAt || design.createdAt!).toLocaleDateString()}
+                          {t.modified}: {new Date((design as any).updatedAt || (design as any).createdAt || Date.now()).toLocaleDateString()}
                         </p>
                         <div className="flex gap-3">
                           <Button

@@ -6,7 +6,7 @@ import { addToCart } from "@/lib/redux/slices/cartSlice"
 import { translations, productCategories } from "@/lib/constants"
 import { Card, CardContent, CardFooter } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { ShoppingCart } from "lucide-react"
+import { ShoppingCart, Heart } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import Image from "next/image"
 
@@ -17,6 +17,8 @@ interface ProductCardProps {
 export function ProductCard({ product }: ProductCardProps) {
   const dispatch = useAppDispatch()
   const { language } = useAppSelector((state) => state.app)
+  const sessionUser = useAppSelector((state) => (state as any).auth.user)
+  const favorites = useAppSelector((s: any) => s.favorites.items)
   const { toast } = useToast()
   const t = translations[language]
 
@@ -40,6 +42,37 @@ export function ProductCard({ product }: ProductCardProps) {
           fill
           className="object-cover rounded-t-lg"
         />
+        <button
+          className="absolute top-2 right-2 rounded-full bg-white/90 hover:bg-white p-2 shadow-sm border border-slate-200"
+          onClick={async () => {
+            if (!sessionUser?.id) {
+              toast({ title: "Sign in required", description: "Please sign in to add favorites.", variant: "default" })
+              return
+            }
+            try {
+              const { addToFavorites, removeFromFavorites } = await import("@/lib/redux/slices/favoritesSlice")
+              const isFav = favorites.some((f: any) => f.productId === product.id && f.userId === sessionUser.id)
+              if (isFav) {
+                // @ts-ignore
+                await dispatch(removeFromFavorites({ userId: sessionUser.id, productId: product.id }))
+                toast({ title: "Removed from favorites", description: product.name })
+              } else {
+                // @ts-ignore
+                await dispatch(addToFavorites({ userId: sessionUser.id, productId: product.id, categoryId: product.categoryId }))
+                toast({ title: "Added to favorites", description: product.name })
+              }
+            } catch (e) {
+              toast({ title: "Failed", description: "Could not add to favorites" })
+            }
+          }}
+          aria-label="Add to favorites"
+        >
+          {favorites.some((f: any) => f.productId === product.id && f.userId === sessionUser?.id) ? (
+            <Heart className="w-4 h-4 text-pink-600 fill-pink-600" />
+          ) : (
+            <Heart className="w-4 h-4 text-pink-600" />
+          )}
+        </button>
       </div>
       <CardContent className="p-4 flex-grow flex flex-col">
         <h3 className="font-semibold text-lg text-slate-900 dark:text-slate-100">{product.name}</h3>

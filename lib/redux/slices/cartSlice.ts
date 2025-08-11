@@ -41,6 +41,11 @@ const cartSlice = createSlice({
   name: "cart",
   initialState,
   reducers: {
+    // Replace entire cart (e.g., after merge/hydrate)
+    setCart: (state, action: PayloadAction<CartItem[]>) => {
+      state.items = action.payload
+      saveCartToStorage(state.items)
+    },
     // Standard add to cart (legacy)
     addToCart: (state, action: PayloadAction<Product>) => {
       const existingItem = state.items.find((item) => item.id === action.payload.id)
@@ -140,6 +145,7 @@ const cartSlice = createSlice({
 })
 
 export const { 
+  setCart, 
   addToCart, 
   addToCartWithSizes,
   updateQuantity, 

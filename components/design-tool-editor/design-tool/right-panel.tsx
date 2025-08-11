@@ -2,9 +2,10 @@
 
 import { useState } from "react"
 import { useSelector, useDispatch } from "react-redux"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { useSession } from "next-auth/react"
-import { createDesign } from "@/lib/redux/slices/designsSlice"
+import { createDesign, updateDesign } from "@/lib/redux/slices/designsSlice"
+import { applyDesignToFavorites } from "@/lib/redux/slices/favoritesSlice"
 import { setShowProductModal } from "@/lib/redux/designToolSlices/designSlice"
 import { TopHeader } from "./top-header"
 import { ProductPanel } from "./panels/product-panel"
@@ -27,6 +28,7 @@ import {
 export function RightPanel({ isMobile = false }: { isMobile?: boolean }) {
   const dispatch = useDispatch()
   const router = useRouter()
+  const searchParams = useSearchParams()
   const { data: session, status } = useSession()
   const { toast } = useToast()
   const { selectedTool, selectedProduct, productColor, viewMode, selectedTemplate } = useSelector((state: RootState) => state.design)
@@ -49,7 +51,7 @@ export function RightPanel({ isMobile = false }: { isMobile?: boolean }) {
             <Button 
               onClick={() => dispatch(setShowProductModal(true))}
               variant="outline"
-              className="border-blue-200 text-blue-600 hover:bg-blue-50"
+              className="border-purple-200 text-purple-700 hover:bg-purple-50"
             >
               Browse Products
             </Button>
@@ -187,8 +189,10 @@ export function RightPanel({ isMobile = false }: { isMobile?: boolean }) {
       const fabricCanvas = (window as any).fabricCanvas
       const canvasJSON = fabricCanvas ? fabricCanvas.toJSON(['isTemplate', 'minFontSize', 'maxFontSize', '_originalFontSize', '_bendAmount']) : null
 
-      // Create composite preview image with product background and design elements
+      // Create composite preview image with product background and design elements (kept for reference)
       const compositePreview = await createCompositePreview(canvas, selectedProduct)
+      // Design-only preview with transparent background (used for applying to favorites)
+      const designOnlyPreview = canvas.toDataURL('image/png')
 
       // Get the selected variation details if applicable
       const getSelectedVariationDetails = () => {
@@ -216,7 +220,8 @@ export function RightPanel({ isMobile = false }: { isMobile?: boolean }) {
       const designData = {
         name: `${selectedProduct.name} Design`,
         type: selectedProduct.type || "design",
-        preview: compositePreview,
+        // Store design-only preview as main preview so we can overlay on favorites without duplicating product background
+        preview: designOnlyPreview,
         userId: (session?.user as any)?.id || "",
         designData: {
           // Complete product reference
@@ -251,7 +256,11 @@ export function RightPanel({ isMobile = false }: { isMobile?: boolean }) {
           },
           
           // Canvas and design elements
-          canvasData: canvas.toDataURL('image/png'),
+          canvasData: designOnlyPreview,
+          canvasSize: { width: canvas.width, height: canvas.height },
+          overlay: { scale: 0.6 },
+          // Keep composite as optional for future use (galleries, etc.)
+          previewComposite: compositePreview,
           canvasJSON: canvasJSON, // Store the full fabric.js canvas state with custom properties
           elements: fabricCanvas ? fabricCanvas.getObjects().map((obj: any) => ({
             type: obj.type,
@@ -289,10 +298,55 @@ export function RightPanel({ isMobile = false }: { isMobile?: boolean }) {
         status: "Draft" as const,
       }
 
-      // Save design using Redux action
-      const resultAction = await dispatch(createDesign(designData) as any)
+      // Determine if we're editing an existing design
+      const editingDesignId = searchParams.get('designId')
+
+      // Save or update design using Redux action
+      const resultAction = editingDesignId
+        ? await dispatch(updateDesign({ id: editingDesignId, ...designData } as any) as any)
+        : await dispatch(createDesign(designData) as any)
       
-      if (createDesign.fulfilled.match(resultAction)) {
+      if (createDesign.fulfilled.match(resultAction) || updateDesign.fulfilled.match(resultAction)) {
+        const saved = (resultAction as any).payload
+        const tryCategoryFromSaved = saved?.designData?.product?.categoryId
+        const tryCategoryFromComposed = designData.designData?.product?.categoryId
+        const tryCategoryFromSelected = (selectedProduct as any)?.categoryId
+        // As a final fallback, attempt to fetch product by id and read categoryId (only if missing)
+        let categoryIdResolved = tryCategoryFromSaved || tryCategoryFromComposed || tryCategoryFromSelected
+        if (!categoryIdResolved) {
+          try {
+            const productId = saved?.designData?.product?.id || designData.designData?.product?.id || (selectedProduct as any)?.id
+            if (productId) {
+              console.log("🔥 [RightPanel] Fallback fetch to resolve categoryId", { productId })
+              const res = await fetch(`/api/products/${productId}`)
+              if (res.ok) {
+                const fullProduct = await res.json()
+                categoryIdResolved = fullProduct?.categoryId
+                console.log("🔥 [RightPanel] Fallback resolved categoryId", { categoryIdResolved })
+              }
+            }
+          } catch (e) {
+            console.warn("🔥 [RightPanel] Fallback fetch failed", e)
+          }
+        }
+        console.log("🔥🔥 [RightPanel] Design save fulfilled", { savedId: saved?.id, editingDesignId, categoryId: tryCategoryFromSaved, categoryIdResolved })
+        // Auto-apply this design to all favorites in same category (optimistic handled in slice)
+        try {
+          const categoryIdForApply = categoryIdResolved
+          const designIdForApply = saved?.id || editingDesignId
+          if (categoryIdForApply && designIdForApply && (session?.user as any)?.id) {
+            console.log("🔥 [RightPanel] Dispatch applyDesignToFavorites", { userId: (session?.user as any).id, categoryId: categoryIdForApply, designId: designIdForApply })
+            await dispatch(applyDesignToFavorites({
+              userId: (session?.user as any).id,
+              categoryId: categoryIdForApply,
+              designId: designIdForApply,
+            }) as any)
+          } else {
+            console.log("🔥 [RightPanel] Skip auto-apply: missing categoryId/designId/userId", { categoryIdForApply, designIdForApply, userId: (session?.user as any)?.id })
+          }
+        } catch (e) {
+          console.warn('🔥 [RightPanel] Failed to auto-apply design to favorites', e)
+        }
         toast({
           title: "Design Saved Successfully!",
           description: "Your design has been saved to your dashboard.",
@@ -330,7 +384,7 @@ export function RightPanel({ isMobile = false }: { isMobile?: boolean }) {
         <div className="p-3 border-b border-gray-200 flex-shrink-0">
           <Button 
             onClick={handleSaveDesign}
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white transition-all duration-200 hover:scale-105"
+            className="w-full bg-purple-700 hover:bg-purple-700 text-white transition-all duration-200 hover:scale-105"
             size="sm"
             disabled={isSaving || !selectedProduct}
           >
@@ -360,7 +414,7 @@ export function RightPanel({ isMobile = false }: { isMobile?: boolean }) {
       <div className="p-3 border-b border-gray-200 flex-shrink-0">
         <Button 
           onClick={handleSaveDesign}
-          className="w-full bg-blue-600 hover:bg-blue-700 text-white transition-all duration-200 hover:scale-105"
+          className="w-full bg-purple-600 hover:bg-purple-700 text-white transition-all duration-200 hover:scale-105"
           size="sm"
           disabled={isSaving || !selectedProduct}
         >
@@ -398,7 +452,7 @@ export function RightPanel({ isMobile = false }: { isMobile?: boolean }) {
                 setShowAuthDialog(false)
                 router.push('/login?returnUrl=/design-tool')
               }}
-              className="bg-blue-600 hover:bg-blue-700 text-white"
+              className="bg-purple-700 hover:bg-purple-700 text-white"
             >
               Sign In
             </Button>

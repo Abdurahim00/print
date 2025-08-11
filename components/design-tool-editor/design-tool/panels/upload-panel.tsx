@@ -5,14 +5,15 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Upload, ImageIcon, FileText, Loader2 } from "lucide-react"
 import { useFabricCanvas } from "@/hooks/useFabricCanvas"
-import { useSelector, useDispatch } from "react-redux"
+import { useDispatch, useSelector } from "react-redux"
 import { RootState } from "@/lib/redux/store"
 import { addImageLayer } from "@/lib/redux/designToolSlices/designSlice"
+import { ImagePropertiesPanel } from "./image-properties"
 
 export function UploadPanel() {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const { addImage } = useFabricCanvas("design-canvas")
-  const { fabricCanvas } = useSelector((state: RootState) => state.canvas)
+  const { fabricCanvas, selectedObject } = useSelector((state: RootState) => state.canvas as any)
   const [isUploading, setIsUploading] = useState(false)
   const dispatch = useDispatch()
 
@@ -166,6 +167,10 @@ export function UploadPanel() {
             Canvas is initializing. Please wait a moment before uploading images.
           </p>
         </div>
+      )}
+
+      {fabricCanvas && selectedObject && selectedObject.type === 'image' && (
+        <ImagePropertiesPanel />
       )}
     </div>
   )

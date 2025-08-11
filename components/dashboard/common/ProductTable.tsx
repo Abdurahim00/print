@@ -3,6 +3,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Edit3, Trash2 } from "lucide-react"
+import { Skeleton } from "@/components/ui/skeleton"
 import Image from "next/image"
 import type { Product } from "@/types"
 
@@ -16,7 +17,25 @@ interface ProductTableProps {
 }
 
 export const ProductTable: React.FC<ProductTableProps> = ({ products, loading, t, productCategories, onEdit, onDelete }) => {
-  if (loading) return <div className="p-6">Loading...</div>
+  const ProductSkeleton = () => (
+    <div className="p-6 space-y-4">
+      {[...Array(5)].map((_, i) => (
+        <div key={i} className="flex gap-4 items-center">
+          <div className="w-12 h-12"><Skeleton className="w-full h-full rounded-lg" /></div>
+          <div className="w-1/4"><Skeleton className="h-8 w-full" /></div>
+          <div className="w-1/6"><Skeleton className="h-6 w-3/4" /></div>
+          <div className="w-1/6"><Skeleton className="h-8 w-full" /></div>
+          <div className="w-1/4"><Skeleton className="h-6 w-full" /></div>
+          <div className="w-1/6 flex gap-2">
+            <Skeleton className="h-8 w-16" />
+            <Skeleton className="h-8 w-16" />
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+
+  if (loading) return <ProductSkeleton />
   if (!products.length) return <div className="text-center py-12">{t.noProductsYet || "No products found"}</div>
   return (
     <div className="overflow-x-auto">

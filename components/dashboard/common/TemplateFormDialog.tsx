@@ -30,7 +30,7 @@ interface TemplateFormDialogProps {
   onOpenChange: (open: boolean) => void
   initialValues: Partial<Template>
   onSubmit: (
-    values: CreateTemplateData | UpdateTemplateData,
+    values: any,
     formikHelpers: FormikHelpers<any>
   ) => Promise<void>
   t: any
@@ -207,7 +207,7 @@ export function TemplateFormDialog({
             >
               Cancel
             </Button>
-            <Button type="submit" className="flex-1" disabled={isSubmitting}>
+            <Button type="submit" className="flex-1 bg-gradient-to-r from-[#634c9e] to-[#7a5ec7] hover:from-[#584289] hover:to-[#6b52b3] text-white shadow-lg" disabled={isSubmitting}>
               {isSubmitting ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />

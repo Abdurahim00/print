@@ -27,6 +27,19 @@ export default function DashboardPage() {
     }
   }, [status, router])
 
+  // Always call hooks at top-level; guard inside the effect
+  useEffect(() => {
+    const role = (session?.user as any)?.role
+    const footer = document.querySelector("footer") as HTMLElement | null
+    if (role === "admin" && footer) {
+      footer.style.display = "none"
+      return () => {
+        if (footer) footer.style.display = ""
+      }
+    }
+    return
+  }, [session?.user])
+
   if (status === "loading") {
     return (
       <div className="flex items-center justify-center py-12">
@@ -39,7 +52,7 @@ export default function DashboardPage() {
     return null // Redirect handled by useEffect
   }
 
-  const user = session.user // Use user from session
+  const user = session.user as any // extended session with role
 
   const getDashboardTitle = () => {
     switch (user.role) {

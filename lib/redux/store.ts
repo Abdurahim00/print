@@ -7,6 +7,9 @@ import appSlice from "./slices/appSlice"
 import usersSlice from "./slices/usersSlice" // New
 import designsSlice from "./slices/designsSlice" // New
 import templatesSlice from "./slices/templatesSlice" // New
+import couponsSlice from "./slices/couponsSlice" // New
+import categoriesSlice from "./slices/categoriesSlice" // New
+import favoritesSlice from "./slices/favoritesSlice" // New
 
 import designReducer from "@/lib/redux/designToolSlices/designSlice"
 import productsReducer from "@/lib/redux/designToolSlices/productsSlice"
@@ -23,6 +26,9 @@ export const store = configureStore({
     users: usersSlice, // Added
     designs: designsSlice, // Added
     templatesManagement: templatesSlice, // Added
+    coupons: couponsSlice, // Added
+    categories: categoriesSlice, // Added
+    favorites: favoritesSlice, // Added
 
     design: designReducer,
     designProducts: productsReducer,

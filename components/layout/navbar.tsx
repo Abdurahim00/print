@@ -24,13 +24,17 @@ import {
   Car,
 } from "lucide-react"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
+import { useRouter, usePathname } from "next/navigation"
 import { useSession, signOut } from "next-auth/react" // New NextAuth imports
+import { setCart } from "@/lib/redux/slices/cartSlice"
+import type { CartItem } from "@/types"
+import { mergeCartsPreferRight } from "@/lib/utils/cartMerge"
 import Image from "next/image"
 
 export function Navbar() {
   const dispatch = useAppDispatch()
   const router = useRouter()
+  const pathname = usePathname()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const { data: session, status } = useSession() // Get session data
   const { language } = useAppSelector((state) => state.app)
@@ -41,18 +45,90 @@ export function Navbar() {
   // Update Redux user state when NextAuth session changes
   useEffect(() => {
     if (status === "authenticated") {
-      dispatch(setSessionUser(session.user))
+      dispatch(setSessionUser(session.user as any))
+
+      // One-time merge on login per session
+      try {
+        const hasMergedKey = `guest_cart_merged_for_session_${(session.user as any).id}`
+        const alreadyMerged = sessionStorage.getItem(hasMergedKey)
+        // Fetch persisted user cart from DB
+        const userId = (session.user as any).id
+        const fetchUserCart = async () => {
+          const res = await fetch(`/api/cart?userId=${encodeURIComponent(userId)}`, { cache: "no-store" })
+          const data = await res.json()
+          return (data?.items ?? []) as CartItem[]
+        }
+
+        const persistUserCart = async (items: CartItem[]) => {
+          await fetch(`/api/cart`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ userId, items }),
+          })
+        }
+
+        ;(async () => {
+          const dbCart = await fetchUserCart()
+          const guestCartRaw = localStorage.getItem("cart")
+          const guestCart: CartItem[] = guestCartRaw ? JSON.parse(guestCartRaw) : []
+
+          if (!alreadyMerged) {
+            // Merge guest into DB cart with guest winning on recency
+            const merged = mergeCartsPreferRight(dbCart, guestCart)
+            dispatch(setCart(merged))
+            await persistUserCart(merged)
+            // Mark merged to prevent repeat merges during this session
+            sessionStorage.setItem(hasMergedKey, "1")
+          } else {
+            // Hydrate from DB only
+            dispatch(setCart(dbCart))
+            // Ensure localStorage cart mirrors user cart while logged in
+            localStorage.setItem("cart", JSON.stringify(dbCart))
+          }
+        })()
+      } catch (e) {
+        console.error("Cart merge/hydrate failed", e)
+      }
     } else if (status === "unauthenticated") {
+      // Enter guest mode: only clear session user; keep guest cart in localStorage
       dispatch(setSessionUser(null))
+      // Additionally, clear the per-session merge flag so a future login can merge again
+      try {
+        // We cannot know userId when unauthenticated; clear all merge flags for safety
+        Object.keys(sessionStorage).forEach((k) => {
+          if (k.startsWith("guest_cart_merged_for_session_")) sessionStorage.removeItem(k)
+        })
+      } catch {}
     }
   }, [session, status, dispatch])
 
   const handleLogout = async () => {
     await signOut({ redirect: false }) // Sign out with NextAuth
     dispatch(setSessionUser(null)) // Clear Redux state
+    // Clear local guest cart to ensure no logged-in data remains visible
+    try {
+      localStorage.removeItem("cart")
+    } catch {}
+    dispatch(setCart([]))
     setMobileMenuOpen(false)
     router.push("/")
   }
+
+  // Persist cart to DB when authenticated and cart changes (debounced)
+  useEffect(() => {
+    if (status !== "authenticated" || !session?.user) return
+    const userId = (session.user as any).id
+    const t = setTimeout(() => {
+      fetch(`/api/cart`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId, items: cartItems }),
+      }).catch(() => {})
+      // Keep localStorage mirroring while logged in
+      try { localStorage.setItem("cart", JSON.stringify(cartItems)) } catch {}
+    }, 400)
+    return () => clearTimeout(t)
+  }, [cartItems, status, session])
 
   const handleLanguageChange = (lang: "en" | "sv") => {
     dispatch(setLanguage(lang))
@@ -65,7 +141,7 @@ export function Navbar() {
   const cartItemCount = cartItems.reduce((sum, item) => sum + item.quantity, 0)
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-slate-200 dark:border-slate-700 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md">
+    <header className="sticky top-0 z-50 w-full border-b border-purple-200 dark:border-purple-700 bg-white/80 dark:bg-purple-900/80 backdrop-blur-md">
       <div className="container mx-auto flex h-16 items-center justify-between px-4 sm:px-6 lg:px-8">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2 cursor-pointer">
@@ -74,13 +150,37 @@ export function Navbar() {
 
         {/* Desktop Navigation */}
         <nav className="hidden md:flex items-center gap-1">
-          <Button variant="ghost" asChild>
+          <Button 
+            className={`${
+              pathname === '/products' || pathname?.startsWith('/products') 
+                ? 'bg-primary text-white' 
+                : 'hover:bg-primary hover:text-white'
+            } transition-colors`} 
+            variant="ghost" 
+            asChild
+          >
             <Link href="/products" className="flex items-center">{t.products}</Link>
           </Button>
-          <Button variant="ghost" asChild>
+          <Button 
+            className={`${
+              pathname === '/design-tool' || pathname?.startsWith('/design-tool') 
+                ? 'bg-primary text-white' 
+                : 'hover:bg-primary hover:text-white'
+            } transition-colors`} 
+            variant="ghost" 
+            asChild
+          >
             <Link href="/design-tool" className="flex items-center">{t.designTool}</Link>
           </Button>
-          <Button variant="ghost" asChild>
+          <Button 
+            className={`${
+              pathname === '/car-mockup' || pathname?.startsWith('/car-mockup') 
+                ? 'bg-primary text-white' 
+                : 'hover:bg-primary hover:text-white'
+            } transition-colors`} 
+            variant="ghost" 
+            asChild
+          >
             <Link href="/car-mockup" className="flex items-center">{t.carWrapDesigner}</Link>
           </Button>
         </nav>
@@ -88,13 +188,13 @@ export function Navbar() {
         {/* Desktop Actions */}
         <div className="hidden md:flex items-center gap-2">
           <Select value={language} onValueChange={handleLanguageChange}>
-            <SelectTrigger className="w-[120px]">
-              <Languages className="h-4 w-4 mr-2" />
+            <SelectTrigger className="w-[120px] bg-primary text-white border-primary hover:bg-primary hover:text-white">
+              <Languages className="h-4 w-4 mr-2 " />
               <SelectValue placeholder={t.language} />
             </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="en">English</SelectItem>
-              <SelectItem value="sv">Svenska</SelectItem>
+            <SelectContent className="bg-primary text-white border-primary">
+              <SelectItem value="en" className="text-white data-[highlighted]:bg-purple-700 data-[highlighted]:text-white">English</SelectItem>
+              <SelectItem value="sv" className="text-white data-[highlighted]:bg-purple-700 data-[highlighted]:text-white">Svenska</SelectItem>
             </SelectContent>
           </Select>
 
@@ -104,19 +204,27 @@ export function Navbar() {
               <ShoppingCart className="mr-2 h-4 w-4" />
               {t.cart}
               {cartItemCount > 0 && (
-                <span className="ml-1 bg-sky-600 text-white rounded-full px-2 py-1 text-xs">{cartItemCount}</span>
+                <span className="ml-1 bg-purple-700 text-white rounded-full px-2 py-1 text-xs">{cartItemCount}</span>
               )}
             </Link>
           </Button>
 
           {status === "authenticated" ? (
             <>
-              <Button variant="ghost" asChild className="hidden lg:inline-flex">
+              <Button 
+                variant="ghost" 
+                asChild 
+                className={`${
+                  pathname === '/dashboard' || pathname?.startsWith('/dashboard') 
+                    ? 'bg-primary text-white' 
+                    : 'hover:bg-primary hover:text-white'
+                } transition-colors hidden lg:inline-flex`}
+              >
                 <Link href="/dashboard" className="flex items-center">
                   <LayoutDashboard className="mr-2 h-4 w-4" /> {t.dashboard}
                 </Link>
               </Button>
-              <Button onClick={handleLogout} variant="secondary">
+              <Button onClick={handleLogout} variant="ghost" className="hover:bg-primary hover:text-white">
                 <LogOut className="mr-2 h-4 w-4" />
                 {t.logout}
               </Button>
@@ -128,7 +236,7 @@ export function Navbar() {
                   <LogIn className="mr-2 h-4 w-4" /> {t.login}
                 </Link>
               </Button>
-              <Button asChild className="bg-primary hover:bg-primary/90 text-white">
+              <Button asChild className="bg-primary hover:bg-primary hover:text-white text-white">
                 <Link href="/signup" className="flex items-center">
                   <UserPlus className="mr-2 h-4 w-4" /> {t.signup}
                 </Link>
@@ -144,7 +252,7 @@ export function Navbar() {
             <Link href="/cart">
               <ShoppingCart className="h-4 w-4" />
               {cartItemCount > 0 && (
-                <span className="absolute -top-1 -right-1 bg-sky-600 text-white rounded-full w-5 h-5 text-xs flex items-center justify-center">
+                <span className="absolute -top-1 -right-1 bg-purple-600 text-white rounded-full w-5 h-5 text-xs flex items-center justify-center">
                   {cartItemCount}
                 </span>
               )}
@@ -168,13 +276,13 @@ export function Navbar() {
                 <div className="space-y-2">
                   <label className="text-sm font-medium">{t.language}</label>
                   <Select value={language} onValueChange={handleLanguageChange}>
-                    <SelectTrigger>
+                    <SelectTrigger className="bg-primary text-white border-primary hover:bg-primary hover:text-white">
                       <Languages className="h-4 w-4 mr-2" />
                       <SelectValue />
                     </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="en">English</SelectItem>
-                      <SelectItem value="sv">Svenska</SelectItem>
+                    <SelectContent className="bg-primary text-white border-primary">
+                      <SelectItem value="en" className="text-white data-[highlighted]:bg-purple-700 data-[highlighted]:text-white">English</SelectItem>
+                      <SelectItem value="sv" className="text-white data-[highlighted]:bg-purple-700 data-[highlighted]:text-white">Svenska</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -206,7 +314,16 @@ export function Navbar() {
                 {status === "authenticated" && session?.user && (
                   <>
                     <Separator />
-                    <Button variant="ghost" asChild className="w-full justify-start" onClick={closeMobileMenu}>
+                    <Button 
+                      variant="ghost" 
+                      asChild 
+                      className={`w-full justify-start ${
+                        pathname === '/dashboard' || pathname?.startsWith('/dashboard') 
+                          ? 'bg-primary text-white' 
+                          : 'hover:bg-primary hover:text-white'
+                      }`} 
+                      onClick={closeMobileMenu}
+                    >
                       <Link href="/dashboard">
                         <LayoutDashboard className="mr-2 h-4 w-4" />
                         {t.dashboard}
@@ -220,11 +337,11 @@ export function Navbar() {
                 {/* Auth Actions */}
                 {status === "authenticated" && session?.user ? (
                   <div className="space-y-2">
-                    <div className="text-sm text-slate-600 dark:text-slate-400 p-2">
+                    <div className="text-sm text-purple-600 dark:text-purple-400 p-2">
                       <p className="font-medium">{session.user.email}</p>
-                      <p className="text-xs">{session.user.customerNumber}</p>
+                      <p className="text-xs">{(session.user as any).customerNumber}</p>
                     </div>
-                    <Button onClick={handleLogout} variant="destructive" className="w-full justify-start">
+                    <Button onClick={handleLogout} variant="ghost" className="w-full justify-start hover:bg-primary hover:text-white">
                       <LogOut className="mr-2 h-4 w-4" />
                       {t.logout}
                     </Button>
@@ -244,7 +361,7 @@ export function Navbar() {
                     </Button>
                     <Button
                       asChild
-                      className="w-full justify-start bg-sky-600 hover:bg-sky-700 text-white"
+                      className="w-full justify-start bg-purple-600 hover:bg-purple-700 hover:text-white text-white"
                       onClick={closeMobileMenu}
                     >
                       <Link href="/signup">

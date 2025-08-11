@@ -16,6 +16,7 @@ export function LoadSavedDesign({ onDesignLoaded }: LoadSavedDesignProps) {
   const dispatch = useDispatch()
   const searchParams = useSearchParams()
   const designId = searchParams.get("designId")
+  const productId = searchParams.get("productId")
   
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -48,11 +49,26 @@ export function LoadSavedDesign({ onDesignLoaded }: LoadSavedDesignProps) {
           console.log("Loading design with complete product reference")
           
           // Use the saved complete product reference (new format)
-          const savedProduct = design.designData.product
+          let savedProduct = design.designData.product
           const savedState = design.designData.selectedState
           
           console.log("Saved product:", savedProduct)
           console.log("Saved state:", savedState)
+
+          // Ensure categoryId exists; if missing, fetch product by id and merge
+          if (!savedProduct?.categoryId && savedProduct?.id) {
+            try {
+              console.log("🔥 [LoadSavedDesign] categoryId missing on saved product, fetching by id", savedProduct.id)
+              const productRes = await fetch(`/api/products/${savedProduct.id}`)
+              if (productRes.ok) {
+                const fullProduct = await productRes.json()
+                savedProduct = { ...savedProduct, categoryId: fullProduct?.categoryId }
+                console.log("🔥 [LoadSavedDesign] merged categoryId into savedProduct", { categoryId: savedProduct.categoryId })
+              }
+            } catch (e) {
+              console.warn("🔥 [LoadSavedDesign] failed to fetch product for categoryId repair", e)
+            }
+          }
           
           // Restore the complete product
           dispatch(setSelectedProduct(savedProduct))
@@ -142,6 +158,30 @@ export function LoadSavedDesign({ onDesignLoaded }: LoadSavedDesignProps) {
     
     loadDesign()
   }, [designId, dispatch, onDesignLoaded])
+
+  // If we only have a productId (coming from Favorites customize without a saved design yet),
+  // preselect the product in the design tool so the user can start designing immediately.
+  useEffect(() => {
+    if (!productId || designId) return
+    const loadProductOnly = async () => {
+      try {
+        setLoading(true)
+        setError(null)
+        const res = await fetch(`/api/products/${productId}`)
+        if (!res.ok) throw new Error("Failed to load product")
+        const product = await res.json()
+        dispatch(setSelectedProduct(product))
+        // If product has variations with colors, pick the first as default color
+        const firstHex = product?.variations?.[0]?.color?.hex_code || product?.baseColor
+        if (firstHex) dispatch(setProductColor(firstHex))
+      } catch (e) {
+        setError(e instanceof Error ? e.message : "Failed to load product")
+      } finally {
+        setLoading(false)
+      }
+    }
+    loadProductOnly()
+  }, [productId, designId, dispatch])
   
   if (!designId) return null
   

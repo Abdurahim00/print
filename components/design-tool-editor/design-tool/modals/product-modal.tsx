@@ -19,35 +19,34 @@ export function ProductModal({ isOpen, onClose, products, loading = false }: Pro
   const dispatch = useDispatch()
 
   const handleSelectProduct = (product: Product) => {
-    // Get all unique angles from variations
-    const allAngles = new Set<string>()
+    // Collect angles only from real data: variations' images or product.angles
+    const angleSet = new Set<string>()
     if (product.hasVariations && product.variations) {
       product.variations.forEach(variation => {
         variation.images?.forEach(img => {
-          if (img.angle) allAngles.add(img.angle)
+          if (img?.angle) angleSet.add(img.angle)
         })
       })
     }
-    
-    // If no variations, use default angles
-    const angles = allAngles.size > 0 ? Array.from(allAngles) : ["front", "back", "left", "right", "material"]
-    
-    // Get colors from variations
-    const colors = product.hasVariations && product.variations 
-      ? product.variations.map(v => v.color.hex_code).filter(Boolean)
-      : ["#1f2937", "#374151", "#d1d5db", "#ffffff"]
-    
-    // Get the first valid color for initial selection
-    const initialColor = colors[0] 
-    
-    // Convert Product to the format expected by the design slice
+    const realAngles = angleSet.size > 0 ? Array.from(angleSet) : (product.angles || [])
+
+    // Collect colors only from real data: variations or product.colors
+    const realColors = (product.hasVariations && product.variations)
+      ? product.variations.map(v => v.color?.hex_code).filter(Boolean)
+      : (product as any).colors || []
+
+    // Initial color preference: first variation color, else product.baseColor, else empty
+    const initialColor = (realColors[0]) || (product as any).baseColor || ""
+
+    // Build the selectedProduct with only real data, no dummy defaults
     const selectedProduct = {
       id: product.id,
       name: product.name,
-      type: product.categoryId, // Use categoryId as type
-      baseColor: initialColor, // Use first variation color or default
-      angles: angles, // Use actual angles from variations
-      colors: colors, // Use actual colors from variations
+      type: product.categoryId,
+      categoryId: product.categoryId,
+      baseColor: initialColor,
+      angles: realAngles,
+      colors: realColors,
       price: `$${product.price.toFixed(2)}`,
       image: product.image,
       description: product.description,
@@ -55,16 +54,16 @@ export function ProductModal({ isOpen, onClose, products, loading = false }: Pro
       hasVariations: product.hasVariations,
       variations: product.variations || [],
     }
-    
-    console.log('ProductModal Debug:', {
+
+    console.log('🔥 [ProductModal] Select product with real data only', {
       productName: product.name,
       hasVariations: product.hasVariations,
       variationsCount: product.variations?.length,
-      colors,
+      realAngles,
+      realColors,
       initialColor,
-      selectedProduct
     })
-    
+
     dispatch(setSelectedProduct(selectedProduct))
     onClose()
   }

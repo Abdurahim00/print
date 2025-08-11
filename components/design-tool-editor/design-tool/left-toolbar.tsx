@@ -53,7 +53,7 @@ export function LeftToolbar() {
                   size="icon"
                   className={`w-11 h-11 lg:w-14 lg:h-14 flex flex-col items-center justify-center rounded-2xl transition-all duration-300 shadow-sm hover:shadow-md ${
                     selectedTool === tool.id 
-                      ? "bg-blue-600 hover:bg-blue-700 text-white shadow-lg scale-105 hover:scale-110" 
+                      ? "bg-purple-700 hover:bg-purple-700 text-white shadow-lg scale-105 hover:scale-110" 
                       : "hover:bg-gray-50 hover:scale-105 text-gray-600 hover:text-gray-800"
                   }`}
                   onClick={() => handleToolSelect(tool.id)}

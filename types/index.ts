@@ -40,6 +40,7 @@ export interface Product {
   price: number;
   image: string;
   categoryId: string;
+  subcategoryIds?: string[];
   description?: string;
   inStock: boolean;
   hasVariations?: boolean;
@@ -143,6 +144,16 @@ export interface AppState {
   orders: Order[]
   users: User[]
   designs: Design[]
+  coupons: Coupon[]
+}
+
+export interface Favorite {
+  id: string
+  userId: string
+  productId: string
+  categoryId: string
+  appliedDesignId?: string | null
+  createdAt?: Date
 }
 
 export interface Template {
@@ -168,4 +179,78 @@ export interface UpdateTemplateData {
   image?: string
   price?: number | "free"
   category?: string
+}
+
+export interface Coupon {
+  id: string
+  code: string
+  description?: string
+  discountType: "percentage" | "fixed"
+  discountValue: number
+  minimumOrderAmount?: number
+  maxUsageCount?: number
+  currentUsageCount: number
+  isActive: boolean
+  validFrom: Date
+  validUntil: Date
+  applicableProducts?: string[]
+  applicableCategories?: string[]
+  createdAt?: Date
+  updatedAt?: Date
+}
+
+export interface CreateCouponData {
+  code: string
+  description?: string
+  discountType: "percentage" | "fixed"
+  discountValue: number
+  minimumOrderAmount?: number
+  maxUsageCount?: number
+  isActive: boolean
+  validFrom: Date
+  validUntil: Date
+  applicableProducts?: string[]
+  applicableCategories?: string[]
+}
+
+export interface UpdateCouponData {
+  id: string
+  code?: string
+  description?: string
+  discountType?: "percentage" | "fixed"
+  discountValue?: number
+  minimumOrderAmount?: number
+  maxUsageCount?: number
+  isActive?: boolean
+  validFrom?: Date
+  validUntil?: Date
+  applicableProducts?: string[]
+  applicableCategories?: string[]
+}
+
+export interface CouponValidationResult {
+  isValid: boolean
+  message?: string
+  discountAmount?: number
+  coupon?: Coupon
+}
+
+export interface Category {
+  id: string
+  name: string
+  slug: string
+  description?: string
+  isActive: boolean
+  createdAt?: Date
+  updatedAt?: Date
+}
+
+export interface Subcategory {
+  id: string
+  categoryId: string
+  name: string
+  slug: string
+  isActive: boolean
+  createdAt?: Date
+  updatedAt?: Date
 }

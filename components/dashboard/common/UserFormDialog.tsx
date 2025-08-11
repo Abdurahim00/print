@@ -123,7 +123,7 @@ export const UserFormDialog: React.FC<UserFormDialogProps> = ({
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)} className="flex-1 border-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800">
               {t.cancel}
             </Button>
-            <Button type="submit" className="flex-1 bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-700 hover:to-blue-700 text-white shadow-lg" disabled={isSubmitting}>
+            <Button type="submit" className="flex-1 bg-gradient-to-r from-[#634c9e] to-[#7a5ec7] hover:from-[#584289] hover:to-[#6b52b3] text-white shadow-lg" disabled={isSubmitting}>
               {isSubmitting ? t.updating : t.updateUser}
             </Button>
           </div>

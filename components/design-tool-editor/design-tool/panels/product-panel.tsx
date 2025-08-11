@@ -45,7 +45,7 @@ export function ProductPanel() {
           <Button 
             onClick={() => dispatch(setShowProductModal(true))}
             variant="outline"
-            className="border-blue-200 text-blue-600 hover:bg-blue-50"
+            className="border-purple-200 text-purple-600 hover:bg-purple-50"
           >
             Browse Products
           </Button>
@@ -87,19 +87,34 @@ export function ProductPanel() {
   // Get current variation based on selected color
   const getCurrentVariation = () => {
     const variations = getVariations()
-    return variations.find((v: any) => v.color.hex_code === productColor) || variations[0]
+    if (variations.length === 0) return null
+    return variations.find((v: any) => v.color?.hex_code === productColor) || variations[0]
   }
 
   // Get image for current view mode from current variation
   const getCurrentVariationImage = () => {
     const currentVariation = getCurrentVariation()
     if (!currentVariation) return null
-    
     const imageForAngle = currentVariation.images?.find((img: any) => img.angle === viewMode && img.url)
-    return imageForAngle?.url || currentVariation.color.swatch_image || product.image
+    return imageForAngle?.url || product.image
   }
 
   const variations = getVariations()
+
+  const parsePriceToNumber = (value: unknown): number => {
+    if (typeof value === "number") return value
+    if (typeof value === "string") {
+      const cleaned = value.replace(/[^\d.-]/g, "")
+      const num = parseFloat(cleaned)
+      return isNaN(num) ? 0 : num
+    }
+    return 0
+  }
+
+  const formatSEK = (amount: number) =>
+    new Intl.NumberFormat("sv-SE", { style: "currency", currency: "SEK" }).format(amount)
+
+  const displayBasePrice = formatSEK(parsePriceToNumber(product.price))
 
   return (
     <div className="flex flex-col h-full p-4 lg:p-6">
@@ -113,10 +128,10 @@ export function ProductPanel() {
               Eco-friendly
             </Badge>
           </div>
-          <div className="text-2xl font-bold text-blue-600">{product.price}</div>
+          <div className="text-2xl font-bold text-purple-600">{displayBasePrice}</div>
         </div>
 
-        {/* Color Variations */}
+        {/* Color Variations - show only if real variations exist */}
         {variations.length > 0 && (
           <div className="space-y-4">
             <div className="flex items-center space-x-2">
@@ -154,53 +169,28 @@ export function ProductPanel() {
           </div>
         )}
 
-        {/* Default Color Selection (if no variations) */}
-        {variations.length === 0 && product.colors && (
-          <div className="space-y-4">
-            <div className="flex items-center space-x-2">
-              <Palette className="w-4 h-4 text-gray-600" />
-              <span className="text-sm font-medium">Product Color</span>
-              <div className="w-4 h-4 rounded-full border border-gray-300" style={{ backgroundColor: productColor }} />
-            </div>
-
-            <div className="grid grid-cols-5 lg:grid-cols-6 gap-3">
-              {product.colors.map((color: string, index: number) => (
-                <button
-                  key={index}
-                  className={`w-10 h-10 lg:w-12 lg:h-12 rounded-full border-2 transition-all duration-200 hover:scale-110 active:scale-95 ${
-                    productColor === color
-                      ? "border-blue-500 ring-2 ring-blue-200 scale-110 shadow-lg"
-                      : "border-gray-300 hover:border-gray-400 hover:shadow-md"
-                  }`}
-                  style={{ backgroundColor: color }}
-                  onClick={() => handleColorChange(color)}
-                  title={`Color ${index + 1}`}
-                />
-              ))}
-            </div>
-          </div>
-        )}
+        {/* No fake/dummy color swatches for non-variation products */}
 
         {/* Delivery Info */}
         <div className="flex items-center space-x-2 text-sm text-gray-600 bg-gray-50 p-3 rounded-xl">
-          <Truck className="w-4 h-4 text-blue-600" />
+          <Truck className="w-4 h-4 text-purple-600" />
           <span>Free delivery: 5-7 business days</span>
         </div>
 
         {/* Size & Quantity Summary (shows when sizes are selected) */}
         {totalQuantity > 0 && (
-          <div className="bg-blue-50 rounded-xl p-3 space-y-2">
+          <div className="bg-purple-50 rounded-xl p-3 space-y-2">
             <div className="flex justify-between items-center">
-              <span className="text-sm font-medium text-blue-800">Selected Items:</span>
-              <span className="text-sm font-bold text-blue-800">{totalQuantity}</span>
+              <span className="text-sm font-medium text-purple-800">Selected Items:</span>
+              <span className="text-sm font-bold text-purple-800">{totalQuantity}</span>
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-sm font-medium text-blue-800">Total Price:</span>
-              <span className="text-lg font-bold text-blue-600">{totalPrice} kr</span>
+              <span className="text-sm font-medium text-purple-800">Total Price:</span>
+              <span className="text-lg font-bold text-purple-600">{totalPrice} kr</span>
             </div>
             <div className="grid grid-cols-3 gap-2 mt-2">
               {selectedSizes.filter(s => s.quantity > 0).map((size) => (
-                <Badge key={size.size} variant="outline" className="bg-white border border-blue-200 text-xs py-1 px-2 flex justify-between items-center">
+                <Badge key={size.size} variant="outline" className="bg-white border border-purple-200 text-xs py-1 px-2 flex justify-between items-center">
                   <span>{size.size}</span>
                   <span className="font-bold ml-1">×{size.quantity}</span>
                 </Badge>
@@ -211,7 +201,7 @@ export function ProductPanel() {
 
         {/* Action Button */}
         <Button 
-          className="w-full bg-blue-600 hover:bg-blue-700 text-white rounded-xl py-3 font-semibold transition-all duration-200 hover:scale-105 active:scale-95 shadow-lg hover:shadow-xl"
+          className="w-full bg-purple-600 hover:bg-purple-700 text-white rounded-xl py-3 font-semibold transition-all duration-200 hover:scale-105 active:scale-95 shadow-lg hover:shadow-xl"
           onClick={() => setIsSizeModalOpen(true)}
         >
           <ShoppingBag className="w-4 h-4 mr-2" />

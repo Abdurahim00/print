@@ -128,14 +128,6 @@ export function Footer() {
             </form>
           </div>
         </div>
-
-        {/* Copyright Bar */}
-        <div className="mt-12 pt-6 border-t border-slate-200 dark:border-slate-700 text-center text-sm">
-          <p>
-            &copy; {new Date().getFullYear()} {t.platformName}. All rights reserved.
-          </p>
-          <p className="mt-1 text-xs text-slate-500">Inspired by Vistaprint.se - Demo for Stakeholders</p>
-        </div>
       </div>
     </footer>
   )

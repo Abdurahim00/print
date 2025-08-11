@@ -12,6 +12,7 @@ import * as Yup from "yup"
 import { Product, Variation, Color, VariationImage } from "@/types"
 import { ProductAnglesSelector } from "./ProductAnglesSelector"
 import { useState } from "react"
+import { useAppSelector } from "@/lib/redux/hooks"
 
 interface ProductFormDialogProps {
   open: boolean
@@ -68,6 +69,7 @@ export const ProductFormDialog: React.FC<ProductFormDialogProps> = ({
   isEdit = false,
 }) => {
   const [showVariations, setShowVariations] = useState(initialValues.hasVariations || false)
+  const { categories, subcategories } = useAppSelector((s: any) => s.categories)
   const formik = useFormik({
     initialValues: {
       ...initialValues,
@@ -228,19 +230,46 @@ export const ProductFormDialog: React.FC<ProductFormDialogProps> = ({
                 <SelectValue placeholder={t.selectCategory} />
               </SelectTrigger>
               <SelectContent>
-                {productCategories
-                  .filter((cat) => cat.id !== "all")
-                  .map((cat) => (
-                    <SelectItem key={cat.id} value={cat.id}>
-                      {cat.name(t)}
-                    </SelectItem>
-                  ))}
+                {categories.map((cat: any) => (
+                  <SelectItem key={cat.id} value={cat.id}>
+                    {cat.name}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
             {formik.touched.categoryId && formik.errors.categoryId && (
               <p className="text-sm text-red-600">{t[formik.errors.categoryId as keyof typeof t] || formik.errors.categoryId}</p>
             )}
           </div>
+
+          {/* Subcategories checkboxes */}
+          {formik.values.categoryId && (
+            <div className="space-y-2">
+              <Label className="text-sm font-medium text-slate-700 dark:text-slate-300">Subcategories</Label>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                {subcategories
+                  .filter((s: any) => s.categoryId === formik.values.categoryId)
+                  .map((s: any) => {
+                    const checked = (formik.values.subcategoryIds || []).includes(s.id)
+                    return (
+                      <label key={s.id} className="flex items-center gap-2 text-sm">
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={(e) => {
+                            const list = new Set<string>(formik.values.subcategoryIds || [])
+                            if (e.target.checked) list.add(s.id)
+                            else list.delete(s.id)
+                            formik.setFieldValue("subcategoryIds", Array.from(list))
+                          }}
+                        />
+                        {s.name}
+                      </label>
+                    )
+                  })}
+              </div>
+            </div>
+          )}
           <div className="space-y-2">
             <Label htmlFor="description" className="text-sm font-medium text-slate-700 dark:text-slate-300">
               {t.description}
@@ -389,7 +418,7 @@ export const ProductFormDialog: React.FC<ProductFormDialogProps> = ({
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)} className="flex-1 border-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800">
               {t.cancel}
             </Button>
-            <Button type="submit" className="flex-1 bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-700 hover:to-blue-700 text-white shadow-lg" disabled={isSubmitting}>
+            <Button type="submit" className="flex-1 bg-gradient-to-r from-[#634c9f] to-[#7a5ec7] hover:from-[#584289] hover:to-[#6b52b3] text-white shadow-lg" disabled={isSubmitting}>
               {isSubmitting ? t.creating : isEdit ? t.updateProduct : t.createProduct}
             </Button>
           </div>

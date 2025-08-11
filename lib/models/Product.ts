@@ -38,6 +38,7 @@ export interface ProductDocument {
   price: number;
   image: string;
   categoryId: string;
+  subcategoryIds?: string[];
   description?: string;
   inStock: boolean;
   createdAt: Date;
@@ -56,6 +57,7 @@ export interface Product {
   price: number;
   image: string;
   categoryId: string;
+  subcategoryIds?: string[];
   description?: string;
   inStock: boolean;
   createdAt?: Date;

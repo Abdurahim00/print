@@ -19,11 +19,37 @@ export async function addFavorite(userId: string, productId: string, categoryId:
   const col = db.collection<FavoriteDocument>(COLLECTION)
   const existing = await col.findOne({ userId: new ObjectId(userId), productId: new ObjectId(productId) })
   if (existing) return toFavorite(existing)
+  // Determine if this category already has an applied design for this user
+  // 1) Prefer any existing favorite in this category with an applied design
+  const existingWithApplied = await col.findOne(
+    { userId: new ObjectId(userId), categoryId, appliedDesignId: { $ne: null } },
+    { sort: { createdAt: -1 } as any },
+  )
+
+  let appliedDesignObjectId: ObjectId | null = existingWithApplied?.appliedDesignId ?? null
+
+  // 2) If none found, fallback to the user's most recent saved design in this category
+  if (!appliedDesignObjectId) {
+    try {
+      const designsCol = db.collection("designs")
+      const latestCategoryDesign = await designsCol.findOne(
+        { userId, "designData.product.categoryId": categoryId },
+        { sort: { updatedAt: -1 } },
+      )
+      if (latestCategoryDesign?._id) {
+        appliedDesignObjectId = latestCategoryDesign._id as ObjectId
+      }
+    } catch (e) {
+      // Non-fatal; leave appliedDesignObjectId as null
+      console.warn("[favoriteService] Failed to resolve latest category design for auto-apply", e)
+    }
+  }
+
   const doc: FavoriteDocument = {
     userId: new ObjectId(userId),
     productId: new ObjectId(productId),
     categoryId,
-    appliedDesignId: null,
+    appliedDesignId: appliedDesignObjectId ?? null,
     createdAt: new Date(),
   }
   const res = await col.insertOne(doc)

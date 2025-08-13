@@ -1,6 +1,7 @@
 "use client"
 
 import { useAppSelector, useAppDispatch } from "@/lib/redux/hooks"
+import { useMemo } from "react"
 import { updateQuantity, removeFromCart } from "@/lib/redux/slices/cartSlice"
 import { translations } from "@/lib/constants"
 import { Button } from "@/components/ui/button"
@@ -19,8 +20,9 @@ export default function CartPage() {
   const { items: cart } = useAppSelector((state) => state.cart)
   const { language } = useAppSelector((state) => state.app)
   const t = translations[language]
+  const activeCoupon = useAppSelector((s: any) => s.coupons.activeCoupon)
 
-  const subtotal = cart.reduce((total, item) => {
+  const rawSubtotal = cart.reduce((total, item) => {
     let itemPrice = 0;
     
     // Handle different price formats
@@ -37,6 +39,24 @@ export default function CartPage() {
     
     return total + (itemPrice * item.quantity);
   }, 0)
+  // Compute discount from active percentage coupon across eligible items
+  const discountAmount = useMemo(() => {
+    if (!activeCoupon || activeCoupon.discountType !== "percentage") return 0
+    const eligibleTotal = cart.reduce((sum, item) => {
+      const eligible = (item as any).eligibleForCoupons === true
+      if (!eligible) return sum
+      let price = 0
+      if (typeof item.price === 'number') price = item.price
+      else if (typeof item.price === 'string') price = parseFloat(String(item.price).replace(/[^\d.-]/g, '')) || 0
+      else if (item.selectedSizes && item.selectedSizes.length > 0) {
+        price = item.selectedSizes.reduce((s, sz) => s + (sz.price * sz.quantity), 0) / item.quantity
+      }
+      return sum + price * item.quantity
+    }, 0)
+    return (eligibleTotal * activeCoupon.discountValue) / 100
+  }, [cart, activeCoupon])
+
+  const subtotal = Math.max(0, rawSubtotal - discountAmount)
   const vatAmount = subtotal * 0.25
   const cartTotal = subtotal + vatAmount
 
@@ -57,7 +77,7 @@ export default function CartPage() {
         <p className="text-lg text-slate-600 dark:text-slate-300 mb-8">{t.yourCartIsEmpty}</p>
         <Button 
           size="lg" 
-          className="bg-sky-600 hover:bg-sky-700 text-white shadow-lg"
+          className="bg-purple-600 hover:bg-purple-700 text-white shadow-lg"
           onClick={() => router.push('/products')}
         >
           <span className="flex items-center">{t.browseProducts}</span>
@@ -253,8 +273,14 @@ export default function CartPage() {
           <div className="w-full sm:w-1/2 md:w-1/3 space-y-3 text-base">
             <div className="flex justify-between text-slate-700 dark:text-slate-300">
               <span>Subtotal:</span>
-              <span>{subtotal.toFixed(2)} SEK</span>
+                  <span>{subtotal.toFixed(2)} SEK</span>
             </div>
+            {discountAmount > 0 && (
+              <div className="flex justify-between text-green-600">
+                <span>Coupon discount{activeCoupon?.code ? ` (${activeCoupon.code})` : ''}:</span>
+                <span>-{discountAmount.toFixed(2)} SEK</span>
+              </div>
+            )}
             <div className="flex justify-between text-slate-700 dark:text-slate-300">
               <span>{t.vat}:</span>
               <span>{vatAmount.toFixed(2)} SEK</span>
@@ -267,7 +293,7 @@ export default function CartPage() {
           </div>
           <Button 
             size="lg" 
-            className="w-full sm:w-auto bg-sky-600 hover:bg-sky-700 text-white shadow-lg"
+            className="w-full sm:w-auto bg-purple-900 hover:bg-purple-800 hover:text-white text-white shadow-lg"
             onClick={() => router.push('/checkout')}
           >
             <span className="flex items-center">

@@ -45,6 +45,8 @@ export interface Product {
   inStock: boolean;
   hasVariations?: boolean;
   variations?: Variation[];
+  /** If true, product participates in global coupon discounts */
+  eligibleForCoupons?: boolean;
   createdAt?: Date;
   updatedAt?: Date;
 }

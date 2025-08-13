@@ -68,8 +68,10 @@ export function UserDashboard({ defaultTab = "orders" }: { defaultTab?: string }
 
   // Filter orders for current user
   const userOrders = orders.filter((order) => order.customer === user?.customerNumber)
-  // Filter designs by user ID - cast user to any to access id property
-  const userDesigns = designs.filter((design) => design.userId === (user as any)?.id)
+  // Filter designs by user ID and exclude a specific unwanted id
+  const userDesigns = designs
+    .filter((design) => design.userId === (user as any)?.id)
+    .filter((design) => design.id !== "689784db262033d62185e0bc")
 
   // Use document visibility API to prevent unnecessary API calls
   const [isVisible, setIsVisible] = useState(!document.hidden);
@@ -118,7 +120,7 @@ export function UserDashboard({ defaultTab = "orders" }: { defaultTab?: string }
       case "Completed":
         return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
       case "Shipped":
-        return "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"
+        return "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200"
       case "In Production":
         return "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200"
       case "Printing":
@@ -135,7 +137,7 @@ export function UserDashboard({ defaultTab = "orders" }: { defaultTab?: string }
       case "Draft":
         return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200"
       case "In Review":
-        return "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"
+        return "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200"
       default:
         return "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200"
     }
@@ -365,11 +367,12 @@ export function UserDashboard({ defaultTab = "orders" }: { defaultTab?: string }
                       <CardContent className="p-5">
                         <h3 className="font-semibold text-base mb-1 text-slate-900 dark:text-white">{design.name}</h3>
                         <p className="text-sm text-primary mb-2">{design.type}</p>
-                        <p className="text-xs text-slate-400 dark:text-slate-500 mb-4">
-                          {t.modified}: {new Date((design as any).updatedAt || (design as any).createdAt || Date.now()).toLocaleDateString()}
-                        </p>
-                        <div className="flex gap-3">
-                          <Button
+                          <p className="text-xs text-slate-400 dark:text-slate-500 mb-4">
+                           {t.modified}: {new Date((design as any).updatedAt || (design as any).createdAt || Date.now()).toLocaleDateString()}
+                          </p>
+                        <div className="flex flex-col justify-center align-center gap-3">
+                          <div className="flex justify-between gap-3">
+                             <Button
                             variant="outline"
                             size="sm"
                             className="flex-1 border-primary/30 hover:bg-primary/5 hover:border-primary dark:hover:bg-primary/20 transition-colors text-primary"
@@ -388,6 +391,33 @@ export function UserDashboard({ defaultTab = "orders" }: { defaultTab?: string }
                           >
                             <Trash2 className="h-4 w-4 mr-1.5" /> {t.delete}
                           </Button>
+                          </div>
+                          <div className="flex justify-center">
+                            <Button
+                            
+                            size="sm"
+                            className="flex-1 border-purple-300 text-white bg-purple-900 hover:bg-purple-800 hover:text-white"
+                            onClick={async () => {
+                              try {
+                                const { store } = await import("@/lib/redux/store")
+                                const state: any = store.getState()
+                                const userId = (state.auth?.user as any)?.id
+                                const categoryId = design?.designData?.product?.categoryId || design?.designData?.categoryId
+                                if (!userId || !categoryId) {
+                                  return
+                                }
+                                const { applyDesignToFavorites } = await import("@/lib/redux/slices/favoritesSlice")
+                                // Reuse the category-level application mechanism to mark this design as the active one for the category
+                                // This will make all product cards in the same category show this overlay immediately
+                                await store.dispatch(applyDesignToFavorites({ userId, categoryId, designId: design.id }) as any)
+                              } catch (e) {
+                                // no-op
+                              }
+                            }}
+                          >
+                            Preview on other products
+                          </Button>
+                          </div>
                         </div>
                       </CardContent>
                     </Card>

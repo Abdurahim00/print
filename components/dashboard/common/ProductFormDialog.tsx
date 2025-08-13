@@ -75,6 +75,7 @@ export const ProductFormDialog: React.FC<ProductFormDialogProps> = ({
       ...initialValues,
       hasVariations: initialValues.hasVariations || false,
       variations: initialValues.variations || [],
+      eligibleForCoupons: initialValues.eligibleForCoupons ?? false,
     },
     enableReinitialize: true,
     validationSchema: productSchema,
@@ -211,6 +212,16 @@ export const ProductFormDialog: React.FC<ProductFormDialogProps> = ({
                 <p className="text-sm text-red-600">{t[formik.errors.price as keyof typeof t] || formik.errors.price}</p>
               )}
             </div>
+          </div>
+          {/* Coupon eligibility */}
+          <div className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              id="eligibleForCoupons"
+              checked={!!formik.values.eligibleForCoupons}
+              onChange={(e) => formik.setFieldValue("eligibleForCoupons", e.target.checked)}
+            />
+            <Label htmlFor="eligibleForCoupons">Eligible for site-wide coupons</Label>
           </div>
           <div className="space-y-2">
             <Label htmlFor="categoryId" className="text-sm font-medium text-slate-700 dark:text-slate-300">

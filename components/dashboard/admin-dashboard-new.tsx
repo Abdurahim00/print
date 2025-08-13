@@ -125,8 +125,14 @@ export function AdminDashboardNew({ onLogout }: AdminDashboardNewProps) {
     dispatch(fetchSubcategories())
   }, [dispatch])
 
-  // Menu items for sidebar
+  // Menu items for sidebar (Analytics on top as requested)
   const menuItems = [
+    {
+      id: "analytics" as AdminPage,
+      label: "Analytics",
+      icon: BarChart3,
+      count: null,
+    },
     {
       id: "users" as AdminPage,
       label: "Manage Users",
@@ -162,12 +168,6 @@ export function AdminDashboardNew({ onLogout }: AdminDashboardNewProps) {
       label: "Manage Subcategories",
       icon: FolderTree,
       count: subcategories.length,
-    },
-    {
-      id: "analytics" as AdminPage,
-      label: "Analytics",
-      icon: BarChart3,
-      count: null,
     },
   ]
 
@@ -395,9 +395,9 @@ export function AdminDashboardNew({ onLogout }: AdminDashboardNewProps) {
       case "operations":
         return "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200"
       case "user":
-        return "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"
+        return "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200"
       default:
-        return "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200"
+        return "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200"
     }
   }
 
@@ -680,13 +680,13 @@ export function AdminDashboardNew({ onLogout }: AdminDashboardNewProps) {
             </CardHeader>
             <CardContent className="p-6">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <div className="bg-gradient-to-r from-blue-50 to-blue-100 p-6 rounded-lg">
+                <div className="bg-gradient-to-r from-purple-50 to-purple-100 p-6 rounded-lg">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium text-blue-700">Total Users</p>
-                      <p className="text-3xl font-bold text-blue-900">{users.length}</p>
+                      <p className="text-sm font-medium text-purple-700">Total Users</p>
+                      <p className="text-3xl font-bold text-purple-900">{users.length}</p>
                     </div>
-                    <Users className="h-10 w-10 text-blue-600" />
+                    <Users className="h-10 w-10 text-purple-600" />
                   </div>
                 </div>
                 <div className="bg-gradient-to-r from-green-50 to-green-100 p-6 rounded-lg">
@@ -734,20 +734,20 @@ export function AdminDashboardNew({ onLogout }: AdminDashboardNewProps) {
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full bg-slate-50 dark:bg-slate-900">
-        <Sidebar className="border-r border-slate-200 dark:border-slate-800">
-          <SidebarHeader className="border-b border-slate-200 dark:border-slate-800 p-4">
+        <Sidebar className="border-r border-slate-200 dark:border-slate-800 bg-gradient-to-b from-white to-purple-50 dark:from-slate-900 dark:to-slate-950">
+          <SidebarHeader className="border-b border-slate-200 dark:border-slate-800 p-4 bg-gradient-to-r from-purple-50 to-transparent dark:from-purple-950/30">
             <div className="flex items-center gap-2">
               <Shield className="h-8 w-8 text-purple-600" />
               <div className="flex flex-col">
-                <h2 className="text-lg font-bold text-slate-900 dark:text-white">Admin Panel</h2>
-                <p className="text-xs text-slate-500 dark:text-slate-400">Management Dashboard</p>
+                <h2 className="text-lg font-extrabold text-slate-900 dark:text-white tracking-tight">Admin Panel</h2>
+                <p className="text-xs text-purple-700 dark:text-purple-300 font-medium">Management Dashboard</p>
               </div>
             </div>
           </SidebarHeader>
           
           <SidebarContent className="p-2">
             <SidebarGroup>
-              <SidebarGroupLabel className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">
+              <SidebarGroupLabel className="text-sm sm:text-base font-extrabold text-purple-700 dark:text-purple-300 uppercase tracking-widest mb-3">
                 Management
               </SidebarGroupLabel>
               <SidebarGroupContent>
@@ -757,7 +757,11 @@ export function AdminDashboardNew({ onLogout }: AdminDashboardNewProps) {
                       <SidebarMenuButton
                         isActive={activePage === item.id}
                         onClick={() => setActivePage(item.id)}
-                        className="w-full justify-between"
+                        className={`w-full justify-between rounded-md transition-colors duration-150 ${
+                          activePage === item.id
+                            ? "bg-purple-900 text-white"
+                            : "hover:bg-purple-800 hover:text-white"
+                        }`}
                       >
                         <div className="flex items-center gap-3">
                           <item.icon className="h-4 w-4" />

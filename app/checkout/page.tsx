@@ -45,6 +45,7 @@ export default function CheckoutPage() {
 
   // Coupon state
   const [couponCode, setCouponCode] = useState("")
+  const globalActiveCoupon = useAppSelector((s: any) => s.coupons.activeCoupon)
   const [appliedCoupon, setAppliedCoupon] = useState<any>(null)
   const [couponLoading, setCouponLoading] = useState(false)
   const [couponError, setCouponError] = useState("")
@@ -69,7 +70,22 @@ export default function CheckoutPage() {
     return total + (itemPrice * item.quantity);
   }, 0)
   
-  const discountAmount = appliedCoupon?.discountAmount || 0
+  // Prefer globally active coupon if present; compute discount accordingly
+  const percentageDiscount = globalActiveCoupon?.discountType === "percentage" ? globalActiveCoupon.discountValue : 0
+  const eligibleSubtotal = cart.reduce((total, item) => {
+    const eligible = (item as any).eligibleForCoupons === true
+    let pricePerUnit = 0
+    if (item.selectedSizes && item.selectedSizes.length > 0) {
+      pricePerUnit = item.selectedSizes.reduce((s, sz) => s + (sz.price * sz.quantity), 0) / item.quantity
+    } else if (typeof item.price === 'number') {
+      pricePerUnit = item.price
+    } else if (typeof item.price === 'string') {
+      pricePerUnit = parseFloat(item.price.replace(/[^\d.-]/g, '')) || 0
+    }
+    return total + (eligible ? pricePerUnit * item.quantity : 0)
+  }, 0)
+  const globalDiscountAmount = (eligibleSubtotal * percentageDiscount) / 100
+  const discountAmount = appliedCoupon?.discountAmount || globalDiscountAmount || 0
   const subtotalAfterDiscount = Math.max(0, subtotal - discountAmount)
   const vatAmount = subtotalAfterDiscount * 0.25
   const shippingCost = shippingOption === "express" ? 149 : 79
@@ -92,6 +108,16 @@ useEffect(() => {
 }, [session, fullName, email, phone, address, city, postalCode, country]);
 
   const handleApplyCoupon = async () => {
+    // If a global active coupon exists, prefer that and skip manual code
+    if (globalActiveCoupon?.code) {
+      setAppliedCoupon({ coupon: globalActiveCoupon, discountAmount: globalDiscountAmount })
+      try {
+        const { toast } = await import("@/hooks/use-toast")
+        toast({ title: "🎉 Coupon Applied", description: `${globalActiveCoupon.code} activated.` })
+      } catch {}
+      setCouponCode("")
+      return
+    }
     if (!couponCode.trim()) {
       setCouponError("Please enter a coupon code")
       return
@@ -115,6 +141,10 @@ useEffect(() => {
 
       if (result.isValid) {
         setAppliedCoupon(result)
+        try {
+          const { toast } = await import("@/hooks/use-toast")
+          toast({ title: "🎉 Coupon Applied", description: `${result.coupon.code} activated.` })
+        } catch {}
         toast({
           title: "Coupon Applied!",
           description: `You saved ${result.discountAmount.toFixed(2)} SEK with coupon "${couponCode.toUpperCase()}"`,

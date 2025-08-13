@@ -1,16 +1,39 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit"
 import type { Coupon, CreateCouponData, UpdateCouponData } from "@/types"
 
+// Local storage helpers (mirror cart slice approach)
+const ACTIVE_COUPON_STORAGE_KEY = "active_coupon"
+
+function loadActiveCouponFromStorage(): Coupon | null {
+  if (typeof window === "undefined") return null
+  try {
+    const raw = localStorage.getItem(ACTIVE_COUPON_STORAGE_KEY)
+    return raw ? (JSON.parse(raw) as Coupon) : null
+  } catch {
+    return null
+  }
+}
+
+function saveActiveCouponToStorage(coupon: Coupon | null) {
+  if (typeof window === "undefined") return
+  try {
+    if (coupon) localStorage.setItem(ACTIVE_COUPON_STORAGE_KEY, JSON.stringify(coupon))
+    else localStorage.removeItem(ACTIVE_COUPON_STORAGE_KEY)
+  } catch {}
+}
+
 interface CouponsState {
   items: Coupon[]
   loading: boolean
   error: string | null
+  activeCoupon: Coupon | null
 }
 
 const initialState: CouponsState = {
   items: [],
   loading: false,
   error: null,
+  activeCoupon: loadActiveCouponFromStorage(),
 }
 
 export const fetchCoupons = createAsyncThunk("coupons/fetchCoupons", async () => {
@@ -79,6 +102,14 @@ const couponsSlice = createSlice({
     clearError: (state) => {
       state.error = null
     },
+    setActiveCoupon: (state, action) => {
+      state.activeCoupon = action.payload
+      try { saveActiveCouponToStorage(action.payload || null) } catch {}
+    },
+    clearActiveCoupon: (state) => {
+      state.activeCoupon = null
+      try { saveActiveCouponToStorage(null) } catch {}
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -139,8 +170,14 @@ const couponsSlice = createSlice({
         state.loading = false
         state.error = action.error.message || "Failed to delete coupon"
       })
+      // Validate coupon code -> on success, set activeCoupon
+      .addCase(validateCouponCode.fulfilled, (state, action) => {
+        if (action.payload?.isValid && action.payload?.coupon) {
+          state.activeCoupon = action.payload.coupon
+        }
+      })
   },
 })
 
-export const { clearError } = couponsSlice.actions
+export const { clearError, setActiveCoupon, clearActiveCoupon } = couponsSlice.actions
 export default couponsSlice.reducer

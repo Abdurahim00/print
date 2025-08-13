@@ -150,7 +150,7 @@ export const CouponFormDialog: React.FC<CouponFormDialogProps> = ({
               <Input
                 id="code"
                 type="text"
-                placeholder="WELCOME10"
+                // placeholder="WELCOME10"
                 value={formik.values.code}
                 onChange={(e) => formik.setFieldValue("code", e.target.value.toUpperCase())}
                 onBlur={formik.handleBlur}

@@ -45,6 +45,8 @@ export interface ProductDocument {
   updatedAt: Date;
   hasVariations?: boolean;
   variations?: Variation[];
+  // If true, product is eligible for global/app coupons and will have discounts applied
+  eligibleForCoupons?: boolean;
   type?: string; // Product type (e.g., 'stickers', 't-shirt', etc.)
   baseColor?: string; // Default/base color for the product
   angles?: string[]; // Available viewing angles (e.g., ['front', 'back', 'left', 'right'])
@@ -64,6 +66,8 @@ export interface Product {
   updatedAt?: Date;
   hasVariations?: boolean;
   variations?: Variation[];
+  // Mirrors ProductDocument. If true, this product participates in coupon discounts
+  eligibleForCoupons?: boolean;
   type?: string; // Product type (e.g., 'stickers', 't-shirt', etc.)
   baseColor?: string; // Default/base color for the product
   angles?: string[]; // Available viewing angles (e.g., ['front', 'back', 'left', 'right'])

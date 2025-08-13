@@ -220,8 +220,9 @@ export function RightPanel({ isMobile = false }: { isMobile?: boolean }) {
       const designData = {
         name: `${selectedProduct.name} Design`,
         type: selectedProduct.type || "design",
-        // Store design-only preview as main preview so we can overlay on favorites without duplicating product background
-        preview: designOnlyPreview,
+        // Use composite (product + design) for the saved preview so dashboards show the actual product mockup
+        // The design-only image is still stored separately in designData.canvasData for applying to favorites
+        preview: compositePreview,
         userId: (session?.user as any)?.id || "",
         designData: {
           // Complete product reference

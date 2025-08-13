@@ -84,10 +84,6 @@ export function FavoritesSection() {
                 <Tag className="w-3 h-3" />
                 Category
               </Badge>
-              <Button variant="outline" size="sm" onClick={() => {
-                console.log("🔥 [FavoritesSection] remove applied design for category (optimistic)", { categoryId: catId })
-                dispatch(applyDesignToFavorites({ userId: user.id, categoryId: catId, designId: undefined }) as any)
-              }}>Remove Applied Design</Button>
               <Link href="/design-tool" className="text-sm underline">Open Design Tool</Link>
             </div>
           </CardHeader>
@@ -127,7 +123,10 @@ export function FavoritesSection() {
                                     width: `${overlayScale * 100}%`,
                                     height: "auto",
                                     filter: "saturate(1.05)",
-                                    mixBlendMode: "multiply",
+                                    // Use normal blend so light/white text remains visible on product images
+                                    mixBlendMode: "normal",
+                                    // Slight shadow to help text stand out across backgrounds
+                                    boxShadow: "0 0 0 transparent",
                                   }}
                                 />
                               )

@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button"
 import { ShoppingCart, Heart } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import Image from "next/image"
+import { useMemo } from "react"
 
 interface ProductCardProps {
   product: Product
@@ -21,6 +22,10 @@ export function ProductCard({ product }: ProductCardProps) {
   const favorites = useAppSelector((s: any) => s.favorites.items)
   const { toast } = useToast()
   const t = translations[language]
+  const favoritesState = useAppSelector((s: any) => s.favorites)
+  const designs = useAppSelector((s: any) => s.designs.items)
+  const activeCoupon = useAppSelector((s: any) => s.coupons.activeCoupon)
+  const allCategories = useAppSelector((s: any) => s.categories.categories)
 
   const handleAddToCart = () => {
     dispatch(addToCart(product))
@@ -31,7 +36,21 @@ export function ProductCard({ product }: ProductCardProps) {
     })
   }
 
-  const categoryName = productCategories.find((c) => c.id === product.categoryId)?.name(t) || product.categoryId
+  const categoryName = useMemo(() => {
+    const fromStore = (allCategories || []).find((c: any) => c.id === product.categoryId)
+    if (fromStore?.name) return fromStore.name
+    const fromConstants = productCategories.find((c) => c.id === product.categoryId)?.name(t)
+    return fromConstants || product.categoryId
+  }, [allCategories, product.categoryId, t])
+
+  // Resolve category-level applied design (set by "Preview on other products" from designs tab)
+  const appliedDesignForCategory = useMemo(() => {
+    const favWithApplied = favoritesState.items.find(
+      (f: any) => f.userId === sessionUser?.id && f.categoryId === product.categoryId && f.appliedDesignId,
+    )
+    if (!favWithApplied?.appliedDesignId) return null
+    return designs.find((d: any) => d.id === favWithApplied.appliedDesignId) || null
+  }, [favoritesState.items, product.categoryId, sessionUser?.id, designs])
 
   return (
     <Card className="overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300 flex flex-col border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
@@ -42,6 +61,28 @@ export function ProductCard({ product }: ProductCardProps) {
           fill
           className="object-cover rounded-t-lg"
         />
+        {appliedDesignForCategory && (
+          <>
+            <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-black/5 to-transparent z-10" />
+            {(() => {
+              const overlaySrc = appliedDesignForCategory?.designData?.canvasData || appliedDesignForCategory?.preview
+              const overlayScale = appliedDesignForCategory?.designData?.overlay?.scale ?? 0.6
+              return (
+                <img
+                  src={overlaySrc || "/placeholder.svg"}
+                  alt="Applied design overlay"
+                  className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20 object-contain"
+                  style={{
+                    width: `${overlayScale * 100}%`,
+                    height: "auto",
+                    filter: "saturate(1.05)",
+                    mixBlendMode: "normal",
+                  }}
+                />
+              )
+            })()}
+          </>
+        )}
         <button
           className="absolute top-2 right-2 rounded-full bg-white/90 hover:bg-white p-2 shadow-sm border border-slate-200"
           onClick={async () => {
@@ -50,7 +91,7 @@ export function ProductCard({ product }: ProductCardProps) {
               return
             }
             try {
-              const { addToFavorites, removeFromFavorites } = await import("@/lib/redux/slices/favoritesSlice")
+              const { addToFavorites, removeFromFavorites, applyDesignToFavorites } = await import("@/lib/redux/slices/favoritesSlice")
               const isFav = favorites.some((f: any) => f.productId === product.id && f.userId === sessionUser.id)
               if (isFav) {
                 // @ts-ignore
@@ -58,7 +99,17 @@ export function ProductCard({ product }: ProductCardProps) {
                 toast({ title: "Removed from favorites", description: product.name })
               } else {
                 // @ts-ignore
-                await dispatch(addToFavorites({ userId: sessionUser.id, productId: product.id, categoryId: product.categoryId }))
+                const addResult = await dispatch(addToFavorites({ userId: sessionUser.id, productId: product.id, categoryId: product.categoryId }))
+                // After adding, ensure any category-level applied design is enforced across favorites in this category
+                try {
+                  const currentFavs = (await import("@/lib/redux/store")).store.getState().favorites.items as any[]
+                  const anyAppliedInCategory = currentFavs.some((f) => f.userId === sessionUser.id && f.categoryId === product.categoryId && f.appliedDesignId)
+                  if (anyAppliedInCategory) {
+                    const appliedId = currentFavs.find((f) => f.userId === sessionUser.id && f.categoryId === product.categoryId && f.appliedDesignId)?.appliedDesignId
+                    // @ts-ignore
+                    await dispatch(applyDesignToFavorites({ userId: sessionUser.id, categoryId: product.categoryId, designId: appliedId }))
+                  }
+                } catch {}
                 toast({ title: "Added to favorites", description: product.name })
               }
             } catch (e) {
@@ -76,8 +127,18 @@ export function ProductCard({ product }: ProductCardProps) {
       </div>
       <CardContent className="p-4 flex-grow flex flex-col">
         <h3 className="font-semibold text-lg text-slate-900 dark:text-slate-100">{product.name}</h3>
-        <p className="text-sky-600 dark:text-sky-400 font-medium mt-1">{product.price.toFixed(2)} SEK</p>
+        {activeCoupon && activeCoupon.discountType === "percentage" && product.eligibleForCoupons ? (
+          <div className="mt-1">
+            <span className="text-purple-700 dark:text-purple-300 font-bold mr-2">
+              { (product.price * (1 - activeCoupon.discountValue / 100)).toFixed(2) } SEK
+            </span>
+            <span className="text-slate-400 line-through">{product.price.toFixed(2)} SEK</span>
+          </div>
+        ) : (
+          <p className="text-sky-600 dark:text-sky-400 font-medium mt-1">{product.price.toFixed(2)} SEK</p>
+        )}
         <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{categoryName}</p>
+        {/* Optional: show product id only for debug; comment out to hide */}
         {product.description && (
           <p className="text-sm text-slate-600 dark:text-slate-300 mt-2 flex-grow">{product.description}</p>
         )}

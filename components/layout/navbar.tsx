@@ -1,12 +1,13 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import Logo from "@/public/logo.png"
 import { useAppSelector, useAppDispatch } from "@/lib/redux/hooks"
 import { setLanguage } from "@/lib/redux/slices/appSlice"
 import { setSessionUser } from "@/lib/redux/slices/authSlice" // New import
 import { translations } from "@/lib/constants"
 import { Button } from "@/components/ui/button"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 import { Separator } from "@/components/ui/separator"
@@ -30,15 +31,47 @@ import { setCart } from "@/lib/redux/slices/cartSlice"
 import type { CartItem } from "@/types"
 import { mergeCartsPreferRight } from "@/lib/utils/cartMerge"
 import Image from "next/image"
+import { useAppSelector as useSelector } from "@/lib/redux/hooks"
+import { validateCouponCode, setActiveCoupon, fetchCoupons } from "@/lib/redux/slices/couponsSlice"
 
 export function Navbar() {
   const dispatch = useAppDispatch()
   const router = useRouter()
   const pathname = usePathname()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [couponModalOpen, setCouponModalOpen] = useState(false)
   const { data: session, status } = useSession() // Get session data
   const { language } = useAppSelector((state) => state.app)
   const { items: cartItems } = useAppSelector((state) => state.cart)
+  const activeCoupon = useSelector((s) => (s as any).coupons.activeCoupon)
+  const availableCoupons = useSelector((s) => (s as any).coupons.items)
+
+  // Load coupons once for the promo bar
+  useEffect(() => {
+    if (!availableCoupons || availableCoupons.length === 0) {
+      // @ts-ignore
+      dispatch(fetchCoupons())
+    }
+    // hydrate active coupon from storage if present (slice already loads, this ensures banner reflects it immediately)
+    try {
+      const raw = localStorage.getItem("active_coupon")
+      if (raw && !activeCoupon) {
+        const parsed = JSON.parse(raw)
+        // @ts-ignore
+        dispatch(setActiveCoupon(parsed))
+      }
+    } catch {}
+  }, [])
+
+  // Pick a valid, active coupon created by admin
+  const promoCoupon = useMemo(() => {
+    const now = new Date()
+    return (availableCoupons || []).find((c: any) => {
+      const from = new Date(c.validFrom)
+      const until = new Date(c.validUntil)
+      return c.isActive && from <= now && now <= until
+    }) || null
+  }, [availableCoupons])
 
   const t = translations[language]
 
@@ -142,6 +175,15 @@ export function Navbar() {
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-purple-200 dark:border-purple-700 bg-white/80 dark:bg-purple-900/80 backdrop-blur-md">
+      {/* Promo bar (from admin-created active coupon) */}
+      {promoCoupon && (
+        <div className="w-full bg-purple-600 text-white text-center text-sm py-2 cursor-pointer" onClick={() => setCouponModalOpen(true)}>
+          <span className="font-semibold">
+            {promoCoupon.discountType === "percentage" ? `${promoCoupon.discountValue}% off` : `${promoCoupon.discountValue} off`} 
+          </span>
+          <span className="ml-2">Promo code: <span className="underline font-mono">{promoCoupon.code}</span></span>
+        </div>
+      )}
       <div className="container mx-auto flex h-16 items-center justify-between px-4 sm:px-6 lg:px-8">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2 cursor-pointer">
@@ -199,12 +241,12 @@ export function Navbar() {
           </Select>
 
           {/* Cart Icon - Always visible */}
-          <Button variant="outline" asChild>
+          <Button className="bg-primary hover:bg-primary hover:text-white text-white" asChild>
             <Link href="/cart" className="flex items-center">
               <ShoppingCart className="mr-2 h-4 w-4" />
               {t.cart}
               {cartItemCount > 0 && (
-                <span className="ml-1 bg-purple-700 text-white rounded-full px-2 py-1 text-xs">{cartItemCount}</span>
+                <span className="ml-1 bg-white text-purple-900 rounded-full px-2.5 py-1 text-xs font-bold">{cartItemCount}</span>
               )}
             </Link>
           </Button>
@@ -376,6 +418,46 @@ export function Navbar() {
           </Sheet>
         </div>
       </div>
+
+      {/* Coupon modal */}
+      <Dialog open={couponModalOpen} onOpenChange={setCouponModalOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-extrabold text-center">
+              {promoCoupon && promoCoupon.discountType === "percentage"
+                ? `${promoCoupon.discountValue}% OFF EVERYTHING`
+                : activeCoupon && activeCoupon.discountType === "percentage"
+                ? `${activeCoupon.discountValue}% OFF EVERYTHING`
+                : "COUPON"}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 text-center">
+            <div className="text-lg font-semibold">Promo code: <span className="font-mono">{promoCoupon?.code ?? activeCoupon?.code ?? "No active coupon"}</span></div>
+            <Button className="bg-purple-700 hover:bg-purple-800" onClick={async () => {
+              const code = promoCoupon?.code ?? activeCoupon?.code
+              if (!code) { setCouponModalOpen(false); return }
+              const orderTotal = cartItems.reduce((sum, item) => sum + (item.quantity * item.price), 0)
+              try {
+                const result = await dispatch(validateCouponCode({ code, orderTotal, cartItems }) as any)
+                const payload = result?.payload
+                if (payload?.isValid && payload?.coupon) {
+                  dispatch(setActiveCoupon(payload.coupon))
+                  setCouponModalOpen(false)
+                  // Toast celebration
+                  try {
+                    const { toast } = await import("@/hooks/use-toast")
+                    toast({
+                      title: "🎉 Coupon Applied",
+                      description: `${payload.coupon.code} activated. Prices for eligible products are discounted ${payload.coupon.discountValue}%`,
+                    })
+                  } catch {}
+                }
+              } catch {}
+            }}>Redeem coupon</Button>
+            <p className="text-xs text-slate-500">Discount applies to products marked as eligible. Shown prices will reflect the discount.</p>
+          </div>
+        </DialogContent>
+      </Dialog>
     </header>
   )
 }

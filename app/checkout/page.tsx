@@ -192,7 +192,7 @@ useEffect(() => {
       return
     }
 
-    const orderData = {
+      const orderData = {
       customer: (session?.user as any)?.customerNumber || "Guest",
       total: grandTotal,
       items: cart.map((item) => {
@@ -211,14 +211,17 @@ useEffect(() => {
           itemPrice = 0;
         }
         
-        return {
-          name: item.name,
-          quantity: item.quantity,
-          price: itemPrice,
-          designId: item.designId,
-          designPreview: item.designPreview,
-          selectedSizes: item.selectedSizes,
-        };
+          return {
+            name: item.name,
+            quantity: item.quantity,
+            price: itemPrice,
+            designId: item.designId,
+            designPreview: item.designPreview,
+            selectedSizes: item.selectedSizes,
+            designContext: (item as any).designContext,
+            designCanvasJSON: (item as any).designCanvasJSON,
+            productId: (item as any).productId || item.id,
+          };
       }),
       shippingOption: shippingOption as "standard" | "express",
       paymentMethod: paymentMethod as "card" | "swish" | "klarna",

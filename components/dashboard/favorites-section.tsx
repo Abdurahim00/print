@@ -2,18 +2,17 @@
 
 import { useEffect, useMemo } from "react"
 import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks"
-import { fetchFavorites, applyDesignToFavorites } from "@/lib/redux/slices/favoritesSlice"
+import { fetchFavorites, removeFromFavorites } from "@/lib/redux/slices/favoritesSlice"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import Image from "next/image"
-import Link from "next/link"
 import { fetchCategories } from "@/lib/redux/slices/categoriesSlice"
 import { fetchProducts } from "@/lib/redux/slices/productsSlice"
-import { Badge } from "@/components/ui/badge"
-import { Tag, Heart } from "lucide-react"
-import { setDesignForFavoriteThunk, removeFromFavorites } from "@/lib/redux/slices/favoritesSlice"
+import { Heart } from "lucide-react"
 import { Skeleton } from "@/components/ui/skeleton"
 import { fetchDesigns } from "@/lib/redux/slices/designsSlice"
+import { addToCart } from "@/lib/redux/slices/cartSlice"
+import { composeProductAndDesign } from "@/lib/utils/imageCompose"
 
 export function FavoritesSection() {
   const dispatch = useAppDispatch()
@@ -36,21 +35,15 @@ export function FavoritesSection() {
     dispatch(fetchProducts() as any)
   }, [user?.id, dispatch, categories?.length])
 
-  // Group favorites by categoryId
-  const grouped = useMemo(() => {
-    const m: Record<string, any[]> = {}
-    favorites.forEach((f: any) => {
-      if (!m[f.categoryId]) m[f.categoryId] = []
-      const product = products.find((p: any) => p.id === f.productId)
-      if (product) m[f.categoryId].push({ fav: f, product })
-    })
-    return m
+  // Flattened list of favorites with product details
+  const favoriteProducts = useMemo(() => {
+    return favorites
+      .map((f: any) => ({ fav: f, product: products.find((p: any) => p.id === f.productId) }))
+      .filter((x: { fav: any; product: any }) => !!x.product)
   }, [favorites, products])
 
-  const categoryIds = Object.keys(grouped)
-
   if (!user?.id) return <div className="text-slate-500">Sign in to see favorites.</div>
-  if (categoryIds.length === 0) return <div className="text-slate-500">No favorites yet.</div>
+  if (favoriteProducts.length === 0) return <div className="text-slate-500">No favorites yet.</div>
 
   const GridSkeleton = () => (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -72,104 +65,100 @@ export function FavoritesSection() {
 
   return (
     <div className="space-y-8">
-      {categoryIds.map((catId) => (
-        <Card key={catId} className="shadow-lg border-0 bg-white dark:bg-slate-900">
-          <CardHeader className="flex flex-row items-center justify-between border-b border-primary/10 dark:border-primary/20 bg-primary/5 dark:bg-primary/10">
-            <CardTitle className="flex items-center gap-2 text-primary dark:text-primary/90">
-              <Heart className="h-5 w-5 text-primary" />
-              {categories.find((c: any) => c.id === catId)?.name || catId}
-            </CardTitle>
-            <div className="flex items-center gap-3">
-              <Badge variant="secondary" className="flex items-center gap-1">
-                <Tag className="w-3 h-3" />
-                Category
-              </Badge>
-              <Link href="/design-tool" className="text-sm underline">Open Design Tool</Link>
-            </div>
-          </CardHeader>
-          <CardContent className="p-6">
-            {(favoritesState.loading || productsLoading) && <GridSkeleton />}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {grouped[catId].map(({ fav, product }) => {
-                const appliedDesign = fav.appliedDesignId ? designs.find((d: any) => d.id === fav.appliedDesignId) : null
-                return (
-                  <Card
-                    key={fav.id}
-                    className="overflow-hidden hover:shadow-lg transition-all border-primary/10 dark:border-primary/20 group bg-white dark:bg-slate-900"
-                  >
-                    <div className="relative">
-                      <div className="absolute inset-0 bg-primary/5 group-hover:bg-primary/10 transition-colors z-0"></div>
-                      <div className="relative w-full aspect-[4/3] bg-white">
-                        <Image
-                          src={product.image || "/placeholder.svg"}
-                          alt={product.name}
-                          fill
-                          className="w-full h-full object-cover z-10 relative"
-                          priority={false}
-                        />
-                        {appliedDesign ? (
-                          <>
-                            <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-black/10 to-transparent z-10" />
-                            {(() => {
-                              const overlaySrc = appliedDesign?.designData?.canvasData || appliedDesign?.preview
-                              const overlayScale = appliedDesign?.designData?.overlay?.scale ?? 0.6
-                              console.log("🔥 [FavoritesSection] Rendering applied design overlay", { designId: appliedDesign?.id, overlayScale, hasCanvasData: !!appliedDesign?.designData?.canvasData })
-                              return (
-                                <img
-                                  src={overlaySrc || "/placeholder.svg"}
-                                  alt="Applied design overlay"
-                                  className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20 object-contain"
-                                  style={{
-                                    width: `${overlayScale * 100}%`,
-                                    height: "auto",
-                                    filter: "saturate(1.05)",
-                                    // Use normal blend so light/white text remains visible on product images
-                                    mixBlendMode: "normal",
-                                    // Slight shadow to help text stand out across backgrounds
-                                    boxShadow: "0 0 0 transparent",
-                                  }}
-                                />
-                              )
-                            })()}
-                            <Badge className="absolute top-3 right-3 z-30 bg-green-600/90 text-white border-transparent">Applied</Badge>
-                          </>
-                        ) : (
-                          <Badge className="absolute top-3 right-3 z-30 bg-slate-50 text-slate-700 border-slate-200">No design</Badge>
-                        )}
-                      </div>
-                    </div>
-                    <CardContent className="p-5">
-                      <h3 className="font-semibold text-base mb-1 text-slate-900 dark:text-white truncate">{product.name}</h3>
-                      <p className="text-xs text-slate-400 dark:text-slate-500 mb-4">#{product.id.slice(-6)}</p>
-                      <div className="flex gap-3">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="flex-1 bg-transparent hover:bg-red-50 hover:text-red-700 hover:border-red-300 dark:hover:bg-red-900/20 text-red-600 border-red-200 transition-colors"
-                          onClick={() => dispatch(removeFromFavorites({ userId: user.id, productId: product.id }) as any)}
-                        >
-                          Remove
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="flex-1 bg-transparent hover:bg-amber-50 hover:text-amber-700 hover:border-amber-300 dark:hover:bg-amber-900/20 text-amber-600 border-amber-200 transition-colors"
-                          onClick={() => dispatch(setDesignForFavoriteThunk({ userId: user.id, productId: product.id, designId: null }) as any)}
-                        >
-                          Remove design
-                        </Button>
-                      </div>
-                      <Button asChild size="sm" className="mt-3 w-full bg-primary hover:bg-primary/90 text-white">
-                        <Link href={`/design-tool?productId=${product.id}${fav.appliedDesignId ? `&designId=${fav.appliedDesignId}` : ''}`}>Customize</Link>
-                      </Button>
-                    </CardContent>
-                  </Card>
-                )
-              })}
-            </div>
-          </CardContent>
-        </Card>
-      ))}
+      <Card className="shadow-lg border-0 bg-white dark:bg-slate-900">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Heart className="h-5 w-5 text-primary" /> Favorites
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-6">
+          {(favoritesState.loading || productsLoading) && <GridSkeleton />}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {favoriteProducts.map(({ fav, product }: { fav: any; product: any }) => (
+              <Card key={fav.id} className="overflow-hidden hover:shadow-lg transition-all bg-white dark:bg-slate-900">
+                <div className="relative w-full aspect-[4/3] bg-white">
+                  <Image
+                    src={product.image || "/placeholder.svg"}
+                    alt={product.name}
+                    fill
+                    className="w-full h-full object-cover"
+                    priority={false}
+                  />
+                </div>
+                <CardContent className="p-5">
+                  <h3 className="font-semibold text-base mb-1 text-slate-900 dark:text-white truncate">{product.name}</h3>
+                  <p className="text-xs text-slate-400 dark:text-slate-500 mb-4">#{product.id.slice(-6)}</p>
+                  <div className="flex gap-3">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex-1 bg-transparent hover:bg-red-50 hover:text-red-700 hover:border-red-300 dark:hover:bg-red-900/20 text-red-600 border-red-200 transition-colors"
+                      onClick={() => dispatch(removeFromFavorites({ userId: user.id, productId: product.id }) as any)}
+                    >
+                      Remove
+                    </Button>
+                    <Button
+                      size="sm"
+                      className="flex-1 bg-primary hover:bg-primary/90 text-white"
+                      onClick={async () => {
+                        try {
+                          // If a design is applied to the category (via dashboard button), include design elements only
+                          const appliedDesignId = fav.appliedDesignId
+                          if (appliedDesignId) {
+                            const applied = designs.find((d: any) => d.id === appliedDesignId)
+                            // Use design-only overlay so we add the CURRENT product with just design elements
+                            const overlay = applied?.designData?.canvasData 
+                              || applied?.preview
+                            // Sanitize context to avoid carrying source product variation/images
+                            const baseState = applied?.designData?.selectedState || {}
+                            const designContext: any = {
+                              viewMode: "front",
+                              productColor: undefined,
+                              selectedVariation: null,
+                              selectedTemplate: baseState?.selectedTemplate || null,
+                            }
+                            const designCanvasJSON = applied?.designData?.canvasJSON || null
+
+                            // Compose product base with overlay for accurate preview in cart
+                            let composed: string | undefined = undefined
+                            try {
+                              if (product?.image && overlay) {
+                                composed = await composeProductAndDesign({
+                                  productImageUrl: product.image,
+                                  overlayImageUrl: overlay,
+                                  targetWidth: 1000,
+                                  overlayScale: applied?.designData?.overlay?.scale ?? 0.6,
+                                })
+                              }
+                            } catch {}
+                            dispatch({
+                              type: 'cart/addToCartWithDesign',
+                              payload: {
+                                product,
+                                quantity: 1,
+                                designPreview: composed || overlay,
+                                designId: appliedDesignId,
+                                designContext,
+                                designCanvasJSON,
+                              }
+                            })
+                          } else {
+                            dispatch(addToCart(product) as any)
+                          }
+                        } catch {
+                          dispatch(addToCart(product) as any)
+                        }
+                      }}
+                    >
+                      Add to cart
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
     </div>
   )
 }

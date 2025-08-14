@@ -393,11 +393,10 @@ export function UserDashboard({ defaultTab = "orders" }: { defaultTab?: string }
                           </Button>
                           </div>
                           <div className="flex justify-center">
-                            <Button
-                            
-                            size="sm"
-                            className="flex-1 border-purple-300 text-white bg-purple-900 hover:bg-purple-800 hover:text-white"
-                            onClick={async () => {
+                              <Button
+                              size="sm"
+                              className="flex-1 border-purple-300 text-white bg-purple-900 hover:bg-purple-800 hover:text-white"
+                              onClick={async () => {
                               try {
                                 const { store } = await import("@/lib/redux/store")
                                 const state: any = store.getState()
@@ -407,9 +406,12 @@ export function UserDashboard({ defaultTab = "orders" }: { defaultTab?: string }
                                   return
                                 }
                                 const { applyDesignToFavorites } = await import("@/lib/redux/slices/favoritesSlice")
+                                const { setAppliedCategoryDesign } = await import("@/lib/redux/slices/appSlice")
                                 // Reuse the category-level application mechanism to mark this design as the active one for the category
                                 // This will make all product cards in the same category show this overlay immediately
                                 await store.dispatch(applyDesignToFavorites({ userId, categoryId, designId: design.id }) as any)
+                                // Mirror in app state for immediate UI reactivity
+                                await store.dispatch(setAppliedCategoryDesign({ categoryId, designId: design.id }) as any)
                               } catch (e) {
                                 // no-op
                               }

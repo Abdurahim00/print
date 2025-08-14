@@ -13,6 +13,8 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { FileArchive, Package, Clock, Printer, Truck, CheckCircle } from "lucide-react"
 import { toast } from "sonner"
 import type { Order } from "@/types"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import Image from "next/image"
 
 export function OperationsDashboard() {
   const dispatch = useAppDispatch()
@@ -106,6 +108,10 @@ export function OperationsDashboard() {
   }
 
   const statusOptions: Order["status"][] = ["Queued", "Printing", "In Production", "Shipped", "Completed"]
+
+  // Order details modal
+  const [detailsOpen, setDetailsOpen] = useState(false)
+  const [detailsOrder, setDetailsOrder] = useState<Order | null>(null)
 
   // Calculate stats
   const totalOrders = orders.length
@@ -265,6 +271,9 @@ export function OperationsDashboard() {
                     <TableHead className="min-w-[150px] font-semibold text-slate-700 dark:text-slate-300">
                       {t.exportPrintFile}
                     </TableHead>
+                    <TableHead className="min-w-[120px] font-semibold text-slate-700 dark:text-slate-300">
+                      Items
+                    </TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -315,6 +324,16 @@ export function OperationsDashboard() {
                           {t.exportPrintFile}
                         </Button>
                       </TableCell>
+                      <TableCell>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => { setDetailsOrder(order); setDetailsOpen(true) }}
+                          className="w-full min-w-[100px]"
+                        >
+                          View Items
+                        </Button>
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -329,6 +348,37 @@ export function OperationsDashboard() {
           )}
         </CardContent>
       </Card>
+
+      {/* Order Details Modal */}
+      <Dialog open={detailsOpen} onOpenChange={setDetailsOpen}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>Order {detailsOrder?.id} Items</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            {(detailsOrder?.items || []).map((it, idx) => {
+              const imgSrc = (it as any).designPreview || (it as any).designContext?.selectedVariation?.variationImages?.find((img: any) => img.angle === ((it as any).designContext?.viewMode || 'front'))?.url || '/placeholder.svg'
+              const name = `${it.name}${(it as any).designContext?.selectedVariation ? ` (${(it as any).designContext?.selectedVariation?.colorName})` : ''}`
+              return (
+                <div key={idx} className="flex items-center gap-4 p-3 border rounded-md">
+                  <div className="relative w-24 h-24 flex-shrink-0">
+                    <Image src={imgSrc} alt={name} fill className="object-cover rounded" />
+                  </div>
+                  <div className="flex-1">
+                    <div className="font-medium">{name}</div>
+                    <div className="text-sm text-slate-500">Qty: {it.quantity} • {t.price}: {it.price.toFixed ? it.price.toFixed(2) : it.price} SEK</div>
+                    {(it as any).selectedSizes && (it as any).selectedSizes.length > 0 && (
+                      <div className="text-xs text-slate-500 mt-1">
+                        {(it as any).selectedSizes.map((s: any) => `${s.size} x ${s.quantity}`).join(', ')}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

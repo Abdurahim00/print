@@ -6,6 +6,7 @@ import { Edit3, Trash2 } from "lucide-react"
 import { Skeleton } from "@/components/ui/skeleton"
 import Image from "next/image"
 import type { Product } from "@/types"
+import { formatSEK } from "@/lib/utils"
 
 interface ProductTableProps {
   products: Product[]
@@ -64,7 +65,7 @@ export const ProductTable: React.FC<ProductTableProps> = ({ products, loading, t
                   {productCategories.find((c) => c.id === product.categoryId)?.name(t) || product.categoryId}
                 </Badge>
               </TableCell>
-              <TableCell className="font-semibold text-slate-900 dark:text-slate-100">{product.price.toFixed(2)} SEK</TableCell>
+              <TableCell className="font-semibold text-slate-900 dark:text-slate-100">{formatSEK(product.price)}</TableCell>
               <TableCell>
                 {product.hasVariations && product.variations && product.variations.length > 0 ? (
                   <div className="flex flex-col gap-1">

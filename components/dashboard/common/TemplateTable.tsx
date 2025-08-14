@@ -7,6 +7,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Edit3, Trash2 } from "lucide-react"
 import Image from "next/image"
 import type { Template } from "@/types"
+import { formatUSD } from "@/lib/utils"
 
 interface TemplateTableProps {
   templates: Template[]
@@ -122,7 +123,7 @@ export function TemplateTable({ templates, loading, t, onEdit, onDelete }: Templ
                     Free
                   </Badge>
                 ) : (
-                  `$${template.price.toFixed(2)}`
+                  formatUSD(template.price)
                 )}
               </TableCell>
               <TableCell>

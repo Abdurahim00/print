@@ -2,8 +2,14 @@ import type { CartItem } from "@/types"
 
 // Keying rules to identify the "same" logical item across carts:
 // - If a designId exists, key by designId (custom designs are unique by designId)
-// - Otherwise, key by exact id only (do not attempt to strip timestamps or merge different unique entries)
-const keyOf = (item: CartItem) => (item.designId ? `design:${item.designId}` : `id:${item.id}`)
+// - Else if a base productId exists and there is no design/context, key by productId for merging quantities
+// - Otherwise, key by exact id only
+const keyOf = (item: CartItem) => {
+  if (item.designId) return `design:${item.designId}`
+  const hasDesign = !!(item.designPreview || item.designContext || item.selectedSizes)
+  if (!hasDesign && item.productId) return `productId:${item.productId}`
+  return `id:${item.id}`
+}
 
 export function mergeCartsPreferRight(left: CartItem[], right: CartItem[]): CartItem[] {
   const map = new Map<string, CartItem>()

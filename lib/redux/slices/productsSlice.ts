@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit"
-import type { Product, Variation, Color, VariationImage } from "@/lib/models/Product"
+import type { Product } from "@/lib/models/Product"
 
 // Async thunks for database operations
 export const fetchProducts = createAsyncThunk(
@@ -30,6 +30,24 @@ export const createProduct = createAsyncThunk(
   }
 )
 
+export const updateProduct = createAsyncThunk(
+  "products/updateProduct",
+  async (productData: Product) => {
+    const { id, ...update } = productData as any
+    const response = await fetch(`/api/products/${id}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(update),
+    })
+    if (!response.ok) {
+      throw new Error("Failed to update product")
+    }
+    return response.json()
+  }
+)
+
 export const deleteProduct = createAsyncThunk("products/deleteProduct", async (id: string) => {
   const response = await fetch(`/api/products/${id}`, {
     method: "DELETE",
@@ -55,12 +73,6 @@ const productsSlice = createSlice({
     },
     addProduct: (state, action) => {
       state.items.push(action.payload)
-    },
-    updateProduct: (state, action) => {
-      const index = state.items.findIndex((p) => p.id === action.payload.id)
-      if (index !== -1) {
-        state.items[index] = action.payload
-      }
     },
     setLoading: (state, action) => {
       state.loading = action.payload
@@ -100,6 +112,22 @@ const productsSlice = createSlice({
         state.loading = false
         state.error = action.error.message || "Failed to create product"
       })
+      // Update product
+      .addCase(updateProduct.pending, (state) => {
+        state.loading = true
+        state.error = null
+      })
+      .addCase(updateProduct.fulfilled, (state, action) => {
+        state.loading = false
+        const index = state.items.findIndex((p) => p.id === action.payload.id)
+        if (index !== -1) {
+          state.items[index] = action.payload
+        }
+      })
+      .addCase(updateProduct.rejected, (state, action) => {
+        state.loading = false
+        state.error = action.error.message || "Failed to update product"
+      })
       // Delete product
       .addCase(deleteProduct.pending, (state) => {
         state.loading = true
@@ -119,7 +147,6 @@ const productsSlice = createSlice({
 export const { 
   setProducts, 
   addProduct, 
-  updateProduct, 
   setLoading, 
   setError, 
   clearError 

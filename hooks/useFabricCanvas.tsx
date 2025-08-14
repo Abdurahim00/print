@@ -20,6 +20,12 @@ export const useFabricCanvas = (canvasId: string) => {
       if (canvasInstance) {
         const state = JSON.stringify(canvasInstance.toJSON())
         dispatch(addToHistory(state))
+        // Persist latest canvas JSON for refresh recovery
+        try {
+          if (typeof window !== 'undefined') {
+            localStorage.setItem('designCanvasJSON', state)
+          }
+        } catch {}
       }
     },
     [dispatch],
@@ -29,8 +35,8 @@ export const useFabricCanvas = (canvasId: string) => {
     if (!canvasRef.current) return
 
     const canvas = new fabric.Canvas(canvasRef.current, {
-      width: 300,
-      height: 300,
+      width: 600,
+      height: 600,
       backgroundColor: "transparent",
       selection: true,
       preserveObjectStacking: true,

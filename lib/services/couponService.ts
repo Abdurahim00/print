@@ -181,7 +181,8 @@ export async function validateCoupon(
   // Check product/category restrictions
   if (coupon.applicableProducts?.length || coupon.applicableCategories?.length) {
     const hasApplicableItems = cartItems.some(item => {
-      if (coupon.applicableProducts?.includes(item.id)) return true
+      const baseProductId = item.productId || item.id
+      if (coupon.applicableProducts?.includes(baseProductId)) return true
       if (coupon.applicableCategories?.includes(item.categoryId)) return true
       return false
     })

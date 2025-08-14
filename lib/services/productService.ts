@@ -86,11 +86,11 @@ export class ProductService {
 
   static async updateProduct(
     id: string,
-    productData: Partial<Omit<ProductDocument, "createdAt">>,
+    productData: Partial<Omit<ProductDocument, "createdAt" | "_id">>,
   ): Promise<Product | null> {
     const collection = await this.getCollection()
 
-    const result = await collection.findOneAndUpdate(
+    const res = await collection.findOneAndUpdate(
       { _id: new ObjectId(id) },
       {
         $set: {
@@ -101,6 +101,7 @@ export class ProductService {
       { returnDocument: "after" },
     )
 
+    const result = (res as any)?.value ?? (res as any) // support driver variations
     if (!result) return null
 
     return {
@@ -109,6 +110,7 @@ export class ProductService {
       price: result.price,
       image: result.image,
       categoryId: result.categoryId,
+      subcategoryIds: result.subcategoryIds,
       description: result.description,
       inStock: result.inStock,
       createdAt: result.createdAt,

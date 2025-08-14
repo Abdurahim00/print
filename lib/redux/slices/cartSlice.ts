@@ -48,11 +48,17 @@ const cartSlice = createSlice({
     },
     // Standard add to cart (legacy)
     addToCart: (state, action: PayloadAction<Product>) => {
-      const existingItem = state.items.find((item) => item.id === action.payload.id)
+      const baseId = action.payload.id
+      // Find an existing cart item with same base product and no design/context
+      const existingItem = state.items.find((item) => {
+        const sameBase = (item.productId || item.id) === baseId
+        const hasNoDesign = !item.designId && !item.designPreview && !item.selectedSizes
+        return sameBase && hasNoDesign
+      })
       if (existingItem) {
         existingItem.quantity += 1
       } else {
-        state.items.push({ ...action.payload, quantity: 1 })
+        state.items.push({ ...action.payload, quantity: 1, productId: baseId })
       }
       // Save to localStorage
       saveCartToStorage(state.items)
@@ -63,9 +69,11 @@ const cartSlice = createSlice({
       product: Product, 
       selectedSizes: CartItemSize[],
       designPreview?: string,
-      designId?: string
+      designId?: string,
+      designContext?: any,
+      designCanvasJSON?: any
     }>) => {
-      const { product, selectedSizes, designPreview, designId } = action.payload
+      const { product, selectedSizes, designPreview, designId, designContext, designCanvasJSON } = action.payload
       
       // Generate a unique ID for this specific product + design combination
       const uniqueId = designId 
@@ -79,15 +87,47 @@ const cartSlice = createSlice({
       const newItem: CartItem = {
         ...product,
         id: uniqueId,
+        productId: product.id,
         quantity: totalQuantity,
         selectedSizes,
         designPreview,
-        designId
+        designId,
+        designContext,
+        designCanvasJSON
       }
       
       state.items.push(newItem)
       
       // Save to localStorage
+      saveCartToStorage(state.items)
+    },
+
+    // Add to cart carrying design data without sizes (defaults to quantity 1)
+    addToCartWithDesign: (state, action: PayloadAction<{
+      product: Product,
+      quantity?: number,
+      designPreview?: string,
+      designId?: string,
+      designContext?: any,
+      designCanvasJSON?: any
+    }>) => {
+      const { product, quantity = 1, designPreview, designId, designContext, designCanvasJSON } = action.payload
+
+      // Unique composite id per product+design
+      const uniqueId = designId ? `${product.id}-${designId}` : `${product.id}-${Date.now()}`
+
+      const newItem: CartItem = {
+        ...product,
+        id: uniqueId,
+        productId: product.id,
+        quantity,
+        designPreview,
+        designId,
+        designContext,
+        designCanvasJSON,
+      }
+
+      state.items.push(newItem)
       saveCartToStorage(state.items)
     },
     
@@ -148,6 +188,7 @@ export const {
   setCart, 
   addToCart, 
   addToCartWithSizes,
+  addToCartWithDesign,
   updateQuantity, 
   updateSizeQuantities,
   removeFromCart, 

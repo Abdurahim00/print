@@ -85,6 +85,10 @@ export interface CartItem extends Product {
   designPreview?: string; // For custom designs (composite image)
   designId?: string; // Reference to saved design
   designContext?: DesignContext; // Complete design context from design tool
+  /** Base product id preserved when cart item id is made unique per design */
+  productId?: string;
+  /** Full Fabric.js canvas JSON to reproduce design precisely */
+  designCanvasJSON?: any;
 }
 
 export interface Order {
@@ -100,6 +104,13 @@ export interface Order {
     size?: string
     designPreview?: string
     designId?: string
+    /** Optional granular size breakdown */
+    selectedSizes?: CartItemSize[]
+    /** Preserve full design context and canvas for production */
+    designContext?: DesignContext
+    designCanvasJSON?: any
+    /** Base product id for reference */
+    productId?: string
   }>
   shippingOption: "standard" | "express"
   paymentMethod: "card" | "swish" | "klarna"

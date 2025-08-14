@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge"
 import { Loader2 } from "lucide-react"
 import { setSelectedProduct } from "@/lib/redux/designToolSlices/designSlice"
 import type { Product } from "@/lib/models/Product"
+import { formatUSD } from "@/lib/utils"
 
 interface ProductModalProps {
   isOpen: boolean
@@ -47,7 +48,7 @@ export function ProductModal({ isOpen, onClose, products, loading = false }: Pro
       baseColor: initialColor,
       angles: realAngles,
       colors: realColors,
-      price: `$${product.price.toFixed(2)}`,
+      price: formatUSD(product.price),
       image: product.image,
       description: product.description,
       inStock: product.inStock,
@@ -101,7 +102,7 @@ export function ProductModal({ isOpen, onClose, products, loading = false }: Pro
                 </div>
 
                 <h3 className="font-semibold text-gray-900 mb-1">{product.name}</h3>
-                <p className="text-sm text-gray-600 mb-2">${product.price.toFixed(2)}</p>
+                <p className="text-sm text-gray-600 mb-2">{formatUSD(product.price)}</p>
                 {product.description && (
                   <p className="text-xs text-gray-500 mb-2 line-clamp-2">{product.description}</p>
                 )}

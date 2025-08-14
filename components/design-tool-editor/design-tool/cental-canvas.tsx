@@ -3,7 +3,7 @@
 import { useRef, useEffect, useState, useCallback } from "react"
 import { useSelector, useDispatch } from "react-redux"
 import { useFabricCanvas } from "@/hooks/useFabricCanvas"
-import { setViewMode } from "@/lib/redux/designToolSlices/designSlice"
+import { setViewMode, setSelectedProduct, setProductColor, setSelectedTemplate } from "@/lib/redux/designToolSlices/designSlice"
 import { Button } from "@/components/ui/button"
 import { RootState } from "@/lib/redux/store"
 import Image from "next/image"
@@ -26,7 +26,7 @@ interface Product {
 
 export function CentralCanvas() {
   const dispatch = useDispatch()
-  const { selectedTool, viewMode, selectedProduct, productColor, imageLayers } = useSelector((state: RootState) => state.design)
+  const { selectedTool, viewMode, selectedProduct, productColor, imageLayers, selectedTemplate } = useSelector((state: RootState) => state.design)
   const { selectedObject } = useSelector((state: RootState) => state.canvas)
   const canvasContainerRef = useRef<HTMLDivElement>(null)
   
@@ -34,6 +34,59 @@ export function CentralCanvas() {
   const [isLoadingDesign, setIsLoadingDesign] = useState(false)
 
   const { canvasRef, loadFromJSON } = useFabricCanvas("design-canvas")
+  
+  // Persist current design session (product + view + template) on change
+  useEffect(() => {
+    try {
+      if (typeof window !== 'undefined') {
+        const sessionState = {
+          selectedProduct,
+          productColor,
+          viewMode,
+          selectedTemplate,
+        }
+        localStorage.setItem('designSessionState', JSON.stringify(sessionState))
+      }
+    } catch {}
+  }, [selectedProduct, productColor, viewMode, selectedTemplate])
+
+  // Restore persisted design session and canvas after refresh if present and no explicit designId/productId in URL
+  useEffect(() => {
+    try {
+      if (typeof window === 'undefined') return
+      const params = new URLSearchParams(window.location.search)
+      const hasDesignId = !!params.get('designId')
+      const hasProductId = !!params.get('productId')
+      if (hasDesignId || hasProductId) return
+
+      // Restore session state first
+      const sessionRaw = localStorage.getItem('designSessionState')
+      if (sessionRaw) {
+        const session = JSON.parse(sessionRaw)
+        if (session?.selectedProduct) {
+          dispatch(setSelectedProduct(session.selectedProduct))
+        }
+        if (session?.productColor) {
+          dispatch(setProductColor(session.productColor))
+        }
+        if (session?.viewMode) {
+          dispatch(setViewMode(session.viewMode))
+        }
+        if (session?.selectedTemplate) {
+          dispatch(setSelectedTemplate(session.selectedTemplate))
+        }
+      }
+
+      // Then restore canvas JSON
+      if (loadFromJSON) {
+        const persisted = localStorage.getItem('designCanvasJSON')
+        if (persisted) {
+          const json = JSON.parse(persisted)
+          loadFromJSON(json)
+        }
+      }
+    } catch {}
+  }, [loadFromJSON, dispatch])
   
   // Handle loading a saved design
   const handleDesignLoaded = useCallback((canvasJSON: any) => {
@@ -167,21 +220,21 @@ export function CentralCanvas() {
                   <canvas
                     ref={canvasRef}
                     id="design-canvas"
-                    className="cursor-crosshair bg-transparent transition-all duration-300 ease-in-out"
-                    style={{ 
-                      border: shouldShowCanvasBorder() 
-                        ? "2px dashed #3b82f6" 
-                        : "2px dashed transparent",
-                      borderRadius: "8px",
-                      boxShadow: shouldShowCanvasBorder() 
-                        ? "0 0 0 1px rgba(59, 130, 246, 0.1), 0 4px 6px -1px rgba(0, 0, 0, 0.1)" 
-                        : "0 0 0 1px transparent, 0 2px 4px -1px rgba(0, 0, 0, 0.02)",
-                      backgroundColor: shouldShowCanvasBorder() 
-                        ? "rgba(255, 255, 255, 0.05)" 
-                        : "transparent"
-                    }}
-                    width={300}
-                    height={300}
+                    // className="cursor-crosshair bg-transparent transition-all duration-300 ease-in-out"
+                    // style={{ 
+                    //   border: shouldShowCanvasBorder() 
+                    //     ? "2px dashed #3b82f6" 
+                    //     : "2px dashed transparent",
+                    //   borderRadius: "8px",
+                    //   boxShadow: shouldShowCanvasBorder() 
+                    //     ? "0 0 0 1px rgba(59, 130, 246, 0.1), 0 4px 6px -1px rgba(0, 0, 0, 0.1)" 
+                    //     : "0 0 0 1px transparent, 0 2px 4px -1px rgba(0, 0, 0, 0.02)",
+                    //   backgroundColor: shouldShowCanvasBorder() 
+                    //     ? "rgba(255, 255, 255, 0.05)" 
+                    //     : "transparent"
+                    // }}
+                    // width={300}
+                    // height={300}
                   />
                 </div>
 

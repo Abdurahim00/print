@@ -148,8 +148,23 @@ export function ProductCard({ product }: ProductCardProps) {
                 await dispatch(removeFromFavorites({ userId: sessionUser.id, productId: product.id }))
                 toast({ title: "Removed from favorites", description: product.name })
               } else {
+                // If a design is applied, compose a preview and store it with the favorite
+                let preview: string | null = null
+                if (appliedDesignForCategory) {
+                  const overlay = appliedDesignForCategory.designData?.canvasData || appliedDesignForCategory.preview
+                  try {
+                    if (product.image && overlay) {
+                      preview = await composeProductAndDesign({
+                        productImageUrl: product.image,
+                        overlayImageUrl: overlay,
+                        targetWidth: 1000,
+                        overlayScale: appliedDesignForCategory?.designData?.overlay?.scale ?? 0.6,
+                      })
+                    }
+                  } catch {}
+                }
                 // @ts-ignore
-                const addResult = await dispatch(addToFavorites({ userId: sessionUser.id, productId: product.id, categoryId: product.categoryId }))
+                const addResult = await dispatch(addToFavorites({ userId: sessionUser.id, productId: product.id, categoryId: product.categoryId, preview }))
                 // If this category has an applied design, explicitly attach it to this new favorite for complete payload
                 if (appliedDesignForCategory?.id) {
                   // @ts-ignore

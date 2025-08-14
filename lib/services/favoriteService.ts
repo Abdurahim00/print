@@ -11,10 +11,11 @@ const toFavorite = (doc: FavoriteDocument): Favorite => ({
   productId: doc.productId.toString(),
   categoryId: doc.categoryId,
   appliedDesignId: doc.appliedDesignId ? doc.appliedDesignId.toString() : null,
+  preview: (doc as any).preview || null,
   createdAt: doc.createdAt,
 })
 
-export async function addFavorite(userId: string, productId: string, categoryId: string): Promise<Favorite> {
+export async function addFavorite(userId: string, productId: string, categoryId: string, preview?: string | null): Promise<Favorite> {
   const db = await getDatabase()
   const col = db.collection<FavoriteDocument>(COLLECTION)
   const existing = await col.findOne({ userId: new ObjectId(userId), productId: new ObjectId(productId) })
@@ -50,6 +51,7 @@ export async function addFavorite(userId: string, productId: string, categoryId:
     productId: new ObjectId(productId),
     categoryId,
     appliedDesignId: appliedDesignObjectId ?? null,
+    preview: preview || null,
     createdAt: new Date(),
   }
   const res = await col.insertOne(doc)

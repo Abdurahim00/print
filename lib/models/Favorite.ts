@@ -6,6 +6,8 @@ export interface FavoriteDocument {
   productId: ObjectId
   categoryId: string
   appliedDesignId?: ObjectId | null
+  /** Optional composed preview (product + design) */
+  preview?: string | null
   createdAt: Date
 }
 

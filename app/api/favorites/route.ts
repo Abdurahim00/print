@@ -11,9 +11,9 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   const body = await req.json()
-  const { userId, productId, categoryId } = body
+  const { userId, productId, categoryId, preview } = body
   if (!userId || !productId || !categoryId) return NextResponse.json({ error: "missing fields" }, { status: 400 })
-  const fav = await addFavorite(userId, productId, categoryId)
+  const fav = await addFavorite(userId, productId, categoryId, preview)
   return NextResponse.json(fav, { status: 201 })
 }
 

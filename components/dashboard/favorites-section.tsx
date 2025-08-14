@@ -77,13 +77,37 @@ export function FavoritesSection() {
             {favoriteProducts.map(({ fav, product }: { fav: any; product: any }) => (
               <Card key={fav.id} className="overflow-hidden hover:shadow-lg transition-all bg-white dark:bg-slate-900">
                 <div className="relative w-full aspect-[4/3] bg-white">
-                  <Image
-                    src={product.image || "/placeholder.svg"}
-                    alt={product.name}
-                    fill
-                    className="w-full h-full object-cover"
-                    priority={false}
-                  />
+                  {(() => {
+                    // Prefer stored composed preview if available on the favorite
+                    const baseSrc = (fav as any).preview || product.image || "/placeholder.svg"
+                    return (
+                      <Image
+                        src={baseSrc}
+                        alt={product.name}
+                        fill
+                        className="w-full h-full object-cover"
+                        priority={false}
+                      />
+                    )
+                  })()}
+                  {(() => {
+                    // If there is no stored preview, overlay the design (appliedDesignId) for visual consistency
+                    if ((fav as any).preview) return null
+                    if (!fav.appliedDesignId) return null
+                    const applied = designs.find((d: any) => d.id === fav.appliedDesignId)
+                    if (!applied) return null
+                    const overlaySrc = applied?.designData?.canvasData || applied?.preview
+                    const overlayScale = applied?.designData?.overlay?.scale ?? 0.6
+                    if (!overlaySrc) return null
+                    return (
+                      <img
+                        src={overlaySrc}
+                        alt="Applied design overlay"
+                        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10 object-contain"
+                        style={{ width: `${overlayScale * 100}%`, height: "auto", filter: "saturate(1.05)", mixBlendMode: "normal" }}
+                      />
+                    )
+                  })()}
                 </div>
                 <CardContent className="p-5">
                   <h3 className="font-semibold text-base mb-1 text-slate-900 dark:text-white truncate">{product.name}</h3>

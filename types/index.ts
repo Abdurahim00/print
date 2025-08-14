@@ -166,6 +166,8 @@ export interface Favorite {
   productId: string
   categoryId: string
   appliedDesignId?: string | null
+  /** Composed preview that reflects base product + applied design */
+  preview?: string | null
   createdAt?: Date
 }
 

@@ -17,8 +17,8 @@ export const fetchFavorites = createAsyncThunk("favorites/fetch", async (userId:
   return res.json()
 })
 
-export const addToFavorites = createAsyncThunk("favorites/add", async ({ userId, productId, categoryId }: { userId: string; productId: string; categoryId: string }) => {
-  const res = await fetch(`/api/favorites`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ userId, productId, categoryId }) })
+export const addToFavorites = createAsyncThunk("favorites/add", async ({ userId, productId, categoryId, preview }: { userId: string; productId: string; categoryId: string; preview?: string | null }) => {
+  const res = await fetch(`/api/favorites`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ userId, productId, categoryId, preview }) })
   if (!res.ok) throw new Error("Failed to add favorite")
   return res.json()
 })

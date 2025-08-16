@@ -50,14 +50,13 @@ export function CentralCanvas() {
     } catch {}
   }, [selectedProduct, productColor, viewMode, selectedTemplate])
 
-  // Restore persisted design session and canvas after refresh if present and no explicit designId/productId in URL
+  // Restore persisted design session and canvas after refresh
   useEffect(() => {
     try {
       if (typeof window === 'undefined') return
       const params = new URLSearchParams(window.location.search)
       const hasDesignId = !!params.get('designId')
       const hasProductId = !!params.get('productId')
-      if (hasDesignId || hasProductId) return
 
       // Restore session state first
       const sessionRaw = localStorage.getItem('designSessionState')
@@ -77,16 +76,55 @@ export function CentralCanvas() {
         }
       }
 
-      // Then restore canvas JSON
+      // Then restore canvas JSON; prefer per-user+product+angle autosave if available
       if (loadFromJSON) {
+        const sessionRaw = localStorage.getItem('designSessionState')
+        const session = sessionRaw ? JSON.parse(sessionRaw) : null
+        const pid = session?.selectedProduct?.id
+        const angle = session?.viewMode
+        const uid = (window as any).__CURRENT_USER_ID__ || null
+        if (pid && angle) {
+          const key = `designCanvasJSON:${uid || 'guest'}:${pid}:${angle}`
+          const specific = localStorage.getItem(key)
+          if (specific) {
+            console.log('🔎 [CentralCanvas:restore] loading per-user+product+angle canvas', { key })
+            loadFromJSON(JSON.parse(specific))
+            return
+          }
+        }
         const persisted = localStorage.getItem('designCanvasJSON')
         if (persisted) {
-          const json = JSON.parse(persisted)
-          loadFromJSON(json)
+          console.log('🔎 [CentralCanvas:restore] loading global latest canvas')
+          loadFromJSON(JSON.parse(persisted))
         }
       }
     } catch {}
   }, [loadFromJSON, dispatch])
+
+  // Ensure product is present after refresh: fetch by productId from URL or session if missing/incomplete
+  useEffect(() => {
+    try {
+      if (typeof window === 'undefined') return
+      const params = new URLSearchParams(window.location.search)
+      const pidFromUrl = params.get('productId')
+      const sessionRaw = localStorage.getItem('designSessionState')
+      const session = sessionRaw ? JSON.parse(sessionRaw) : null
+      const pid = pidFromUrl || session?.selectedProduct?.id
+      const hasProduct = !!selectedProduct && (selectedProduct as any).id
+      const needsFetch = pid && (!hasProduct || (selectedProduct as any).id !== pid || !(selectedProduct as any).image)
+      if (!pid || !needsFetch) return
+      ;(async () => {
+        try {
+          const res = await fetch(`/api/products/${pid}`)
+          if (res.ok) {
+            const product = await res.json()
+            dispatch(setSelectedProduct(product))
+          }
+        } catch {}
+      })()
+    } catch {}
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
   
   // Handle loading a saved design
   const handleDesignLoaded = useCallback((canvasJSON: any) => {
@@ -101,7 +139,37 @@ export function CentralCanvas() {
   }, [loadFromJSON])
 
   const handleViewChange = (view: string) => {
+    // Before switching, snapshot current angle canvas into per-product+angle slot
+    try {
+      const fabricCanvas = (window as any).fabricCanvas
+      if (fabricCanvas && selectedProduct) {
+        const state = JSON.stringify(fabricCanvas.toJSON())
+        const pid = (selectedProduct as any).id
+        const currAngle = viewMode
+        const uid = (window as any).__CURRENT_USER_ID__ || null
+        if (pid && currAngle) {
+          const key = `designCanvasJSON:${uid || 'guest'}:${pid}:${currAngle}`
+          localStorage.setItem(key, state)
+        }
+      }
+    } catch {}
     dispatch(setViewMode(view))
+    // After switching, load the new angle autosave if present
+    try {
+      const fabricCanvas = (window as any).fabricCanvas
+      if (fabricCanvas && selectedProduct && loadFromJSON) {
+        const pid = (selectedProduct as any).id
+        const uid = (window as any).__CURRENT_USER_ID__ || null
+        const next = localStorage.getItem(`designCanvasJSON:${uid || 'guest'}:${pid}:${view}`)
+        if (next) {
+          loadFromJSON(JSON.parse(next))
+        } else {
+          // Clear for a clean slate on a new angle
+          fabricCanvas.clear()
+          fabricCanvas.requestRenderAll()
+        }
+      }
+    } catch {}
   }
 
   // Determine if canvas border should be visible based on selected tool
@@ -120,7 +188,7 @@ export function CentralCanvas() {
     return (selectedProduct as Product).angles || []
   }
 
-  // Get image for current view mode
+  // Get image for current view mode (robust across partial product restore)
   const getCurrentImage = () => {
     if (!selectedProduct) return null
     
@@ -141,7 +209,7 @@ export function CentralCanvas() {
     }
     
     // Fallback to main product image
-    return product.image
+    return (product as any).image || null
   }
 
   // Get current variation images for the selected color

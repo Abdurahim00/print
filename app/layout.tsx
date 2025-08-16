@@ -34,7 +34,10 @@ export default async function RootLayout({
           <ReduxProvider>
             <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-200 text-slate-800 dark:from-slate-900 dark:to-slate-800 dark:text-slate-200 font-sans">
               <Navbar />
-              <main className="container mx-auto px-4 py-8 sm:px-6 lg:px-8">{children}</main>
+              <main className="container mx-auto px-4 py-8 sm:px-6 lg:px-8">
+                <UserIdBridge />
+                {children}
+              </main>
               <Footer />
             </div>
             <Toaster />
@@ -42,5 +45,19 @@ export default async function RootLayout({
         </CustomSessionProvider>
       </body>
     </html>
+  )
+}
+
+// Bridge current user id into window so autosave keys are per-user
+function UserIdBridge() {
+  if (typeof window !== 'undefined') {
+    try {
+      const el = document.getElementById('__current_user_meta__')
+      const uid = el?.getAttribute('data-uid') || 'guest'
+      ;(window as any).__CURRENT_USER_ID__ = uid
+    } catch {}
+  }
+  return (
+    <div id="__current_user_meta__" data-uid="" style={{ display: 'none' }} />
   )
 }

@@ -4,7 +4,6 @@ import { Card, CardContent, CardFooter } from "@/components/ui/card"
 import { useEffect, useMemo, useState } from "react"
 import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks"
 import { fetchProducts } from "@/lib/redux/slices/productsSlice"
-import { fetchFavorites } from "@/lib/redux/slices/favoritesSlice"
 import { translations } from "@/lib/constants"
 import { ProductCard } from "@/components/products/product-card"
 import { Input } from "@/components/ui/input"
@@ -32,10 +31,9 @@ export function ProductsView({ categorySlug, subcategorySlug }: { categorySlug?:
 
   useEffect(() => {
     dispatch(fetchProducts())
-    if (sessionUser?.id) dispatch(fetchFavorites(sessionUser.id) as any)
     dispatch(fetchCategories())
     dispatch(fetchSubcategories())
-  }, [dispatch, sessionUser?.id])
+  }, [dispatch])
 
   // Map slugs to IDs once categories/subcategories present
   useEffect(() => {

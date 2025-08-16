@@ -5,7 +5,6 @@ import { useSelector, useDispatch } from "react-redux"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useSession } from "next-auth/react"
 import { createDesign, updateDesign } from "@/lib/redux/slices/designsSlice"
-import { applyDesignToFavorites } from "@/lib/redux/slices/favoritesSlice"
 import { setShowProductModal } from "@/lib/redux/designToolSlices/designSlice"
 import { TopHeader } from "./top-header"
 import { ProductPanel } from "./panels/product-panel"
@@ -128,9 +127,9 @@ export function RightPanel({ isMobile = false }: { isMobile?: boolean }) {
       const fabricCanvas = (window as any).fabricCanvas
       const canvasJSON = fabricCanvas ? fabricCanvas.toJSON(['isTemplate', 'minFontSize', 'maxFontSize', '_originalFontSize', '_bendAmount']) : null
 
-      // Create composite preview image with product background and design elements (kept for reference)
+      // Create composite preview image with product background and design elements (reusable util)
       const compositePreview = await createCompositePreview(canvas, selectedProduct)
-      // Design-only preview with transparent background (used for applying to favorites)
+      // Design-only preview with transparent background (kept for reference)
       const designOnlyPreview = canvas.toDataURL('image/png')
 
       // Get the selected variation details if applicable
@@ -160,7 +159,6 @@ export function RightPanel({ isMobile = false }: { isMobile?: boolean }) {
         name: `${selectedProduct.name} Design`,
         type: selectedProduct.type || "design",
         // Use composite (product + design) for the saved preview so dashboards show the actual product mockup
-        // The design-only image is still stored separately in designData.canvasData for applying to favorites
         preview: compositePreview,
         userId: (session?.user as any)?.id || "",
         designData: {
@@ -270,7 +268,6 @@ export function RightPanel({ isMobile = false }: { isMobile?: boolean }) {
           }
         }
         console.log("🔥🔥 [RightPanel] Design save fulfilled", { savedId: saved?.id, editingDesignId, categoryId: tryCategoryFromSaved, categoryIdResolved })
-        // Do NOT auto-apply to favorites. The user can explicitly apply from the dashboard "Preview on other products" button.
         toast({
           title: "Design Saved Successfully!",
           description: "Your design has been saved to your dashboard.",

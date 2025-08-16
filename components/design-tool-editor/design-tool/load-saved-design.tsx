@@ -159,7 +159,6 @@ export function LoadSavedDesign({ onDesignLoaded }: LoadSavedDesignProps) {
     loadDesign()
   }, [designId, dispatch, onDesignLoaded])
 
-  // If we only have a productId (coming from Favorites customize without a saved design yet),
   // preselect the product in the design tool so the user can start designing immediately.
   useEffect(() => {
     if (!productId || designId) return

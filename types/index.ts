@@ -160,16 +160,7 @@ export interface AppState {
   coupons: Coupon[]
 }
 
-export interface Favorite {
-  id: string
-  userId: string
-  productId: string
-  categoryId: string
-  appliedDesignId?: string | null
-  /** Composed preview that reflects base product + applied design */
-  preview?: string | null
-  createdAt?: Date
-}
+// Removed Favorite feature
 
 export interface Template {
   id: string

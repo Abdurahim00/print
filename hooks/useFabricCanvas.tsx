@@ -12,6 +12,7 @@ export const useFabricCanvas = (canvasId: string) => {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const fabricCanvasRef = useRef<fabric.Canvas | null>(null)
   const { selectedObject, history, historyIndex } = useSelector((state: RootState) => state.canvas)
+  const userId = useSelector((state: RootState) => (state as any).auth.user?.id) as string | undefined
   const { selectedTool } = useSelector((state: RootState) => state.design)
 
   // saveState accepts the canvas instance as an argument
@@ -20,15 +21,29 @@ export const useFabricCanvas = (canvasId: string) => {
       if (canvasInstance) {
         const state = JSON.stringify(canvasInstance.toJSON())
         dispatch(addToHistory(state))
-        // Persist latest canvas JSON for refresh recovery
+        // Persist latest canvas JSON for refresh recovery and also per product+angle for multi-angle autosave
         try {
           if (typeof window !== 'undefined') {
             localStorage.setItem('designCanvasJSON', state)
+            // Also persist per current product and view (angle)
+            try {
+              const sessionRaw = localStorage.getItem('designSessionState')
+              if (sessionRaw) {
+                const session = JSON.parse(sessionRaw)
+                const pid = session?.selectedProduct?.id
+                const angle = session?.viewMode
+                if (pid && angle) {
+                  const uid = userId || 'guest'
+                  const key = `designCanvasJSON:${uid}:${pid}:${angle}`
+                  localStorage.setItem(key, state)
+                }
+              }
+            } catch {}
           }
         } catch {}
       }
     },
-    [dispatch],
+    [dispatch, userId],
   )
 
   const initCanvas = useCallback(() => {

@@ -24,8 +24,7 @@ import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { FileText, Palette, MapPin, Package, Edit3, Copy, Trash2, Heart, ArrowUpRight } from "lucide-react" // Added Edit3, Copy, Trash2
-import { FavoritesSection } from "./favorites-section"
+import { FileText, Palette, MapPin, Package, Edit3, Copy, Trash2, ArrowUpRight } from "lucide-react" // Added Edit3, Copy, Trash2
 import Image from "next/image"
 import { useSession } from "next-auth/react" // Import useSession
 
@@ -240,21 +239,14 @@ export function UserDashboard({ defaultTab = "orders" }: { defaultTab?: string }
             <span className="hidden sm:inline">{t.savedDesigns}</span>
             <span className="sm:hidden">{t.savedDesigns}</span>
           </TabsTrigger>
-          <TabsTrigger value="favorites" className="flex items-center gap-2 py-3">
-            <Heart className="h-4 w-4" />
-            <span className="hidden sm:inline">Favorites</span>
-            <span className="sm:hidden">Favs</span>
-          </TabsTrigger>
+          
           <TabsTrigger value="profile" className="flex items-center gap-2 py-3">
             <MapPin className="h-4 w-4" />
             <span className="hidden sm:inline">{t.billingShippingInfo}</span>
             <span className="sm:hidden">{t.profile}</span>
           </TabsTrigger>
         </TabsList>
-        {/* Favorites Tab */}
-        <TabsContent value="favorites" className="mt-6">
-          <FavoritesSection />
-        </TabsContent>
+        
 
         {/* Order History Tab */}
         <TabsContent value="orders" className="mt-6">
@@ -405,11 +397,8 @@ export function UserDashboard({ defaultTab = "orders" }: { defaultTab?: string }
                                 if (!userId || !categoryId) {
                                   return
                                 }
-                                const { applyDesignToFavorites } = await import("@/lib/redux/slices/favoritesSlice")
                                 const { setAppliedCategoryDesign } = await import("@/lib/redux/slices/appSlice")
-                                // Reuse the category-level application mechanism to mark this design as the active one for the category
-                                // This will make all product cards in the same category show this overlay immediately
-                                await store.dispatch(applyDesignToFavorites({ userId, categoryId, designId: design.id }) as any)
+                                await store.dispatch(setAppliedCategoryDesign({ categoryId, designId: design.id }))
                                 // Mirror in app state for immediate UI reactivity
                                 await store.dispatch(setAppliedCategoryDesign({ categoryId, designId: design.id }) as any)
                               } catch (e) {

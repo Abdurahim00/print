@@ -9,7 +9,6 @@ import designsSlice from "./slices/designsSlice" // New
 import templatesSlice from "./slices/templatesSlice" // New
 import couponsSlice from "./slices/couponsSlice" // New
 import categoriesSlice from "./slices/categoriesSlice" // New
-import favoritesSlice from "./slices/favoritesSlice" // New
 
 import designReducer from "@/lib/redux/designToolSlices/designSlice"
 import productsReducer from "@/lib/redux/designToolSlices/productsSlice"
@@ -28,7 +27,7 @@ export const store = configureStore({
     templatesManagement: templatesSlice, // Added
     coupons: couponsSlice, // Added
     categories: categoriesSlice, // Added
-    favorites: favoritesSlice, // Added
+    // favorites removed
 
     design: designReducer,
     designProducts: productsReducer,

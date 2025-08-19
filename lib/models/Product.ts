@@ -51,6 +51,23 @@ export interface ProductDocument {
   baseColor?: string; // Default/base color for the product
   angles?: string[]; // Available viewing angles (e.g., ['front', 'back', 'left', 'right'])
   colors?: string[]; // Available colors for non-variation products
+  // Individual angle images for single products without variations
+  frontImage?: string;
+  backImage?: string;
+  leftImage?: string;
+  rightImage?: string;
+  materialImage?: string;
+  frontAltText?: string;
+  backAltText?: string;
+  leftAltText?: string;
+  rightAltText?: string;
+  materialAltText?: string;
+  // Purchase limit settings
+  purchaseLimit?: {
+    enabled: boolean; // Whether purchase limits are enabled for this product
+    maxQuantityPerOrder: number; // Maximum quantity per order
+    message?: string; // Custom message to show when limit is exceeded
+  };
 }
 
 export interface Product {
@@ -72,4 +89,21 @@ export interface Product {
   baseColor?: string; // Default/base color for the product
   angles?: string[]; // Available viewing angles (e.g., ['front', 'back', 'left', 'right'])
   colors?: string[]; // Available colors for non-variation products
+  // Individual angle images for single products without variations
+  frontImage?: string;
+  backImage?: string;
+  leftImage?: string;
+  rightImage?: string;
+  materialImage?: string;
+  frontAltText?: string;
+  backAltText?: string;
+  leftAltText?: string;
+  rightAltText?: string;
+  materialAltText?: string;
+  // Purchase limit settings
+  purchaseLimit?: {
+    enabled: boolean; // Whether purchase limits are enabled for this product
+    maxQuantityPerOrder: number; // Maximum quantity per order
+    message?: string; // Custom message to show when limit is exceeded
+  };
 }

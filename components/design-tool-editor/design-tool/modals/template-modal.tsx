@@ -33,6 +33,7 @@ export function TemplateModal({ isOpen, onClose, loading = false }: TemplateModa
   const { items: templates, loading: templatesLoading } = useSelector((state: RootState) => state.templatesManagement)
   const { fabricCanvas } = useSelector((state: RootState) => state.canvas)
   
+  console.log('🛠️ [TemplateModal] Render state:', { isOpen, templatesCount: templates?.length, templatesLoading, loading })
 
   // Fetch templates when modal opens
   useEffect(() => {
@@ -71,6 +72,8 @@ export function TemplateModal({ isOpen, onClose, loading = false }: TemplateModa
           <DialogTitle>Choose Template</DialogTitle>
         </DialogHeader>
 
+       
+
         <div className="p-4 space-y-4">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
@@ -82,7 +85,7 @@ export function TemplateModal({ isOpen, onClose, loading = false }: TemplateModa
             />
           </div>
 
-          <div className="flex flex-wrap gap-2">
+          {/* <div className="flex flex-wrap gap-2">
             {categories.map((category: string) => (
               <Button
                 key={category}
@@ -94,7 +97,7 @@ export function TemplateModal({ isOpen, onClose, loading = false }: TemplateModa
                 {category}
               </Button>
             ))}
-          </div>
+          </div> */}
 
           {templatesLoading || loading ? (
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">

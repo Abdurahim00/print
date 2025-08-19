@@ -18,18 +18,46 @@ interface ProductModalProps {
 
 export function ProductModal({ isOpen, onClose, products, loading = false }: ProductModalProps) {
   const dispatch = useDispatch()
+  
+  console.log('🛠️ [ProductModal] Render state:', { isOpen, productsCount: products?.length, loading })
 
   const handleSelectProduct = (product: Product) => {
-    // Collect angles only from real data: variations' images or product.angles
-    const angleSet = new Set<string>()
-    if (product.hasVariations && product.variations) {
-      product.variations.forEach(variation => {
-        variation.images?.forEach(img => {
-          if (img?.angle) angleSet.add(img.angle)
+    // Collect angles from variations OR individual angle images for single products
+    let realAngles: string[] = []
+    
+    if (product.hasVariations && product.variations && product.variations.length > 0) {
+      // Get angles from the first variation (which will be the initial color)
+      const firstVariation = product.variations[0]
+      if (firstVariation.images) {
+        const angleSet = new Set<string>()
+        firstVariation.images.forEach(img => {
+          if (img?.angle && img.url && img.url.trim() !== '') {
+            angleSet.add(img.angle)
+          }
         })
+        realAngles = Array.from(angleSet)
+      }
+    } else {
+      // For single products without variations, check individual angle images
+      const angleImages = [
+        { angle: 'front', image: (product as any).frontImage },
+        { angle: 'back', image: (product as any).backImage },
+        { angle: 'left', image: (product as any).leftImage },
+        { angle: 'right', image: (product as any).rightImage },
+        { angle: 'material', image: (product as any).materialImage }
+      ]
+      
+      angleImages.forEach(({ angle, image }) => {
+        if (image && image.trim() !== '') {
+          realAngles.push(angle)
+        }
       })
     }
-    const realAngles = angleSet.size > 0 ? Array.from(angleSet) : (product.angles || [])
+    
+    // If no angles found, don't show any angles
+    if (realAngles.length === 0) {
+      realAngles = []
+    }
 
     // Collect colors only from real data: variations or product.colors
     const realColors = (product.hasVariations && product.variations)
@@ -43,8 +71,12 @@ export function ProductModal({ isOpen, onClose, products, loading = false }: Pro
     const selectedProduct = {
       id: product.id,
       name: product.name,
-      type: product.categoryId,
       categoryId: product.categoryId,
+      subcategoryIds: product.subcategoryIds,
+      createdAt: product.createdAt,
+      updatedAt: product.updatedAt,
+      type: product.type,
+      eligibleForCoupons: product.eligibleForCoupons,
       baseColor: initialColor,
       angles: realAngles,
       colors: realColors,
@@ -54,6 +86,20 @@ export function ProductModal({ isOpen, onClose, products, loading = false }: Pro
       inStock: product.inStock,
       hasVariations: product.hasVariations,
       variations: product.variations || [],
+      purchaseLimit: product.purchaseLimit, // Add purchase limit data
+      // Include individual angle images for single products
+      ...(product.hasVariations ? {} : {
+        frontImage: (product as any).frontImage,
+        backImage: (product as any).backImage,
+        leftImage: (product as any).leftImage,
+        rightImage: (product as any).rightImage,
+        materialImage: (product as any).materialImage,
+        frontAltText: (product as any).frontAltText,
+        backAltText: (product as any).backAltText,
+        leftAltText: (product as any).leftAltText,
+        rightAltText: (product as any).rightAltText,
+        materialAltText: (product as any).materialAltText,
+      })
     }
 
     console.log('🔥 [ProductModal] Select product with real data only', {
@@ -63,6 +109,30 @@ export function ProductModal({ isOpen, onClose, products, loading = false }: Pro
       realAngles,
       realColors,
       initialColor,
+      variations: product.variations?.map(v => ({
+        color: v.color?.hex_code,
+        imagesCount: v.images?.length,
+        images: v.images?.map(img => ({ angle: img.angle, url: img.url, isValid: img.url && img.url.trim() !== '' }))
+      })),
+      selectedProduct,
+      // Debug single product angle images
+      singleProductAngles: !product.hasVariations ? {
+        frontImage: (product as any).frontImage,
+        backImage: (product as any).backImage,
+        leftImage: (product as any).leftImage,
+        rightImage: (product as any).rightImage,
+        materialImage: (product as any).materialImage,
+        realAngles
+      } : null,
+      // Debug raw product data
+      rawProductData: {
+        allKeys: Object.keys(product),
+        hasFrontImage: !!(product as any).frontImage,
+        hasBackImage: !!(product as any).backImage,
+        hasLeftImage: !!(product as any).leftImage,
+        hasRightImage: !!(product as any).rightImage,
+        hasMaterialImage: !!(product as any).materialImage
+      }
     })
 
     dispatch(setSelectedProduct(selectedProduct))
@@ -71,10 +141,11 @@ export function ProductModal({ isOpen, onClose, products, loading = false }: Pro
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+      <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Choose Product</DialogTitle>
         </DialogHeader>
+
 
         {loading ? (
           <div className="flex items-center justify-center p-8">
@@ -86,7 +157,7 @@ export function ProductModal({ isOpen, onClose, products, loading = false }: Pro
             <p>No products available</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4">
             {products.map((product: Product) => (
               <div
                 key={product.id}
@@ -103,17 +174,17 @@ export function ProductModal({ isOpen, onClose, products, loading = false }: Pro
 
                 <h3 className="font-semibold text-gray-900 mb-1">{product.name}</h3>
                 <p className="text-sm text-gray-600 mb-2">{formatUSD(product.price)}</p>
-                {product.description && (
+                {/* {product.description && (
                   <p className="text-xs text-gray-500 mb-2 line-clamp-2">{product.description}</p>
-                )}
+                )} */}
 
                 <div className="flex items-center justify-between mb-3">
-                  <Badge variant="secondary" className="text-xs">
+                  {/* <Badge variant="secondary" className="text-xs">
                     {product.categoryId}
-                  </Badge>
-                  <Badge variant={product.inStock ? "default" : "destructive"} className="text-xs">
+                  </Badge> */}
+                  {/* <Badge variant={product.inStock ? "default" : "destructive"} className="text-xs">
                     {product.inStock ? "In Stock" : "Out of Stock"}
-                  </Badge>
+                  </Badge> */}
                 </div>
 
                 <Button 

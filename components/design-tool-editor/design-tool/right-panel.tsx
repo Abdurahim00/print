@@ -11,6 +11,7 @@ import { ProductPanel } from "./panels/product-panel"
 import { TextPanel } from "./panels/text-panel"
 import { TemplatePanel } from "./panels/template-panel"
 import { UploadPanel } from "./panels/upload-panel"
+import { DesignManagementPanel } from "./panels/design-management-panel"
 import { Button } from "@/components/ui/button"
 import { Save, Loader2, Shirt } from "lucide-react"
 import { RootState } from "@/lib/redux/store"
@@ -70,6 +71,14 @@ export function RightPanel({ isMobile = false }: { isMobile?: boolean }) {
         return <TemplatePanel />
       case "upload":
         return <UploadPanel />
+      case "design-management":
+        return (
+          <DesignManagementPanel
+            selectedProduct={selectedProduct}
+            productColor={productColor}
+            viewMode={viewMode}
+          />
+        )
       default:
         return <ProductPanel />
     }

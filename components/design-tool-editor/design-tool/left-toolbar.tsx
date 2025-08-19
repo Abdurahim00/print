@@ -4,10 +4,21 @@ import { useSelector, useDispatch } from "react-redux"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-import { Shirt, ImageIcon, Type, Upload, Undo2, Redo2 } from "lucide-react"
+import { 
+  Type, 
+  Image, 
+  Palette, 
+  Shirt, 
+  FileText, 
+  Upload,
+  Settings,
+  Layers,
+  Undo2,
+  Redo2
+} from "lucide-react"
 import { setSelectedTool, setShowProductModal, setShowTemplateModal } from "@/lib/redux/designToolSlices/designSlice"
-import { useFabricCanvas } from "@/hooks/useFabricCanvas"
 import { RootState } from "@/lib/redux/store"
+import { useFabricCanvas } from "@/hooks/useFabricCanvas"
 
 export function LeftToolbar() {
   const dispatch = useDispatch()
@@ -16,24 +27,34 @@ export function LeftToolbar() {
   const { handleUndo, handleRedo, addText } = useFabricCanvas("design-canvas")
 
   const tools = [
-    { id: "product", icon: Shirt, label: "Product" },
-    { id: "template", icon: ImageIcon, label: "Templates" },
-    { id: "text", icon: Type, label: "Text" },
-    { id: "upload", icon: Upload, label: "Upload" },
+    { id: "product", icon: Shirt, label: "Product", description: "Select and configure products" },
+    { id: "text", icon: Type, label: "Text", description: "Add and edit text elements" },
+    { id: "template", icon: FileText, label: "Templates", description: "Browse and apply design templates" },
+    { id: "upload", icon: Upload, label: "Upload", description: "Upload custom images and graphics" },
+    { id: "design-management", icon: Layers, label: "Designs", description: "Manage variation designs" },
   ]
 
-  const handleToolSelect = (tool: string) => {
+  const handleToolSelect = (toolId: string) => {
+    console.log('🛠️ [LeftToolbar] Tool selected:', toolId)
+    console.log('🛠️ [LeftToolbar] Current Redux state:', { selectedTool, canUndo, canRedo, fabricCanvas: !!fabricCanvas })
+    
     // First, set the selected tool (this visually highlights the tool)
-    dispatch(setSelectedTool(tool))
+    dispatch(setSelectedTool(toolId))
     
     // Then perform the tool-specific action
-    if (tool === "product") {
+    if (toolId === "product") {
+      console.log('🛠️ [LeftToolbar] Opening product modal')
       dispatch(setShowProductModal(true))
-    } else if (tool === "template") {
+      console.log('🛠️ [LeftToolbar] Product modal action dispatched')
+    } else if (toolId === "template") {
+      console.log('🛠️ [LeftToolbar] Opening template modal')
       dispatch(setShowTemplateModal(true))
-    } else if (tool === "text") {
+      console.log('🛠️ [LeftToolbar] Template modal action dispatched')
+    } else if (toolId === "text") {
+      console.log('🛠️ [LeftToolbar] Adding text to canvas')
       if (fabricCanvas) {
         addText(fabricCanvas) // Pass the fabricCanvas instance
+        console.log('🛠️ [LeftToolbar] Text added to canvas')
       } else {
         console.warn("Fabric canvas not yet initialized. Please wait a moment or try again.")
       }
@@ -45,27 +66,33 @@ export function LeftToolbar() {
       <TooltipProvider>
         {/* Main Tools */}
         <div className="space-y-2 lg:space-y-3">
-          {tools.map((tool) => (
-            <Tooltip key={tool.id}>
-              <TooltipTrigger asChild>
-                <Button
-                  variant={selectedTool === tool.id ? "default" : "ghost"}
-                  size="icon"
-                  className={`w-11 h-11 lg:w-14 lg:h-14 flex flex-col items-center justify-center rounded-2xl transition-all duration-300 shadow-sm hover:shadow-md ${
-                    selectedTool === tool.id 
-                      ? "bg-purple-700 hover:bg-purple-700 text-white shadow-lg scale-105 hover:scale-110" 
-                      : "hover:bg-gray-50 hover:scale-105 text-gray-600 hover:text-gray-800"
-                  }`}
-                  onClick={() => handleToolSelect(tool.id)}
-                >
-                  <tool.icon className="w-5 h-5 lg:w-6 lg:h-6" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side="right" className="bg-gray-900 text-white border-gray-700">
-                <p className="font-medium">{tool.label}</p>
-              </TooltipContent>
-            </Tooltip>
-          ))}
+          {tools.map((tool) => {
+            const Icon = tool.icon
+            const isSelected = selectedTool === tool.id
+            
+            return (
+              <Tooltip key={tool.id}>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant={isSelected ? "default" : "ghost"}
+                    size="icon"
+                    className={`w-11 h-11 lg:w-14 lg:h-14 flex flex-col items-center justify-center rounded-2xl transition-all duration-300 shadow-sm hover:shadow-md ${
+                      isSelected 
+                        ? "bg-purple-700 hover:bg-purple-700 text-white shadow-lg scale-105 hover:scale-110" 
+                        : "hover:bg-gray-50 hover:scale-105 text-gray-600 hover:text-gray-800"
+                    }`}
+                    onClick={() => handleToolSelect(tool.id)}
+                  >
+                    <Icon className="w-5 h-5 lg:w-6 lg:h-6" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="right" className="bg-gray-900 text-white border-gray-700">
+                  <p className="font-medium">{tool.label}</p>
+                  <p className="text-xs text-gray-300">{tool.description}</p>
+                </TooltipContent>
+              </Tooltip>
+            )
+          })}
         </div>
 
         <Separator className="my-4 lg:my-6 w-8 lg:w-10 bg-gradient-to-r from-transparent via-gray-300 to-transparent" />

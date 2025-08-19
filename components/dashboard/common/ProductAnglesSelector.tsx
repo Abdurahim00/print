@@ -26,34 +26,33 @@ export const ProductAnglesSelector: React.FC<ProductAnglesSelectorProps> = ({
   variationImages = [],
   productImage,
 }) => {
-  // Only show if we have meaningful angles to display
-  if (!angles || angles.length <= 1 || !productImage) return null
+  // Only show if we have angles and variation images
+  // No fallbacks - only show what admins actually uploaded
+  if (!angles || angles.length <= 1) return null
+  
+  // Check if we have valid variation images to display
+  const hasValidImages = variationImages.some(img => img.url && img.url.trim() !== '')
+  
+  if (!hasValidImages) return null
 
   // Helper to get image for a specific angle
   const getImageForAngle = (angle: string) => {
-    // If we have variation images, prioritize them
+    // Only use variation images - no fallbacks
     if (variationImages.length > 0) {
-      // First try to find the specific angle image from variation images
-      const specificAngleImage = variationImages.find(img => img.angle === angle && img.url)
+      // Find the specific angle image from variation images
+      const specificAngleImage = variationImages.find(img => img.angle === angle && img.url && img.url.trim() !== '')
       if (specificAngleImage) {
+        console.log(`Found specific angle image for ${angle}:`, specificAngleImage.url)
         return specificAngleImage.url
       }
       
-      // If no specific angle image, use the primary image from the variation
-      const primaryImage = variationImages.find(img => img.is_primary && img.url)
-      if (primaryImage) {
-        return primaryImage.url
-      }
-      
-      // If no primary image, use any available image from the variation
-      const anyVariationImage = variationImages.find(img => img.url)
-      if (anyVariationImage) {
-        return anyVariationImage.url
-      }
+      // If no specific angle image found, don't show anything for this angle
+      console.log(`No image found for angle ${angle} - skipping`)
+      return null
     }
     
-    // Fallback to product image
-    return productImage || "/placeholder.svg"
+    // No fallback - return null if no variation images
+    return null
   }
 
   // Debug logging
@@ -61,8 +60,8 @@ export const ProductAnglesSelector: React.FC<ProductAnglesSelectorProps> = ({
     angles,
     selectedAngle,
     variationImagesCount: variationImages.length,
-    variationImages: variationImages.map(img => ({ angle: img.angle, url: img.url })),
-    productImage
+    variationImages: variationImages.map(img => ({ angle: img.angle, url: img.url, isValid: img.url && img.url.trim() !== '' })),
+    hasValidImages
   })
 
   // Helper to get display name for angle
@@ -85,6 +84,11 @@ export const ProductAnglesSelector: React.FC<ProductAnglesSelectorProps> = ({
           {angles.map((angle) => {
             const isSelected = selectedAngle === angle
             const imageUrl = getImageForAngle(angle)
+            
+            // Skip angles that don't have images
+            if (!imageUrl) {
+              return null
+            }
             
             return (
               <div 

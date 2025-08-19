@@ -75,6 +75,40 @@ const cartSlice = createSlice({
     }>) => {
       const { product, selectedSizes, designPreview, designId, designContext, designCanvasJSON } = action.payload
       
+      // Log the data being added to cart
+      console.log('🛒 [CartSlice] Adding to cart with sizes:', {
+        product: {
+          id: product.id,
+          name: product.name,
+          price: product.price,
+          hasVariations: (product as any).hasVariations,
+          type: typeof product.price
+        },
+        selectedSizes: selectedSizes.map(size => ({
+          size: size.size,
+          quantity: size.quantity,
+          price: size.price,
+          totalPrice: size.price * size.quantity
+        })),
+        designPreview: designPreview ? 'Present' : 'None',
+        designId: designId || 'None',
+        designContext: designContext ? {
+          viewMode: designContext.viewMode,
+          productColor: designContext.productColor,
+          hasTemplate: !!designContext.selectedTemplate,
+          hasDesignCosts: !!designContext.designCosts,
+          allDesignedAngles: designContext.allDesignedAngles ? {
+            count: designContext.allDesignedAngles.length,
+            angles: designContext.allDesignedAngles.map((angle: any) => ({
+              angle: angle.angle,
+              hasDesign: angle.hasDesign,
+              hasCanvasData: !!angle.canvasJSON
+            }))
+          } : 'Missing'
+        } : 'None',
+        designCanvasJSON: designCanvasJSON ? 'Present' : 'None'
+      })
+      
       // Generate a unique ID for this specific product + design combination
       const uniqueId = designId 
         ? `${product.id}-${designId}` 
@@ -95,6 +129,30 @@ const cartSlice = createSlice({
         designContext,
         designCanvasJSON
       }
+      
+      console.log('🛒 [CartSlice] Created cart item:', {
+        uniqueId,
+        totalQuantity,
+        finalItem: {
+          id: newItem.id,
+          name: newItem.name,
+          price: newItem.price,
+          quantity: newItem.quantity,
+          selectedSizesCount: newItem.selectedSizes?.length || 0,
+          hasDesignPreview: !!newItem.designPreview,
+          hasDesignContext: !!newItem.designContext,
+          designContextDetails: newItem.designContext ? {
+            viewMode: newItem.designContext.viewMode,
+            productColor: newItem.designContext.productColor,
+            allDesignedAnglesCount: (newItem.designContext as any).allDesignedAngles?.length || 0,
+            allDesignedAngles: (newItem.designContext as any).allDesignedAngles?.map((angle: any) => ({
+              angle: angle.angle,
+              hasDesign: angle.hasDesign,
+              hasCanvasData: !!angle.canvasJSON
+            })) || []
+          } : 'None'
+        }
+      })
       
       state.items.push(newItem)
       

@@ -24,6 +24,6 @@ export function formatSEK(value: unknown): string {
 
 export function formatUSD(value: unknown): string {
   const num = coerceNumber(value)
-  if (num === null) return "$0.00"
-  return `$${num.toFixed(2)}`
+  if (num === null) return "Kr0.00"
+  return `${num.toFixed(2)} Kr`
 }

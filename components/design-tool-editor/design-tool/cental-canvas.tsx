@@ -9,6 +9,7 @@ import { RootState } from "@/lib/redux/store"
 import Image from "next/image"
 import { ProductAnglesSelector } from "@/components/dashboard/common/ProductAnglesSelector"
 import { LoadSavedDesign } from "./load-saved-design"
+import { useVariationDesignPersistence } from "@/hooks/useVariationDesignPersistence"
 
 // Type definition for product
 interface Product {
@@ -32,99 +33,212 @@ export function CentralCanvas() {
   
   // State for tracking if a saved design is loaded
   const [isLoadingDesign, setIsLoadingDesign] = useState(false)
+  const [isClient, setIsClient] = useState(false)
 
   const { canvasRef, loadFromJSON } = useFabricCanvas("design-canvas")
   
+  // Get the Fabric.js canvas instance safely
+  const getFabricCanvas = useCallback(() => {
+    if (typeof window === 'undefined') return null
+    return (window as any).fabricCanvas
+  }, [])
+  
+  // Initialize variation design persistence only on client side
+  const variationDesignPersistence = useVariationDesignPersistence({
+    fabricCanvas: isClient ? getFabricCanvas() : null,
+    selectedProduct,
+    productColor,
+    viewMode,
+    autoSaveDelay: 1000
+  })
+  
+  // Set client-side flag
+  useEffect(() => {
+    setIsClient(true)
+  }, [])
+  
   // Persist current design session (product + view + template) on change
   useEffect(() => {
+    if (!isClient) return // Only run on client
+    
     try {
-      if (typeof window !== 'undefined') {
         const sessionState = {
-          selectedProduct,
+        selectedProduct: selectedProduct ? {
+          id: selectedProduct.id,
+          name: selectedProduct.name,
+          type: selectedProduct.type,
+          categoryId: selectedProduct.categoryId,
+          baseColor: selectedProduct.baseColor,
+          angles: selectedProduct.angles,
+          colors: selectedProduct.colors,
+          price: selectedProduct.price,
+          image: selectedProduct.image,
+          description: selectedProduct.description,
+          inStock: selectedProduct.inStock,
+          hasVariations: selectedProduct.hasVariations,
+          variations: selectedProduct.variations,
+          purchaseLimit: selectedProduct.purchaseLimit, // Add purchase limit data
+        } : null,
           productColor,
           viewMode,
           selectedTemplate,
+        timestamp: Date.now(), // Add timestamp for debugging
         }
         localStorage.setItem('designSessionState', JSON.stringify(sessionState))
-      }
-    } catch {}
-  }, [selectedProduct, productColor, viewMode, selectedTemplate])
+      
+      console.log('💾 [CentralCanvas] Session state persisted:', {
+        productId: selectedProduct?.id,
+        productName: selectedProduct?.name,
+        productColor,
+        viewMode,
+        hasTemplate: !!selectedTemplate,
+        timestamp: new Date().toISOString()
+      })
+    } catch (error) {
+      console.error('Error persisting session state:', error)
+    }
+  }, [selectedProduct, productColor, viewMode, selectedTemplate, isClient])
 
-  // Restore persisted design session and canvas after refresh
+  // Restore persisted design session after refresh
   useEffect(() => {
+    if (!isClient) return // Only run on client
+    
     try {
-      if (typeof window === 'undefined') return
-      const params = new URLSearchParams(window.location.search)
-      const hasDesignId = !!params.get('designId')
-      const hasProductId = !!params.get('productId')
-
-      // Restore session state first
       const sessionRaw = localStorage.getItem('designSessionState')
       if (sessionRaw) {
         const session = JSON.parse(sessionRaw)
-        if (session?.selectedProduct) {
+        console.log('🔄 [CentralCanvas] Restoring session from localStorage:', session)
+        
+        // Check if the session product has purchaseLimit
+        if (session.selectedProduct) {
+          console.log('🔄 [CentralCanvas] Session product data:', {
+            hasPurchaseLimit: !!session.selectedProduct.purchaseLimit,
+            purchaseLimit: session.selectedProduct.purchaseLimit,
+            allKeys: Object.keys(session.selectedProduct)
+          })
+        }
+        
+        // Restore product selection first
+        if (session.selectedProduct && !selectedProduct) {
+          console.log('🔄 [CentralCanvas] Restoring selected product from session')
           dispatch(setSelectedProduct(session.selectedProduct))
         }
-        if (session?.productColor) {
+        
+        // Restore other session state
+        if (session.productColor && session.productColor !== productColor) {
           dispatch(setProductColor(session.productColor))
         }
-        if (session?.viewMode) {
+        if (session.viewMode && session.viewMode !== viewMode) {
           dispatch(setViewMode(session.viewMode))
         }
-        if (session?.selectedTemplate) {
+        if (session.selectedTemplate && !selectedTemplate) {
           dispatch(setSelectedTemplate(session.selectedTemplate))
         }
       }
+    } catch (error) {
+      console.error('Error restoring session state:', error)
+    }
+  }, [dispatch, isClient, selectedProduct, productColor, viewMode, selectedTemplate])
 
-      // Then restore canvas JSON; prefer per-user+product+angle autosave if available
-      if (loadFromJSON) {
-        const sessionRaw = localStorage.getItem('designSessionState')
-        const session = sessionRaw ? JSON.parse(sessionRaw) : null
-        const pid = session?.selectedProduct?.id
-        const angle = session?.viewMode
-        const uid = (window as any).__CURRENT_USER_ID__ || null
-        if (pid && angle) {
-          const key = `designCanvasJSON:${uid || 'guest'}:${pid}:${angle}`
-          const specific = localStorage.getItem(key)
-          if (specific) {
-            console.log('🔎 [CentralCanvas:restore] loading per-user+product+angle canvas', { key })
-            loadFromJSON(JSON.parse(specific))
-            return
-          }
-        }
-        const persisted = localStorage.getItem('designCanvasJSON')
-        if (persisted) {
-          console.log('🔎 [CentralCanvas:restore] loading global latest canvas')
-          loadFromJSON(JSON.parse(persisted))
-        }
-      }
-    } catch {}
-  }, [loadFromJSON, dispatch])
-
-  // Ensure product is present after refresh: fetch by productId from URL or session if missing/incomplete
+  // Ensure product is present after refresh: use session data or fetch by productId from URL if missing
   useEffect(() => {
+    if (!isClient) return // Only run on client
+    
     try {
-      if (typeof window === 'undefined') return
-      const params = new URLSearchParams(window.location.search)
-      const pidFromUrl = params.get('productId')
-      const sessionRaw = localStorage.getItem('designSessionState')
-      const session = sessionRaw ? JSON.parse(sessionRaw) : null
-      const pid = pidFromUrl || session?.selectedProduct?.id
-      const hasProduct = !!selectedProduct && (selectedProduct as any).id
-      const needsFetch = pid && (!hasProduct || (selectedProduct as any).id !== pid || !(selectedProduct as any).image)
-      if (!pid || !needsFetch) return
-      ;(async () => {
-        try {
-          const res = await fetch(`/api/products/${pid}`)
-          if (res.ok) {
-            const product = await res.json()
-            dispatch(setSelectedProduct(product))
-          }
-        } catch {}
-      })()
-    } catch {}
+      // Check if we have a product ID in the URL
+      const urlParams = new URLSearchParams(window.location.search)
+      const productIdFromUrl = urlParams.get('productId')
+      
+      // Check if we have a product ID in session
+        const sessionRaw = localStorage.getItem('designSessionState')
+      const session = sessionRaw ? JSON.parse(sessionRaw) : {}
+      const productIdFromSession = session.selectedProduct?.id
+      
+      // Determine which product ID to use
+      const targetProductId = productIdFromUrl || productIdFromSession
+      
+      // Only fetch from API if we don't have the product data in session
+      if (targetProductId && (!selectedProduct || selectedProduct.id !== targetProductId) && !session.selectedProduct) {
+        console.log('🔄 [CentralCanvas] Fetching product from API (no session data):', targetProductId)
+        
+        // Fetch the product data
+        fetch(`/api/products/${targetProductId}`)
+          .then(res => res.json())
+          .then(productData => {
+            if (productData && productData.id) {
+              console.log('🔄 [CentralCanvas] Product restored from API:', productData.name)
+              
+              // Build the selectedProduct object with the same structure as ProductModal
+              const restoredProduct = {
+                id: productData.id,
+                name: productData.name,
+                type: productData.categoryId,
+                categoryId: productData.categoryId,
+                baseColor: session.productColor || productData.baseColor || "",
+                angles: session.viewMode ? [session.viewMode] : [],
+                colors: productData.hasVariations && productData.variations 
+                  ? productData.variations.map((v: any) => v.color?.hex_code).filter(Boolean)
+                  : [],
+                price: productData.price,
+                image: productData.image,
+                description: productData.description,
+                inStock: productData.inStock,
+                hasVariations: productData.hasVariations,
+                variations: productData.variations || [],
+                purchaseLimit: productData.purchaseLimit, // Add purchase limit data
+              }
+              
+              dispatch(setSelectedProduct(restoredProduct))
+              
+              // Also restore the color and view mode if they were in session
+              if (session.productColor) {
+                dispatch(setProductColor(session.productColor))
+              } else if (restoredProduct.colors && restoredProduct.colors.length > 0) {
+                // If no color in session, use the first available color
+                const defaultColor = restoredProduct.colors[0]
+                console.log('🔄 [CentralCanvas] Setting default color:', defaultColor)
+                dispatch(setProductColor(defaultColor))
+              }
+              if (session.viewMode) {
+                dispatch(setViewMode(session.viewMode))
+              } else if (restoredProduct.angles && restoredProduct.angles.length > 0) {
+                // If no view mode in session, use the first available angle
+                const defaultViewMode = restoredProduct.angles[0]
+                console.log('🔄 [CentralCanvas] Setting default view mode:', defaultViewMode)
+                dispatch(setViewMode(defaultViewMode))
+              }
+            }
+          })
+          .catch(error => {
+            console.error('Error fetching product for restoration:', error)
+          })
+      }
+    } catch (error) {
+      console.error('Error in product restoration logic:', error)
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [isClient, selectedProduct?.id])
+
+  // Ensure canvas displays product image when product is restored
+  useEffect(() => {
+    if (isClient && selectedProduct && getFabricCanvas() && !isLoadingDesign) {
+      console.log('🔄 [CentralCanvas] Product restored, ensuring canvas displays product image')
+      
+      // Small delay to ensure everything is ready
+      setTimeout(() => {
+        // Force a re-render of the canvas to show the product image
+        if (getFabricCanvas()) {
+          getFabricCanvas()?.requestRenderAll()
+          console.log('🔄 [CentralCanvas] Canvas re-rendered after product restoration')
+        }
+        
+        // Force a re-render of the component to update the product image
+        const event = new Event('resize')
+        window.dispatchEvent(event)
+        console.log('🔄 [CentralCanvas] Component re-render triggered after product restoration')
+      }, 200)
+    }
+  }, [selectedProduct?.id, getFabricCanvas, isClient, isLoadingDesign])
   
   // Handle loading a saved design
   const handleDesignLoaded = useCallback((canvasJSON: any) => {
@@ -139,37 +253,15 @@ export function CentralCanvas() {
   }, [loadFromJSON])
 
   const handleViewChange = (view: string) => {
-    // Before switching, snapshot current angle canvas into per-product+angle slot
-    try {
-      const fabricCanvas = (window as any).fabricCanvas
-      if (fabricCanvas && selectedProduct) {
-        const state = JSON.stringify(fabricCanvas.toJSON())
-        const pid = (selectedProduct as any).id
-        const currAngle = viewMode
-        const uid = (window as any).__CURRENT_USER_ID__ || null
-        if (pid && currAngle) {
-          const key = `designCanvasJSON:${uid || 'guest'}:${pid}:${currAngle}`
-          localStorage.setItem(key, state)
-        }
-      }
-    } catch {}
+    // Before switching, save current design
+    if (isClient && getFabricCanvas() && selectedProduct && variationDesignPersistence.getCurrentVariationId()) {
+      variationDesignPersistence.saveCurrentDesign()
+    }
+    
     dispatch(setViewMode(view))
-    // After switching, load the new angle autosave if present
-    try {
-      const fabricCanvas = (window as any).fabricCanvas
-      if (fabricCanvas && selectedProduct && loadFromJSON) {
-        const pid = (selectedProduct as any).id
-        const uid = (window as any).__CURRENT_USER_ID__ || null
-        const next = localStorage.getItem(`designCanvasJSON:${uid || 'guest'}:${pid}:${view}`)
-        if (next) {
-          loadFromJSON(JSON.parse(next))
-        } else {
-          // Clear for a clean slate on a new angle
-          fabricCanvas.clear()
-          fabricCanvas.requestRenderAll()
-        }
-      }
-    } catch {}
+    
+    // After switching, the useVariationDesignPersistence hook will automatically load the design
+    // for the new view mode if it exists
   }
 
   // Determine if canvas border should be visible based on selected tool
@@ -182,10 +274,63 @@ export function CentralCanvas() {
 
   // Get product angles from the selected product
   const getProductAngles = () => {
-    if (!selectedProduct || !(selectedProduct as Product).angles) {
+    if (!selectedProduct) {
       return [] // No angles when no product is selected
     }
-    return (selectedProduct as Product).angles || []
+    
+    const product = selectedProduct as Product;
+    
+    // If product has variations, collect angles ONLY from the current variation
+    if (product.hasVariations && product.variations) {
+      // Find the variation that matches the current product color
+      const currentVariation = product.variations.find((v: any) => v.color.hex_code === productColor)
+      
+      if (currentVariation && currentVariation.images) {
+        const angleSet = new Set<string>()
+        
+        // Collect angles ONLY from the current variation's images
+        currentVariation.images.forEach((img: any) => {
+          if (img?.angle && img.url && img.url.trim() !== '') {
+            angleSet.add(img.angle)
+          }
+        })
+        
+        // Return only the angles that have actual images for this specific variation
+        if (angleSet.size > 0) {
+          return Array.from(angleSet)
+        }
+      }
+    } else {
+      // For single products, use the hook's getAvailableViewModes function
+      if (variationDesignPersistence.getAvailableViewModes) {
+        const availableViewModes = variationDesignPersistence.getAvailableViewModes()
+        console.log('🔄 [CentralCanvas] Single product angles from hook:', availableViewModes)
+        return availableViewModes
+      }
+      
+      // Fallback to manual checking if hook function not available
+      const angleImages = [
+        { angle: 'front', image: (product as any).frontImage },
+        { angle: 'back', image: (product as any).backImage },
+        { angle: 'left', image: (product as any).leftImage },
+        { angle: 'right', image: (product as any).rightImage },
+        { angle: 'material', image: (product as any).materialImage }
+      ]
+      
+      const availableAngles: string[] = []
+      angleImages.forEach(({ angle, image }) => {
+        if (image && image.trim() !== '') {
+          availableAngles.push(angle)
+        }
+      })
+      
+      if (availableAngles.length > 0) {
+        return availableAngles
+      }
+    }
+    
+    // No fallback - if no images found, return empty array
+    return []
   }
 
   // Get image for current view mode (robust across partial product restore)
@@ -206,37 +351,280 @@ export function CentralCanvas() {
         // Fallback to swatch image or main product image
         return currentVariation.color.swatch_image || product.image
       }
+    } else {
+      // For single products without variations, check individual angle images
+      const angleImageMap: Record<string, string> = {
+        'front': (product as any).frontImage,
+        'back': (product as any).backImage,
+        'left': (product as any).leftImage,
+        'right': (product as any).rightImage,
+        'material': (product as any).materialImage
+      }
+      
+      const currentAngleImage = angleImageMap[viewMode]
+      
+      // Debug logging for single product image selection
+      if (process.env.NODE_ENV === 'development') {
+        console.log('🔍 [CentralCanvas] getCurrentImage for single product:', {
+          viewMode,
+          angleImageMap,
+          currentAngleImage,
+          hasCurrentAngleImage: !!(currentAngleImage && currentAngleImage.trim() !== ''),
+          imageLength: currentAngleImage ? currentAngleImage.length : 0
+        })
+      }
+      
+      if (currentAngleImage && currentAngleImage.trim() !== '') {
+        return currentAngleImage
+      }
     }
     
     // Fallback to main product image
     return (product as any).image || null
   }
 
+  // Debug logging for image restoration
+  useEffect(() => {
+    if (isClient && selectedProduct && process.env.NODE_ENV === 'development') {
+      console.log('🖼️ [CentralCanvas] Image restoration debug:', {
+        productName: selectedProduct.name,
+        productColor,
+        viewMode,
+        hasVariations: selectedProduct.hasVariations,
+        variationsCount: selectedProduct.variations?.length,
+        currentVariation: getCurrentVariation(),
+        currentImage: getCurrentImage(),
+        fallbackImage: (selectedProduct as any).image,
+        // Debug single product angle images
+        singleProductAngles: !selectedProduct.hasVariations ? {
+          frontImage: (selectedProduct as any).frontImage,
+          backImage: (selectedProduct as any).backImage,
+          leftImage: (selectedProduct as any).leftImage,
+          rightImage: (selectedProduct as any).rightImage,
+          materialImage: (selectedProduct as any).materialImage,
+          angles: selectedProduct.angles
+        } : null,
+        // Debug raw product data
+        rawProductData: {
+          allKeys: Object.keys(selectedProduct),
+          hasFrontImage: !!(selectedProduct as any).frontImage,
+          hasBackImage: !!(selectedProduct as any).backImage,
+          hasLeftImage: !!(selectedProduct as any).leftImage,
+          hasRightImage: !!(selectedProduct as any).rightImage,
+          hasMaterialImage: !!(selectedProduct as any).materialImage
+        }
+      })
+    }
+  }, [selectedProduct, productColor, viewMode, isClient])
+
   // Get current variation images for the selected color
   const getCurrentVariationImages = () => {
     if (!selectedProduct) return []
     
     const product = selectedProduct as Product;
-    if (!product.hasVariations || !product.variations) {
+    
+    // If product has variations, find images for the current color variation
+    if (product.hasVariations && product.variations) {
+      // Find the variation that matches the current product color
+      const currentVariation = product.variations.find((v: any) => v.color.hex_code === productColor)
+      
+      if (!currentVariation || !currentVariation.images) {
       return []
     }
     
-    // Find the variation that matches the current product color
-    const currentVariation = product.variations.find((v: any) => v.color.hex_code === productColor)
-    return currentVariation?.images || []
+      // Filter out images without valid URLs and return only valid images
+      return currentVariation.images.filter((img: any) => img.url && img.url.trim() !== '')
+    } else {
+      // For single products without variations, return individual angle images
+      const individualImages = []
+      
+      if ((product as any).frontImage && (product as any).frontImage.trim() !== '') {
+        individualImages.push({
+          id: 'front_img',
+          url: (product as any).frontImage,
+          alt_text: (product as any).frontAltText || '',
+          angle: 'front',
+          is_primary: true
+        })
+      }
+      
+      if ((product as any).backImage && (product as any).backImage.trim() !== '') {
+        individualImages.push({
+          id: 'back_img',
+          url: (product as any).backImage,
+          alt_text: (product as any).backAltText || '',
+          angle: 'back',
+          is_primary: false
+        })
+      }
+      
+      if ((product as any).leftImage && (product as any).leftImage.trim() !== '') {
+        individualImages.push({
+          id: 'left_img',
+          url: (product as any).leftImage,
+          alt_text: (product as any).leftAltText || '',
+          angle: 'left',
+          is_primary: false
+        })
+      }
+      
+      if ((product as any).rightImage && (product as any).rightImage.trim() !== '') {
+        individualImages.push({
+          id: 'right_img',
+          url: (product as any).rightImage,
+          alt_text: (product as any).rightAltText || '',
+          angle: 'right',
+          is_primary: false
+        })
+      }
+      
+      if ((product as any).materialImage && (product as any).materialImage.trim() !== '') {
+        individualImages.push({
+          id: 'material_img',
+          url: (product as any).materialImage,
+          alt_text: (product as any).materialAltText || '',
+          angle: 'material',
+          is_primary: false
+        })
+      }
+      
+      return individualImages
+    }
+  }
+
+  // Get current variation (for both variation products and single products)
+  const getCurrentVariation = () => {
+    if (!selectedProduct) return null
+    
+    const product = selectedProduct as Product;
+    
+    if (product.hasVariations && product.variations) {
+      // For variation products, find the variation that matches the current color
+      return product.variations.find((v: any) => v.color.hex_code === productColor)
+    } else {
+      // For single products, create a virtual variation with individual angle images
+      const individualImages = getCurrentVariationImages()
+      if (individualImages.length > 0) {
+        return {
+          id: 'single_product_variation',
+          color: { name: 'Default', hex_code: product.baseColor || '#000000', swatch_image: product.image },
+          images: individualImages,
+          price: product.price,
+          inStock: (product as any).inStock || true,
+          stockQuantity: 0,
+          isDefault: true
+        }
+      }
+    }
+    
+    return null
   }
 
   const angles = getProductAngles()
   const currentImage = getCurrentImage()
   const currentVariationImages = getCurrentVariationImages()
+  const currentVariation = getCurrentVariation()
+
+  // Update view mode if current view mode is not available in new angles
+  useEffect(() => {
+    if (selectedProduct && angles.length > 0 && !angles.includes(viewMode)) {
+      // If current view mode is not available in new angles, switch to first available angle
+      dispatch(setViewMode(angles[0]))
+    }
+  }, [angles, viewMode, selectedProduct, dispatch])
+
+  // Force refresh product data from API (bypass session)
+  const forceRefreshProductFromAPI = useCallback(async () => {
+    if (!selectedProduct?.id) {
+      console.log('🔄 [CentralCanvas] No product ID available for force refresh')
+      return
+    }
+    
+    try {
+      console.log('🔄 [CentralCanvas] Force refreshing product from API:', selectedProduct.id)
+      
+      const response = await fetch(`/api/products/${selectedProduct.id}`)
+      const productData = await response.json()
+      
+      if (productData && productData.id) {
+        console.log('🔄 [CentralCanvas] Product refreshed from API:', {
+          name: productData.name,
+          hasPurchaseLimit: !!productData.purchaseLimit,
+          purchaseLimit: productData.purchaseLimit,
+          price: productData.price
+        })
+        
+        // Build the refreshed product object with the same structure as ProductModal
+        const refreshedProduct = {
+          id: productData.id,
+          name: productData.name,
+          type: productData.categoryId,
+          categoryId: productData.categoryId,
+          baseColor: productData.baseColor || "",
+          angles: productData.angles || [],
+          colors: productData.hasVariations && productData.variations 
+            ? productData.variations.map((v: any) => v.color?.hex_code).filter(Boolean)
+            : [],
+          price: productData.price,
+          image: productData.image,
+          description: productData.description,
+          inStock: productData.inStock,
+          hasVariations: productData.hasVariations,
+          variations: productData.variations || [],
+          purchaseLimit: productData.purchaseLimit, // Include purchase limit data
+        }
+        
+        // Update the product in Redux state
+        dispatch(setSelectedProduct(refreshedProduct))
+        
+        // Also update the session in localStorage
+        const sessionRaw = localStorage.getItem('designSessionState')
+        const session = sessionRaw ? JSON.parse(sessionRaw) : {}
+        const updatedSession = {
+          ...session,
+          selectedProduct: refreshedProduct,
+          timestamp: Date.now()
+        }
+        localStorage.setItem('designSessionState', JSON.stringify(updatedSession))
+        
+        console.log('🔄 [CentralCanvas] Product refreshed and session updated')
+      }
+    } catch (error) {
+      console.error('🔄 [CentralCanvas] Error force refreshing product:', error)
+    }
+  }, [selectedProduct?.id, dispatch])
+  
+  // Expose the force refresh function to window for debugging
+  useEffect(() => {
+    if (isClient) {
+      (window as any).forceRefreshProductFromAPI = forceRefreshProductFromAPI
+    }
+  }, [isClient, forceRefreshProductFromAPI])
 
   // Enterprise apps typically log only in development environments
-  if (process.env.NODE_ENV === 'development') {
+  if (isClient && process.env.NODE_ENV === 'development') {
     console.log('CentralCanvas:', {
       productName: selectedProduct ? (selectedProduct as Product).name : null,
       viewMode,
       hasVariations: selectedProduct ? (selectedProduct as Product).hasVariations : null,
-      colorSelected: productColor
+      colorSelected: productColor,
+      angles,
+      currentVariationImagesCount: currentVariationImages.length,
+      currentVariationImages: currentVariationImages.map((img: any) => ({ angle: img.angle, url: img.url })),
+      currentImage,
+      currentVariation: currentVariation ? {
+        id: currentVariation.id,
+        color: currentVariation.color?.hex_code,
+        imagesCount: currentVariation.images?.length
+      } : null,
+      hasCurrentDesign: variationDesignPersistence.hasCurrentDesign,
+      variationsWithCurrentView: variationDesignPersistence.getVariationsWithCurrentView(),
+      // Debug single product design persistence
+      singleProductDebug: !(selectedProduct as Product)?.hasVariations ? {
+        currentVariationId: variationDesignPersistence.getCurrentVariationId(),
+        availableViewModes: variationDesignPersistence.getAvailableViewModes(),
+        hasCurrentDesign: variationDesignPersistence.hasCurrentDesign
+      } : null
     })
   }
 
@@ -312,8 +700,9 @@ export function CentralCanvas() {
           </div>
           
           {/* Product Angles - Compact design at bottom */}
-          {selectedProduct && angles && angles.length > 1 && (
+          {selectedProduct && angles && angles.length > 1 && currentVariationImages.length > 0 && (
             <div className="flex-shrink-0 mt-3 lg:mt-4">
+             
               <ProductAnglesSelector
                 angles={angles}
                 selectedAngle={viewMode}

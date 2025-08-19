@@ -154,6 +154,44 @@ export default function CartPage() {
                     return displayName
                   }
 
+                  // Get selected sizes description
+                  const getSelectedSizesDescription = () => {
+                    if (!item.selectedSizes || item.selectedSizes.length === 0) {
+                      return null
+                    }
+                    
+                    // Filter out sizes with 0 quantity
+                    const activeSizes = item.selectedSizes.filter(size => size.quantity > 0)
+                    
+                    if (activeSizes.length === 0) {
+                      return null
+                    }
+                    
+                    // Create a readable description
+                    const sizeDescriptions = activeSizes.map(size => 
+                      `${size.size}: ${size.quantity}`
+                    )
+                    
+                    return `Sizes: ${sizeDescriptions.join(', ')}`
+                  }
+
+                  // Get price breakdown for items with selected sizes
+                  const getPriceBreakdown = () => {
+                    if (!item.selectedSizes || item.selectedSizes.length === 0) {
+                      return null
+                    }
+                    
+                    const activeSizes = item.selectedSizes.filter(size => size.quantity > 0)
+                    if (activeSizes.length === 0) {
+                      return null
+                    }
+                    
+                    const totalPrice = activeSizes.reduce((sum, size) => sum + (size.price * size.quantity), 0)
+                    const averagePrice = totalPrice / activeSizes.reduce((sum, size) => sum + size.quantity, 0)
+                    
+                    return `Avg: ${averagePrice.toFixed(2)} kr per item`
+                  }
+
                   return (
                     <TableRow
                       key={item.id}
@@ -188,6 +226,18 @@ export default function CartPage() {
                               {(item as any).designContext.selectedTemplate && (
                                 <span>Template: {(item as any).designContext.selectedTemplate.name}</span>
                               )}
+                            </div>
+                          )}
+                          {/* Show selected sizes description */}
+                          {getSelectedSizesDescription() && (
+                            <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                              {getSelectedSizesDescription()}
+                            </div>
+                          )}
+                          {/* Show price breakdown for items with selected sizes */}
+                          {getPriceBreakdown() && (
+                            <div className="text-xs text-blue-600 dark:text-blue-400 mt-1">
+                              {getPriceBreakdown()}
                             </div>
                           )}
                         </div>

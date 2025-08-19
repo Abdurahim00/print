@@ -10,11 +10,14 @@ import { TemplateModal } from "./modals/template-modal"
 import { setShowProductModal, setShowTemplateModal } from "@/lib/redux/designToolSlices/designSlice"
 import { fetchProducts } from "@/lib/redux/slices/productsSlice"
 import { RootState } from "@/lib/redux/store"
+import { Button } from "@/components/ui/button"
 
 export function DesignToolContainer() {
   const dispatch = useDispatch()
   const { showProductModal, showTemplateModal } = useSelector((state: RootState) => state.design)
   const { items: products, loading } = useSelector((state: RootState) => state.products)
+
+  console.log('🛠️ [DesignToolContainer] Modal states:', { showProductModal, showTemplateModal, productsCount: products?.length, loading })
 
   // Fetch regular products on mount for the product modal
   useEffect(() => {
@@ -51,6 +54,7 @@ export function DesignToolContainer() {
         isOpen={showTemplateModal}
         onClose={() => dispatch(setShowTemplateModal(false))}
       />
+
     </div>
   )
 }

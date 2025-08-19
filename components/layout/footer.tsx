@@ -4,7 +4,7 @@ import { useAppSelector } from "@/lib/redux/hooks"
 import { translations } from "@/lib/constants"
 import Link from "next/link"
 import Image from "next/image"
-import { Instagram, Facebook, Mail, MapPin, Phone } from "lucide-react"
+import { Instagram, Facebook, Mail, MapPin, Phone, LinkedinIcon } from "lucide-react"
 
 export function Footer() {
   const { language } = useAppSelector((state) => state.app)
@@ -41,11 +41,14 @@ export function Footer() {
               </div>
             </address>
             <div className="flex items-center space-x-4 pt-2">
-              <Link href="https://instagram.com" aria-label="Instagram" className="bg-primary/10 hover:bg-primary/20 p-2 rounded-full transition-colors">
+              <Link href="https://www.instagram.com/mr.merch.se?igsh=bnkxMXI4azhqNHlz" aria-label="Instagram" className="bg-primary/10 hover:bg-primary/20 p-2 rounded-full transition-colors">
                 <Instagram size={18} className="text-primary" />
               </Link>
-              <Link href="https://facebook.com" aria-label="Facebook" className="bg-primary/10 hover:bg-primary/20 p-2 rounded-full transition-colors">
+              <Link href="https://www.facebook.com/share/1ANBooptVJ/?mibextid=wwXIfr" aria-label="Facebook" className="bg-primary/10 hover:bg-primary/20 p-2 rounded-full transition-colors">
                 <Facebook size={18} className="text-primary" />
+              </Link>
+              <Link href="https://www.linkedin.com/company/mr.merch/" aria-label="Facebook" className="bg-primary/10 hover:bg-primary/20 p-2 rounded-full transition-colors">
+                <LinkedinIcon size={18} className="text-primary" />
               </Link>
             </div>
           </div>

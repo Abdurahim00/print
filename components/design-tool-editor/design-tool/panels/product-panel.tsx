@@ -101,6 +101,15 @@ export function ProductPanel() {
 
   const variations = getVariations()
 
+  // Get current variation price or fallback to product price
+  const getCurrentPrice = () => {
+    const currentVariation = getCurrentVariation()
+    if (currentVariation && currentVariation.price !== undefined && currentVariation.price !== null) {
+      return currentVariation.price
+    }
+    return product.price
+  }
+
   const parsePriceToNumber = (value: unknown): number => {
     if (typeof value === "number") return value
     if (typeof value === "string") {
@@ -111,10 +120,13 @@ export function ProductPanel() {
     return 0
   }
 
-  const formatSEK = (amount: number) =>
-    new Intl.NumberFormat("sv-SE", { style: "currency", currency: "SEK" }).format(amount)
+  // Format price without decimals, just "888 kr"
+  const formatPrice = (amount: number) => {
+    return `${Math.round(amount)} kr`
+  }
 
-  const displayBasePrice = formatSEK(parsePriceToNumber(product.price))
+  const currentPrice = getCurrentPrice()
+  const displayPrice = formatPrice(parsePriceToNumber(currentPrice))
 
   return (
     <div className="flex flex-col h-full p-4 lg:p-6">
@@ -128,7 +140,7 @@ export function ProductPanel() {
               Eco-friendly
             </Badge>
           </div>
-          <div className="text-2xl font-bold text-purple-600">{displayBasePrice}</div>
+          <div className="text-2xl font-bold text-purple-600">{displayPrice}</div>
         </div>
 
         {/* Color Variations - show only if real variations exist */}

@@ -13,6 +13,14 @@ import { Product, Variation, Color, VariationImage } from "@/types"
 import { ProductAnglesSelector } from "./ProductAnglesSelector"
 import { useState } from "react"
 import { useAppSelector } from "@/lib/redux/hooks"
+import { Badge } from "@/components/ui/badge"
+
+// Extend Window interface for color picker
+declare global {
+  interface Window {
+    updateVariationFromColorPicker?: (variationIndex: number, hexValue: string, colorName: string | null) => void
+  }
+}
 
 interface ProductFormDialogProps {
   open: boolean
@@ -26,6 +34,78 @@ interface ProductFormDialogProps {
 }
 
 const defaultAngles = ["front", "back", "left", "right", "material"]
+
+// Color name mapping for common hex values
+const colorNameMap: Record<string, string> = {
+  "#000000": "Black",
+  "#FFFFFF": "White",
+  "#FF0000": "Red",
+  "#00FF00": "Green",
+  "#0000FF": "Blue",
+  "#FFFF00": "Yellow",
+  "#FF00FF": "Magenta",
+  "#00FFFF": "Cyan",
+  "#FFA500": "Orange",
+  "#800080": "Purple",
+  "#A52A2A": "Brown",
+  "#808080": "Gray",
+  "#FFC0CB": "Pink",
+  "#FFD700": "Gold",
+  "#C0C0C0": "Silver",
+  "#8B4513": "Saddle Brown",
+  "#32CD32": "Lime Green",
+  "#FF4500": "Orange Red",
+  "#4169E1": "Royal Blue",
+  "#DC143C": "Crimson",
+  "#2b4e58": "Dark Teal",
+}
+
+// Function to get color name from hex value
+const getColorNameFromHex = (hex: string): string | null => {
+  const normalizedHex = hex.toUpperCase()
+  return colorNameMap[normalizedHex] || null
+}
+
+// Function to start web page color picker
+const startWebPageColorPicker = (variationIndex: number) => {
+  // Create a temporary color picker that can be used to pick colors from the page
+  const colorPicker = document.createElement('input')
+  colorPicker.type = 'color'
+  colorPicker.style.position = 'fixed'
+  colorPicker.style.top = '50%'
+  colorPicker.style.left = '50%'
+  colorPicker.style.transform = 'translate(-50%, -50%)'
+  colorPicker.style.zIndex = '10000'
+  colorPicker.style.opacity = '0'
+  colorPicker.style.pointerEvents = 'none'
+  
+  document.body.appendChild(colorPicker)
+  
+  // Trigger color picker
+  colorPicker.click()
+  
+  // Handle color selection
+  colorPicker.addEventListener('change', (e) => {
+    const target = e.target as HTMLInputElement
+    const hexValue = target.value
+    const colorName = getColorNameFromHex(hexValue)
+    
+    // Update the variation with the picked color
+    if (window.updateVariationFromColorPicker) {
+      window.updateVariationFromColorPicker(variationIndex, hexValue, colorName)
+    }
+    
+    // Clean up
+    document.body.removeChild(colorPicker)
+  })
+  
+  // Clean up if user cancels
+  setTimeout(() => {
+    if (document.body.contains(colorPicker)) {
+      document.body.removeChild(colorPicker)
+    }
+  }, 1000)
+}
 
 const productSchema = Yup.object().shape({
   name: Yup.string().required("productNameRequired").min(2, "nameMinLength"),
@@ -70,12 +150,29 @@ export const ProductFormDialog: React.FC<ProductFormDialogProps> = ({
 }) => {
   const [showVariations, setShowVariations] = useState(initialValues.hasVariations || false)
   const { categories, subcategories } = useAppSelector((s: any) => s.categories)
+  
   const formik = useFormik({
     initialValues: {
       ...initialValues,
       hasVariations: initialValues.hasVariations || false,
       variations: initialValues.variations || [],
       eligibleForCoupons: initialValues.eligibleForCoupons ?? false,
+      purchaseLimit: initialValues.purchaseLimit || {
+        enabled: false,
+        maxQuantityPerOrder: 5,
+        message: ""
+      },
+      // Add angle image fields for products without variations
+      frontImage: initialValues.frontImage || "",
+      backImage: initialValues.backImage || "",
+      leftImage: initialValues.leftImage || "",
+      rightImage: initialValues.rightImage || "",
+      materialImage: initialValues.materialImage || "",
+      frontAltText: initialValues.frontAltText || "",
+      backAltText: initialValues.backAltText || "",
+      leftAltText: initialValues.leftAltText || "",
+      rightAltText: initialValues.rightAltText || "",
+      materialAltText: initialValues.materialAltText || "",
     },
     enableReinitialize: true,
     validationSchema: productSchema,
@@ -90,13 +187,92 @@ export const ProductFormDialog: React.FC<ProductFormDialogProps> = ({
             images: variation.images?.filter((img: any) => img.url && img.url.trim() !== '') || []
           })) || []
         }
+        
+        // For products without variations, create angles array from individual angle images
+        if (!cleanedValues.hasVariations) {
+          const angles: string[] = []
+          if (cleanedValues.frontImage) angles.push('front')
+          if (cleanedValues.backImage) angles.push('back')
+          if (cleanedValues.leftImage) angles.push('left')
+          if (cleanedValues.rightImage) angles.push('right')
+          if (cleanedValues.materialImage) angles.push('material')
+          cleanedValues.angles = angles
+          
+          // Ensure all individual angle image fields are properly included
+          // This is crucial for single products to work correctly
+          const requiredFields = [
+            'frontImage', 'backImage', 'leftImage', 'rightImage', 'materialImage',
+            'frontAltText', 'backAltText', 'leftAltText', 'rightAltText', 'materialAltText'
+          ]
+          
+          requiredFields.forEach(field => {
+            if (cleanedValues[field] === undefined) {
+              cleanedValues[field] = ''
+            }
+          })
+          
+          console.log('🔧 [ProductFormDialog] Single product angles created:', {
+            angles,
+            frontImage: cleanedValues.frontImage,
+            backImage: cleanedValues.backImage,
+            leftImage: cleanedValues.leftImage,
+            rightImage: cleanedValues.rightImage,
+            materialImage: cleanedValues.materialImage
+          })
+          
+          // Debug: Log the complete cleaned values before submission
+          console.log('🔧 [ProductFormDialog] Complete cleaned values before submission:', {
+            hasVariations: cleanedValues.hasVariations,
+            angles: cleanedValues.angles,
+            individualImages: {
+              frontImage: cleanedValues.frontImage,
+              backImage: cleanedValues.backImage,
+              leftImage: cleanedValues.leftImage,
+              rightImage: cleanedValues.rightImage,
+              materialImage: cleanedValues.materialImage
+            },
+            allKeys: Object.keys(cleanedValues)
+          })
+        }
+        
         console.log("Cleaned form values:", cleanedValues)
         await onSubmit(cleanedValues, helpers)
       } catch (error) {
         console.error("Form submission error:", error)
+        helpers.setSubmitting(false)
       }
     },
   })
+  
+  // Add global color picker function to window
+  React.useEffect(() => {
+    if (typeof window !== 'undefined') {
+      window.updateVariationFromColorPicker = (variationIndex: number, hexValue: string, colorName: string | null) => {
+        // This will be called from the color picker
+        const currentVariations = formik.values.variations
+        if (currentVariations[variationIndex]) {
+          const updatedVariation = {
+            ...currentVariations[variationIndex],
+            color: {
+              ...currentVariations[variationIndex].color,
+              hex_code: hexValue,
+              name: colorName || currentVariations[variationIndex].color.name
+            }
+          }
+          
+          const newVariations = [...currentVariations]
+          newVariations[variationIndex] = updatedVariation
+          formik.setFieldValue('variations', newVariations)
+        }
+      }
+    }
+    
+    return () => {
+      if (typeof window !== 'undefined') {
+        delete window.updateVariationFromColorPicker
+      }
+    }
+  }, [formik])
 
   // Helper to add a new variation
   const addVariation = () => {
@@ -223,6 +399,67 @@ export const ProductFormDialog: React.FC<ProductFormDialogProps> = ({
             />
             <Label htmlFor="eligibleForCoupons">Eligible for site-wide coupons</Label>
           </div>
+          
+          {/* Purchase Limits Section */}
+          <div className="space-y-4 border rounded-lg p-4 bg-slate-50 dark:bg-slate-800/30">
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                id="purchaseLimitEnabled"
+                checked={!!formik.values.purchaseLimit?.enabled}
+                onChange={(e) => {
+                  const currentLimit = formik.values.purchaseLimit || {}
+                  formik.setFieldValue("purchaseLimit", {
+                    ...currentLimit,
+                    enabled: e.target.checked
+                  })
+                }}
+              />
+              <Label htmlFor="purchaseLimitEnabled" className="font-medium">Enable Purchase Limits</Label>
+            </div>
+            
+            {formik.values.purchaseLimit?.enabled && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="maxQuantityPerOrder" className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                    Max Quantity Per Order
+                  </Label>
+                  <Input
+                    id="maxQuantityPerOrder"
+                    type="number"
+                    min="1"
+                    value={formik.values.purchaseLimit?.maxQuantityPerOrder || 5}
+                    onChange={(e) => {
+                      const currentLimit = formik.values.purchaseLimit || {}
+                      formik.setFieldValue("purchaseLimit", {
+                        ...currentLimit,
+                        maxQuantityPerOrder: Number(e.target.value)
+                      })
+                    }}
+                    placeholder="5"
+                  />
+                </div>
+                <div className="md:col-span-2 space-y-2">
+                  <Label htmlFor="purchaseLimitMessage" className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                    Custom Limit Message (Optional)
+                  </Label>
+                  <Input
+                    id="purchaseLimitMessage"
+                    value={formik.values.purchaseLimit?.message || ""}
+                    onChange={(e) => {
+                      const currentLimit = formik.values.purchaseLimit || {}
+                      formik.setFieldValue("purchaseLimit", {
+                        ...currentLimit,
+                        message: e.target.value
+                      })
+                    }}
+                    placeholder="Maximum quantity limit exceeded. Please reduce your order."
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+          
           <div className="space-y-2">
             <Label htmlFor="categoryId" className="text-sm font-medium text-slate-700 dark:text-slate-300">
               {t.category} <span className="text-red-500">*</span>
@@ -302,6 +539,40 @@ export const ProductFormDialog: React.FC<ProductFormDialogProps> = ({
             onChange={(value) => formik.setFieldValue("image", value)}
             error={formik.touched.image && formik.errors.image ? String(formik.errors.image) : undefined}
           />
+          
+          {/* Angle Views Section - for products without variations */}
+          {!showVariations && (
+            <div className="space-y-4 border rounded-lg p-4 bg-slate-50 dark:bg-slate-800/30">
+              <div className="flex justify-between items-center">
+                <h4 className="font-semibold text-slate-900 dark:text-slate-100">Product Angle Views</h4>
+                <span className="text-sm text-slate-600">Upload images for different product angles</span>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {defaultAngles.map((angle) => (
+                  <div key={angle} className="border rounded-md p-3 bg-white dark:bg-slate-900/50">
+                    <div className="flex items-center justify-between mb-2">
+                      <Label className="text-sm font-medium capitalize">{angle} View</Label>
+                      {angle === 'front' && (
+                        <Badge variant="secondary" className="text-xs">Primary</Badge>
+                      )}
+                    </div>
+                    <FileUpload
+                      value={formik.values[`${angle}Image`] || ""}
+                      onChange={(value) => formik.setFieldValue(`${angle}Image`, value)}
+                      label={`${angle} Image`}
+                    />
+                    <Input
+                      value={formik.values[`${angle}AltText`] || ""}
+                      onChange={(e) => formik.setFieldValue(`${angle}AltText`, e.target.value)}
+                      placeholder={`Alt text for ${angle} view`}
+                      className="mt-2"
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          
           <div className="flex items-center gap-2">
             <input
               type="checkbox"
@@ -337,13 +608,51 @@ export const ProductFormDialog: React.FC<ProductFormDialogProps> = ({
                     </div>
                     <div>
                       <Label>{t.colorHex || "Color Hex"}</Label>
-                      <Input
-                        value={variation.color.hex_code || "#000000"}
-                        onChange={e => updateVariation(varIdx, { color: { ...variation.color, hex_code: e.target.value } })}
-                        placeholder="#000000"
-                        type="color"
-                        className="h-10 w-full"
-                      />
+                      <div className="flex gap-2">
+                        <Input
+                          value={variation.color.hex_code || "#000000"}
+                          onChange={e => {
+                            const hexValue = e.target.value
+                            updateVariation(varIdx, { color: { ...variation.color, hex_code: hexValue } })
+                            
+                            // Auto-fill color name based on hex value
+                            if (hexValue && hexValue.length === 7) {
+                              const colorName = getColorNameFromHex(hexValue)
+                              if (colorName) {
+                                updateVariation(varIdx, { color: { ...variation.color, hex_code: hexValue, name: colorName } })
+                              }
+                            }
+                          }}
+                          placeholder="#000000"
+                          className="flex-1"
+                        />
+                        <input
+                          type="color"
+                          value={variation.color.hex_code || "#000000"}
+                          onChange={e => {
+                            const hexValue = e.target.value
+                            updateVariation(varIdx, { color: { ...variation.color, hex_code: hexValue } })
+                            
+                            // Auto-fill color name based on hex value
+                            const colorName = getColorNameFromHex(hexValue)
+                            if (colorName) {
+                              updateVariation(varIdx, { color: { ...variation.color, hex_code: hexValue, name: colorName } })
+                            }
+                          }}
+                          className="h-10 w-12 rounded border border-slate-300 cursor-pointer"
+                          title="Pick color"
+                        />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => startWebPageColorPicker(varIdx)}
+                          className="px-3"
+                          title="Pick color from web page"
+                        >
+                          🎨
+                        </Button>
+                      </div>
                     </div>
                     <div>
                       <Label>{t.swatchImage || "Swatch Image"}</Label>

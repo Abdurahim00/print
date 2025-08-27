@@ -1,3 +1,4 @@
+
 export const translations = {
   en: {
     // Homepage & General
@@ -10,6 +11,7 @@ export const translations = {
     signup: "Sign Up",
     viewProducts: "View Products",
     products: "Products",
+    allProducts: "All Products",
     dashboard: "Dashboard",
     cart: "Cart",
     checkout: "Checkout",
@@ -303,6 +305,7 @@ export const translations = {
     signup: "Registrera Dig",
     viewProducts: "Visa Produkter",
     products: "Produkter",
+    allProducts: "Alla Produkter",
     dashboard: "Kontrollpanel",
     cart: "Varukorg",
     checkout: "Kassa",

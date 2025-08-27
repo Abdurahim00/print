@@ -136,7 +136,7 @@ export function TemplateModal({ isOpen, onClose, loading = false }: TemplateModa
                   
                   <div className="flex items-center justify-between mb-3">
                     <span className="text-xs text-gray-500">
-                      {template.price === "free" ? "Free" : `$${Number(template.price).toFixed(2)}`}
+                      {template.price === "free" ? "Free" : Number(template.price).toFixed(2)}
                     </span>
                   </div>
 

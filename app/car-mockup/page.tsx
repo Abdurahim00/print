@@ -131,7 +131,7 @@ export default function CarMockupPage() {
 
     // Draw vehicle mockup
     if (selectedVehicle) {
-      const vehicleImg = new Image()
+      const vehicleImg = new (window as any).Image()
       vehicleImg.crossOrigin = "anonymous"
       vehicleImg.onload = () => {
         const vehicleWidth = 600
@@ -143,7 +143,7 @@ export default function CarMockupPage() {
 
         // Draw wrap designs on top of vehicle
         wrapDesigns.forEach((design) => {
-          const designImg = new Image()
+          const designImg = new (window as any).Image()
           designImg.crossOrigin = "anonymous"
           designImg.onload = () => {
             ctx.save()

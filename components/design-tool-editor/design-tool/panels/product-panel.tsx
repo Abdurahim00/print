@@ -1,11 +1,11 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useSelector, useDispatch } from "react-redux"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Star, Truck, Leaf, Palette, ShoppingBag, Shirt } from "lucide-react"
-import { setProductColor, setViewMode, setShowProductModal } from "@/lib/redux/designToolSlices/designSlice"
+import { setProductColor, setViewMode, setShowProductModal, setSelectedProduct } from "@/lib/redux/designToolSlices/designSlice"
 import { RootState } from "@/lib/redux/store"
 import Image from "next/image"
 import { SizeQuantityModal, SelectedSizeQuantity } from "../modals/size-quantity-modal"
@@ -24,6 +24,23 @@ interface Product {
   variations?: any[];
 }
 
+// Default product for testing
+const DEFAULT_PRODUCT = {
+  id: "default-tshirt",
+  name: "Custom T-Shirt",
+  type: "apparel",
+  categoryId: "apparel",
+  baseColor: "#000000",
+  angles: ["front", "back"],
+  colors: ["#000000", "#FFFFFF", "#FF0000", "#00FF00", "#0000FF"],
+  price: "$19.99",
+  image: "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=600&q=80",
+  description: "Premium cotton t-shirt perfect for custom designs",
+  inStock: true,
+  hasVariations: false,
+  variations: []
+}
+
 export function ProductPanel() {
   const dispatch = useDispatch()
   const { selectedTool, selectedProduct, productColor, viewMode } = useSelector((state: RootState) => state.design)
@@ -31,6 +48,14 @@ export function ProductPanel() {
   const [selectedSizes, setSelectedSizes] = useState<SelectedSizeQuantity[]>([])
   const [totalPrice, setTotalPrice] = useState<number>(0)
   const [totalQuantity, setTotalQuantity] = useState<number>(0)
+  
+  // Auto-select default product if none selected
+  useEffect(() => {
+    if (!selectedProduct) {
+      console.log('No product selected, setting default product')
+      dispatch(setSelectedProduct(DEFAULT_PRODUCT))
+    }
+  }, [selectedProduct, dispatch])
 
   // If no product is selected, show a message to select a product first
   if (!selectedProduct) {

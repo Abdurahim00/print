@@ -19,7 +19,7 @@ export function coerceNumber(value: unknown): number | null {
 export function formatSEK(value: unknown): string {
   const num = coerceNumber(value)
   if (num === null) return "N/A"
-  return `${num.toFixed(2)} SEK`
+  return num.toFixed(2)
 }
 
 export function formatUSD(value: unknown): string {

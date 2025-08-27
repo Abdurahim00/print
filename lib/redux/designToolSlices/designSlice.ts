@@ -27,6 +27,7 @@ interface DesignState {
   showProductModal: boolean;
   showTemplateModal: boolean;
   isLoading: boolean;
+  isLoadingProduct: boolean;
   error: string | null;
   // New fields for variation design persistence
   variationDesigns: VariationDesign[];
@@ -44,6 +45,7 @@ const initialState: DesignState = {
   showProductModal: false,
   showTemplateModal: false,
   isLoading: false,
+  isLoadingProduct: false,
   error: null,
   // New fields initialization
   variationDesigns: [],
@@ -116,6 +118,9 @@ const designSlice = createSlice({
     },
     setError: (state, action) => {
       state.error = action.payload
+    },
+    setLoadingProduct: (state, action) => {
+      state.isLoadingProduct = action.payload
     },
     // New reducers for variation design persistence
     saveVariationDesign: (state, action) => {
@@ -241,6 +246,7 @@ export const {
   setShowTemplateModal,
   setLoading,
   setError,
+  setLoadingProduct,
   // New actions
   saveVariationDesign,
   loadVariationDesign,

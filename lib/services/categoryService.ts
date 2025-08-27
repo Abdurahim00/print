@@ -13,6 +13,9 @@ function toCategory(doc: CategoryDocument): Category {
     slug: doc.slug,
     description: doc.description,
     isActive: doc.isActive,
+    isDesignable: doc.isDesignable || false,
+    designableAreas: doc.designableAreas,
+    designTechniques: doc.designTechniques,
     createdAt: doc.createdAt,
     updatedAt: doc.updatedAt,
   }
@@ -25,6 +28,8 @@ function toSubcategory(doc: SubcategoryDocument): Subcategory {
     name: doc.name,
     slug: doc.slug,
     isActive: doc.isActive,
+    isDesignable: doc.isDesignable || false,
+    inheritDesignSettings: doc.inheritDesignSettings || false,
     createdAt: doc.createdAt,
     updatedAt: doc.updatedAt,
   }
@@ -50,6 +55,24 @@ export async function getCategories(): Promise<Category[]> {
   const collection = db.collection<CategoryDocument>(CATEGORIES)
   const docs = await collection.find({}).sort({ name: 1 }).toArray()
   return docs.map(toCategory)
+}
+
+export async function getCategoryById(id: string): Promise<Category | null> {
+  const db = await getDatabase()
+  const collection = db.collection<CategoryDocument>(CATEGORIES)
+  
+  // Try to find by MongoDB ObjectId first
+  let doc = null
+  if (/^[0-9a-fA-F]{24}$/.test(id)) {
+    doc = await collection.findOne({ _id: new ObjectId(id) })
+  }
+  
+  // If not found, try to find by string id field
+  if (!doc) {
+    doc = await collection.findOne({ id: id } as any)
+  }
+  
+  return doc ? toCategory(doc) : null
 }
 
 export async function updateCategory(id: string, data: Partial<Category>): Promise<Category | null> {
@@ -95,6 +118,24 @@ export async function getSubcategories(categoryId?: string): Promise<Subcategory
   const filter = categoryId ? { categoryId: new ObjectId(categoryId) } : {}
   const docs = await collection.find(filter).sort({ name: 1 }).toArray()
   return docs.map(toSubcategory)
+}
+
+export async function getSubcategoryById(id: string): Promise<Subcategory | null> {
+  const db = await getDatabase()
+  const collection = db.collection<SubcategoryDocument>(SUBCATEGORIES)
+  
+  // Try to find by MongoDB ObjectId first
+  let doc = null
+  if (/^[0-9a-fA-F]{24}$/.test(id)) {
+    doc = await collection.findOne({ _id: new ObjectId(id) })
+  }
+  
+  // If not found, try to find by string id field
+  if (!doc) {
+    doc = await collection.findOne({ id: id } as any)
+  }
+  
+  return doc ? toSubcategory(doc) : null
 }
 
 export async function updateSubcategory(id: string, data: Partial<Subcategory>): Promise<Subcategory | null> {

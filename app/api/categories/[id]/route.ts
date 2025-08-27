@@ -1,5 +1,15 @@
 import { NextRequest, NextResponse } from "next/server"
-import { updateCategory, deleteCategory } from "@/lib/services/categoryService"
+import { updateCategory, deleteCategory, getCategoryById } from "@/lib/services/categoryService"
+
+export async function GET(_req: NextRequest, { params }: { params: { id: string } }) {
+  try {
+    const category = await getCategoryById(params.id)
+    if (!category) return NextResponse.json({ error: "Not found" }, { status: 404 })
+    return NextResponse.json(category)
+  } catch (e: any) {
+    return NextResponse.json({ error: e.message || "Failed to fetch category" }, { status: 500 })
+  }
+}
 
 export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
   try {

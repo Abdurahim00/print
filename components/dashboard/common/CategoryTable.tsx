@@ -3,7 +3,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
-import { Edit3, Trash2 } from "lucide-react"
+import { Edit3, Trash2, Palette } from "lucide-react"
 import type { Category } from "@/types"
 
 interface Props {
@@ -37,6 +37,7 @@ export const CategoryTable: React.FC<Props> = ({ items, loading, onEdit, onDelet
             <TableHead className="min-w-[200px]">Name</TableHead>
             <TableHead className="min-w-[160px]">Slug</TableHead>
             <TableHead className="min-w-[120px]">Status</TableHead>
+            <TableHead className="min-w-[140px]">Designable</TableHead>
             <TableHead className="min-w-[140px]">Actions</TableHead>
           </TableRow>
         </TableHeader>
@@ -49,6 +50,20 @@ export const CategoryTable: React.FC<Props> = ({ items, loading, onEdit, onDelet
                 <Badge className={c.isActive ? "bg-green-100 text-green-800" : "bg-slate-200 text-slate-700"}>
                   {c.isActive ? "Active" : "Disabled"}
                 </Badge>
+              </TableCell>
+              <TableCell>
+                {c.isDesignable ? (
+                  <div className="flex items-center gap-1">
+                    <Palette className="h-4 w-4 text-blue-600" />
+                    <Badge variant="outline" className="text-blue-600 border-blue-200">
+                      Designable
+                    </Badge>
+                  </div>
+                ) : (
+                  <Badge variant="outline" className="text-gray-500">
+                    Standard
+                  </Badge>
+                )}
               </TableCell>
               <TableCell>
                 <div className="flex gap-2">

@@ -2,6 +2,9 @@
  * Utility functions for calculating design element costs
  */
 
+import { Template } from '@/types';
+import { fabric } from 'fabric';
+
 export interface DesignElementCosts {
   templateCost: number;
   totalCost: number;
@@ -18,8 +21,8 @@ export interface DesignElementCosts {
  * @returns Object containing cost breakdown
  */
 export function calculateDesignElementCosts(
-  selectedTemplate: any,
-  fabricCanvas: any
+  selectedTemplate: Template | null,
+  fabricCanvas: fabric.Canvas | null
 ): DesignElementCosts {
   let templateCost = 0;
   const elements: Array<{ type: string; name: string; cost: number }> = [];
@@ -40,13 +43,14 @@ export function calculateDesignElementCosts(
   if (fabricCanvas) {
     const canvasObjects = fabricCanvas.getObjects();
     
-    canvasObjects.forEach((obj: any) => {
+    canvasObjects.forEach((obj: fabric.Object) => {
       // Check for premium elements (this is a placeholder for future implementation)
-      if (obj.isPremiumElement) {
+      const customObj = obj as fabric.Object & { isPremiumElement?: boolean; premiumCost?: number; name?: string };
+      if (customObj.isPremiumElement) {
         elements.push({
-          type: obj.type || 'unknown',
-          name: obj.name || 'Premium Element',
-          cost: obj.premiumCost || 0
+          type: customObj.type || 'unknown',
+          name: customObj.name || 'Premium Element',
+          cost: customObj.premiumCost || 0
         });
       }
     });

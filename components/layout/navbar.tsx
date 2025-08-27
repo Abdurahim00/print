@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useMemo } from "react"
-import Logo from "@/public/logo.png"
+import Logo from "@/public/mr-logo.png"
 import { useAppSelector, useAppDispatch } from "@/lib/redux/hooks"
 import { setLanguage } from "@/lib/redux/slices/appSlice"
 import { setSessionUser } from "@/lib/redux/slices/authSlice" // New import
@@ -23,6 +23,7 @@ import {
   Package,
   Brush,
   Car,
+  Search,
 } from "lucide-react"
 import Link from "next/link"
 import { useRouter, usePathname } from "next/navigation"
@@ -33,6 +34,7 @@ import { mergeCartsPreferRight } from "@/lib/utils/cartMerge"
 import Image from "next/image"
 import { useAppSelector as useSelector } from "@/lib/redux/hooks"
 import { validateCouponCode, setActiveCoupon, fetchCoupons } from "@/lib/redux/slices/couponsSlice"
+import { CategoryDropdown } from "./category-dropdown"
 
 export function Navbar() {
   const dispatch = useAppDispatch()
@@ -40,11 +42,17 @@ export function Navbar() {
   const pathname = usePathname()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [couponModalOpen, setCouponModalOpen] = useState(false)
+  const [mounted, setMounted] = useState(false)
   const { data: session, status } = useSession() // Get session data
   const { language } = useAppSelector((state) => state.app)
   const { items: cartItems } = useAppSelector((state) => state.cart)
   const activeCoupon = useSelector((s) => (s as any).coupons.activeCoupon)
   const availableCoupons = useSelector((s) => (s as any).coupons.items)
+  
+  // Ensure component is mounted before showing dynamic content
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   // Load coupons once for the promo bar
   useEffect(() => {
@@ -171,143 +179,125 @@ export function Navbar() {
     setMobileMenuOpen(false)
   }
 
-  const cartItemCount = cartItems.reduce((sum, item) => sum + item.quantity, 0)
+  const cartItemCount = mounted ? cartItems.reduce((sum, item) => sum + item.quantity, 0) : 0
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-purple-200 dark:border-purple-700 bg-white/80 dark:bg-purple-900/80 backdrop-blur-md">
-      {/* Promo bar (from admin-created active coupon) */}
-      {promoCoupon && (
-        <div className="w-full bg-purple-600 text-white text-center text-sm py-2 cursor-pointer" onClick={() => setCouponModalOpen(true)}>
-          <span className="font-semibold">
-            {promoCoupon.discountType === "percentage" ? `${promoCoupon.discountValue}% off` : `${promoCoupon.discountValue} off`} 
+    <header className="sticky top-0 z-50 w-full border-b-2 border-gray-200 dark:border-gray-800 bg-white dark:bg-black backdrop-blur-md">
+        {/* Promo bar (from admin-created active coupon) */}
+        {promoCoupon && (
+        <div className="w-full bg-gradient-to-r from-brand-green via-brand-yellow via-brand-orange to-brand-red text-black text-center text-sm py-2 cursor-pointer font-bold" onClick={() => setCouponModalOpen(true)}>
+          <span className="font-black">
+            {promoCoupon.discountType === "percentage" ? `${promoCoupon.discountValue}% OFF` : `${promoCoupon.discountValue} OFF`} 
           </span>
-          <span className="ml-2">Promo code: <span className="underline font-mono">{promoCoupon.code}</span></span>
+          <span className="ml-2">CODE: <span className="underline font-mono">{promoCoupon.code}</span></span>
         </div>
       )}
-      <div className="container mx-auto flex h-16 items-center justify-between px-4 sm:px-6 lg:px-8">
-        {/* Logo */}
-        <Link href="/" className="flex items-center gap-2 cursor-pointer">
-          <Image src={Logo} alt="Logo" width={120} height={120} />
-        </Link>
+      
+      {/* Main Navbar */}
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex h-16 items-center justify-between">
+          {/* Left Side - Search Field */}
+          <div className="flex-1 max-w-md hidden md:block">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <input
+                type="text"
+                placeholder="What are you looking for?"
+                className="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm"
+              />
+            </div>
+          </div>
 
-        {/* Desktop Navigation */}
-        <nav className="hidden md:flex items-center gap-1">
-          <Button 
-            className={`${
-              pathname === '/products' || pathname?.startsWith('/products') 
-                ? 'bg-primary text-white' 
-                : 'hover:bg-primary hover:text-white'
-            } transition-colors`} 
-            variant="ghost" 
-            asChild
-          >
-            <Link href="/products" className="flex items-center">{t.products}</Link>
-          </Button>
-          <Button 
-            className={`${
-              pathname === '/design-tool' || pathname?.startsWith('/design-tool') 
-                ? 'bg-primary text-white' 
-                : 'hover:bg-primary hover:text-white'
-            } transition-colors`} 
-            variant="ghost" 
-            asChild
-          >
-            <Link href="/design-tool" className="flex items-center">{t.designTool}</Link>
-          </Button>
-          <Button 
-            className={`${
-              pathname === '/car-mockup' || pathname?.startsWith('/car-mockup') 
-                ? 'bg-primary text-white' 
-                : 'hover:bg-primary hover:text-white'
-            } transition-colors`} 
-            variant="ghost" 
-            asChild
-          >
-            <Link href="/car-mockup" className="flex items-center">{t.carWrapDesigner}</Link>
-          </Button>
-        </nav>
-
-        {/* Desktop Actions */}
-        <div className="hidden md:flex items-center gap-2">
-          <Select value={language} onValueChange={handleLanguageChange}>
-            <SelectTrigger className="w-[120px] bg-primary text-white border-primary hover:bg-primary hover:text-white">
-              <Languages className="h-4 w-4 mr-2 " />
-              <SelectValue placeholder={t.language} />
-            </SelectTrigger>
-            <SelectContent className="bg-primary text-white border-primary">
-              <SelectItem value="en" className="text-white data-[highlighted]:bg-purple-700 data-[highlighted]:text-white">English</SelectItem>
-              <SelectItem value="sv" className="text-white data-[highlighted]:bg-purple-700 data-[highlighted]:text-white">Svenska</SelectItem>
-            </SelectContent>
-          </Select>
-
-          {/* Cart Icon - Always visible */}
-          <Button className="bg-primary hover:bg-primary hover:text-white text-white" asChild>
-            <Link href="/cart" className="flex items-center">
-              <ShoppingCart className="mr-2 h-4 w-4" />
-              {t.cart}
-              {cartItemCount > 0 && (
-                <span className="ml-1 bg-white text-purple-900 rounded-full px-2.5 py-1 text-xs font-bold">{cartItemCount}</span>
-              )}
+          {/* Center - Logo */}
+          <div className="flex-1 flex justify-center">
+            <Link href="/" className="flex items-center gap-2 cursor-pointer">
+              <Image src={Logo} alt="MR MERCH" width={150} height={50} className="object-contain" />
             </Link>
-          </Button>
+          </div>
 
-          {status === "authenticated" ? (
-            <>
-              <Button 
-                variant="ghost" 
-                asChild 
-                className={`${
-                  pathname === '/dashboard' || pathname?.startsWith('/dashboard') 
-                    ? 'bg-primary text-white' 
-                    : 'hover:bg-primary hover:text-white'
-                } transition-colors hidden lg:inline-flex`}
-              >
-                <Link href="/dashboard" className="flex items-center">
-                  <LayoutDashboard className="mr-2 h-4 w-4" /> {t.dashboard}
-                </Link>
-              </Button>
-              <Button onClick={handleLogout} variant="ghost" className="hover:bg-primary hover:text-white">
-                <LogOut className="mr-2 h-4 w-4" />
-                {t.logout}
-              </Button>
-            </>
-          ) : (
-            <>
-              <Button variant="outline" asChild>
-                <Link href="/login" className="flex items-center">
-                  <LogIn className="mr-2 h-4 w-4" /> {t.login}
-                </Link>
-              </Button>
-              <Button asChild className="bg-primary hover:bg-primary hover:text-white text-white">
-                <Link href="/signup" className="flex items-center">
-                  <UserPlus className="mr-2 h-4 w-4" /> {t.signup}
-                </Link>
-              </Button>
-            </>
-          )}
-        </div>
+          {/* Right Side - Actions */}
+          <div className="flex-1 flex justify-end items-center gap-2">
+            {/* Desktop Actions */}
+            <div className="hidden md:flex items-center gap-2">
+              <Select value={language} onValueChange={handleLanguageChange}>
+                <SelectTrigger className="w-[120px] bg-black text-white border-black hover:bg-gray-900 hover:text-white dark:bg-white dark:text-black dark:border-white dark:hover:bg-gray-100">
+                  <Languages className="h-4 w-4 mr-2 " />
+                  <SelectValue placeholder={t.language} />
+                </SelectTrigger>
+                <SelectContent className="bg-black text-white border-black dark:bg-white dark:text-black dark:border-white">
+                  <SelectItem value="en" className="text-white dark:text-black data-[highlighted]:bg-gray-800 dark:data-[highlighted]:bg-gray-200">English</SelectItem>
+                  <SelectItem value="sv" className="text-white dark:text-black data-[highlighted]:bg-gray-800 dark:data-[highlighted]:bg-gray-200">Svenska</SelectItem>
+                </SelectContent>
+              </Select>
 
-        {/* Mobile Actions */}
-        <div className="flex md:hidden items-center gap-2">
-          {/* Cart Icon - Always visible on mobile */}
-          <Button variant="outline" size="icon" asChild>
-            <Link href="/cart">
-              <ShoppingCart className="h-4 w-4" />
-              {cartItemCount > 0 && (
-                <span className="absolute -top-1 -right-1 bg-purple-600 text-white rounded-full w-5 h-5 text-xs flex items-center justify-center">
-                  {cartItemCount}
-                </span>
+              {/* Cart Icon - Always visible */}
+              <Button className="bg-black hover:bg-gray-900 text-white dark:bg-white dark:text-black dark:hover:bg-gray-100" asChild>
+                <Link href="/cart" className="flex items-center">
+                  <ShoppingCart className="mr-2 h-4 w-4" />
+                  {t.cart}
+                  {cartItemCount > 0 && (
+                    <span className="ml-1 bg-white text-purple-900 rounded-full px-2.5 py-1 text-xs font-bold">{cartItemCount}</span>
+                  )}
+                </Link>
+              </Button>
+
+              {status === "authenticated" ? (
+                <>
+                  <Button 
+                    variant="ghost" 
+                    asChild 
+                    className={`${
+                      pathname === '/dashboard' || pathname?.startsWith('/dashboard') 
+                        ? 'bg-primary text-white' 
+                        : 'hover:bg-primary hover:text-white'
+                    } transition-colors hidden lg:inline-flex`}
+                  >
+                    <Link href="/dashboard" className="flex items-center">
+                      <LayoutDashboard className="mr-2 h-4 w-4" /> {t.dashboard}
+                    </Link>
+                  </Button>
+                  <Button onClick={handleLogout} variant="ghost" className="hover:bg-primary hover:text-white">
+                    <LogOut className="mr-2 h-4 w-4" />
+                    {t.logout}
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Button variant="outline" asChild>
+                    <Link href="/login" className="flex items-center">
+                      <LogIn className="mr-2 h-4 w-4" /> {t.login}
+                    </Link>
+                  </Button>
+                  <Button asChild className="bg-primary hover:bg-primary hover:text-white text-white">
+                    <Link href="/signup" className="flex items-center">
+                      <UserPlus className="mr-2 h-4 w-4" /> {t.signup}
+                    </Link>
+                  </Button>
+                </>
               )}
-            </Link>
-          </Button>
+            </div>
 
-          {/* Mobile Menu */}
-          <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
-            <SheetTrigger asChild>
-              <Button variant="ghost" size="icon">
-                <Menu className="h-5 w-5" />
-              </Button>
-            </SheetTrigger>
+            {/* Mobile Actions */}
+            <div className="flex md:hidden items-center gap-2">
+              {/* Cart Icon - Always visible on mobile */}
+              <Link href="/cart" className="relative">
+                <Button variant="outline" size="icon">
+                  <ShoppingCart className="h-4 w-4" />
+                  {cartItemCount > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-purple-600 text-white rounded-full w-5 h-5 text-xs flex items-center justify-center">
+                      {cartItemCount}
+                    </span>
+                  )}
+                </Button>
+              </Link>
+
+              {/* Mobile Menu */}
+              <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+                <SheetTrigger asChild>
+                  <Button variant="ghost" size="icon">
+                    <Menu className="h-5 w-5" />
+                  </Button>
+                </SheetTrigger>
             <SheetContent side="right" className="w-[300px] sm:w-[400px]">
               <SheetHeader>
                 <SheetTitle className="text-left">{t.platformName}</SheetTitle>
@@ -333,6 +323,7 @@ export function Navbar() {
 
                 {/* Navigation Links */}
                 <div className="space-y-2">
+                  <CategoryDropdown />
                   <Button variant="ghost" asChild className="w-full justify-start" onClick={closeMobileMenu}>
                     <Link href="/products">
                       <Package className="mr-2 h-4 w-4" />
@@ -416,6 +407,60 @@ export function Navbar() {
               </div>
             </SheetContent>
           </Sheet>
+            </div>
+          </div>
+        </div>
+        
+        {/* Secondary Navigation Bar */}
+        <div className="hidden md:block border-t border-gray-200 dark:border-gray-700">
+          <nav className="flex items-center justify-center gap-8 py-3">
+            <Button 
+              className={`${
+                pathname === '/products' || pathname?.startsWith('/products') 
+                  ? 'bg-primary text-white' 
+                  : 'hover:bg-primary hover:text-white'
+              } transition-colors`} 
+              variant="ghost" 
+              asChild
+            >
+              <Link href="/products" className="flex items-center">
+                <Package className="mr-2 h-4 w-4" />
+                {t.products}
+              </Link>
+            </Button>
+            
+            <Button 
+              className={`${
+                pathname === '/design-tool' || pathname?.startsWith('/design-tool') 
+                  ? 'bg-primary text-white' 
+                  : 'hover:bg-primary hover:text-white'
+              } transition-colors`} 
+              variant="ghost" 
+              asChild
+            >
+              <Link href="/design-tool" className="flex items-center">
+                <Palette className="mr-2 h-4 w-4" />
+                {t.designTool}
+              </Link>
+            </Button>
+            
+            <Button 
+              className={`${
+                pathname === '/car-mockup' || pathname?.startsWith('/car-mockup') 
+                  ? 'bg-primary text-white' 
+                  : 'hover:bg-primary hover:text-white'
+              } transition-colors`} 
+              variant="ghost" 
+              asChild
+            >
+              <Link href="/car-mockup" className="flex items-center">
+                <Car className="mr-2 h-4 w-4" />
+                {t.carWrapDesigner}
+              </Link>
+            </Button>
+            
+            <CategoryDropdown />
+          </nav>
         </div>
       </div>
 

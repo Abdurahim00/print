@@ -2,13 +2,47 @@
 
 import { useEffect } from "react"
 import { useRouter } from "next/navigation"
+import dynamic from 'next/dynamic'
 import { useAppSelector } from "@/lib/redux/hooks"
 import { translations } from "@/lib/constants"
-import { UserDashboard } from "@/components/dashboard/user-dashboard"
-import { AdminDashboard } from "@/components/dashboard/admin-dashboard"
-import { OperationsDashboard } from "@/components/dashboard/operations-dashboard"
-import { useSession } from "next-auth/react" // Import useSession
+import { useSession } from "next-auth/react"
 import { Skeleton } from "@/components/ui/skeleton"
+
+// Lazy load dashboard components
+const UserDashboard = dynamic(
+  () => import("@/components/dashboard/user-dashboard").then(mod => mod.UserDashboard),
+  {
+    loading: () => <DashboardSkeleton />,
+  }
+)
+
+const AdminDashboard = dynamic(
+  () => import("@/components/dashboard/admin-dashboard").then(mod => mod.AdminDashboard),
+  {
+    loading: () => <DashboardSkeleton />,
+  }
+)
+
+const OperationsDashboard = dynamic(
+  () => import("@/components/dashboard/operations-dashboard").then(mod => mod.OperationsDashboard),
+  {
+    loading: () => <DashboardSkeleton />,
+  }
+)
+
+function DashboardSkeleton() {
+  return (
+    <div className="space-y-6 p-6">
+      <Skeleton className="h-10 w-[200px]" />
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <Skeleton className="h-32" />
+        <Skeleton className="h-32" />
+        <Skeleton className="h-32" />
+      </div>
+      <Skeleton className="h-[400px]" />
+    </div>
+  )
+}
 
 export default function DashboardPage() {
   const router = useRouter()
@@ -41,15 +75,11 @@ export default function DashboardPage() {
   }, [session?.user])
 
   if (status === "loading") {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <Skeleton className="h-8 w-8 rounded-full" />
-      </div>
-    )
+    return <DashboardSkeleton />
   }
 
   if (status === "unauthenticated" || !session?.user) {
-    return null // Redirect handled by useEffect
+    return <DashboardSkeleton /> // Show skeleton while redirecting
   }
 
   const user = session.user as any // extended session with role

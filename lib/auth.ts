@@ -1,10 +1,12 @@
-import NextAuth from "next-auth"
+import { NextAuthOptions } from "next-auth"
 import CredentialsProvider from "next-auth/providers/credentials"
 import { MongoDBAdapter } from "@auth/mongodb-adapter"
 import clientPromise from "@/lib/mongodb"
 import { UserService } from "@/lib/services/userService"
+import { JWT } from "next-auth/jwt"
+import { Session, User } from "next-auth"
 
-export const authOptions = {
+export const authOptions: NextAuthOptions = {
   adapter: process.env.MONGODB_URI ? MongoDBAdapter(clientPromise) : undefined,
   providers: [
     CredentialsProvider({
@@ -55,7 +57,7 @@ export const authOptions = {
     secret: process.env.NEXTAUTH_SECRET,
   },
   callbacks: {
-    async jwt({ token, user }: { token: any; user: any }) {
+    async jwt({ token, user }: { token: JWT; user?: User }) {
       if (user) {
         token.id = user.id
         token.role = user.role
@@ -69,7 +71,7 @@ export const authOptions = {
       }
       return token
     },
-    async session({ session, token }: { session: any; token: any }) {
+    async session({ session, token }: { session: Session; token: JWT }) {
       if (token) {
         session.user.id = token.id
         session.user.role = token.role

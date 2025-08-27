@@ -49,15 +49,60 @@ export const useFabricCanvas = (canvasId: string) => {
   const initCanvas = useCallback(() => {
     if (!canvasRef.current) return
 
-    const canvas = new fabric.Canvas(canvasRef.current, {
-      width: 600,
-      height: 600,
-      backgroundColor: "transparent",
-      selection: true,
-      preserveObjectStacking: true,
-      enableRetinaScaling: true,
-      imageSmoothingEnabled: true,
-    })
+    // Check if canvas element exists and has proper context
+    const canvasElement = canvasRef.current
+    if (!canvasElement) {
+      console.error('Canvas element not found')
+      return
+    }
+
+    // Get the 2D rendering context to ensure canvas is ready
+    const ctx = canvasElement.getContext('2d')
+    if (!ctx) {
+      console.error('Canvas 2D context not available')
+      return
+    }
+
+    // Initialize Fabric.js canvas with error handling
+    let canvas: fabric.Canvas
+    try {
+      canvas = new fabric.Canvas(canvasElement, {
+        width: 600,
+        height: 600,
+        backgroundColor: "transparent",
+        selection: true,
+        preserveObjectStacking: true,
+        enableRetinaScaling: true,
+        imageSmoothingEnabled: true,
+        renderOnAddRemove: true,
+        stopContextMenu: true,
+        fireRightClick: false,
+        controlsAboveOverlay: true,
+      })
+
+      // Ensure canvas has proper internal contexts
+      if (!(canvas as any).contextTop || !(canvas as any).contextContainer) {
+        console.warn('Canvas contexts not properly initialized, reinitializing...')
+        // Force reinitialize canvas contexts
+        canvas.dispose()
+        canvas = new fabric.Canvas(canvasElement, {
+          width: 600,
+          height: 600,
+          backgroundColor: "transparent",
+          selection: true,
+          preserveObjectStacking: true,
+          enableRetinaScaling: true,
+          imageSmoothingEnabled: true,
+          renderOnAddRemove: true,
+          stopContextMenu: true,
+          fireRightClick: false,
+          controlsAboveOverlay: true,
+        })
+      }
+    } catch (error) {
+      console.error('Error initializing Fabric canvas:', error)
+      return
+    }
 
     // --- Fabric.js v6 Global Control Configuration ---
     // Set global defaults for all interactive objects with modern styling
@@ -772,11 +817,23 @@ export const useFabricCanvas = (canvasId: string) => {
   }, [])
 
   useEffect(() => {
-    const canvas = initCanvas()
+    // Delay canvas initialization to ensure DOM is ready
+    const timer = setTimeout(() => {
+      const canvas = initCanvas()
+    }, 100)
 
     return () => {
-      if (canvas) {
-        canvas.dispose()
+      clearTimeout(timer)
+      if (fabricCanvasRef.current) {
+        try {
+          fabricCanvasRef.current.dispose()
+        } catch (error) {
+          console.error('Error disposing canvas:', error)
+        }
+        fabricCanvasRef.current = null
+      }
+      if ((window as any).fabricCanvas) {
+        (window as any).fabricCanvas = null
       }
     }
   }, [initCanvas])
@@ -920,46 +977,75 @@ export const useFabricCanvas = (canvasId: string) => {
     // Add image to canvas
   const addImage = useCallback(
     (canvasInstance: fabric.Canvas, imageUrl: string, options: any = {}) => {
+      // Validate canvas instance
+      if (!canvasInstance) {
+        console.error('Canvas instance is not available')
+        return
+      }
+      
+      // Check if canvas has proper contexts
+      if (!(canvasInstance as any).contextTop || !(canvasInstance as any).contextContainer) {
+        console.error('Canvas contexts are not properly initialized')
+        // Try to get fresh canvas instance
+        const freshCanvas = (window as any).fabricCanvas
+        if (freshCanvas && (freshCanvas as any).contextTop && (freshCanvas as any).contextContainer) {
+          canvasInstance = freshCanvas
+          console.log('Using fresh canvas instance from window')
+        } else {
+          console.error('Cannot add image - canvas not properly initialized')
+          return
+        }
+      }
+      
       // Use regular JS Image to load first to avoid TypeScript issues with fabric.Image.fromURL
       const img = new Image();
       img.crossOrigin = 'anonymous';
+      
       img.onload = function() {
-        // Create fabric image from the loaded JS image
-        const fabricImage = new fabric.Image(img, {
-          left: 150,
-          top: 150,
-          originX: "center",
-          originY: "center",
-          ...options
-        });
-        
-        // Scale the image to fit within a reasonable size while maintaining aspect ratio
-        const maxDimension = 250; // Maximum width or height
-        if (fabricImage.width && fabricImage.height) {
-          if (fabricImage.width > fabricImage.height) {
-            if (fabricImage.width > maxDimension) {
-              fabricImage.scaleToWidth(maxDimension);
-            }
-          } else {
-            if (fabricImage.height > maxDimension) {
-              fabricImage.scaleToHeight(maxDimension);
+        try {
+          // Create fabric image from the loaded JS image
+          const fabricImage = new fabric.Image(img, {
+            left: 150,
+            top: 150,
+            originX: "center",
+            originY: "center",
+            ...options
+          });
+          
+          // Scale the image to fit within a reasonable size while maintaining aspect ratio
+          const maxDimension = 250; // Maximum width or height
+          if (fabricImage.width && fabricImage.height) {
+            if (fabricImage.width > fabricImage.height) {
+              if (fabricImage.width > maxDimension) {
+                fabricImage.scaleToWidth(maxDimension);
+              }
+            } else {
+              if (fabricImage.height > maxDimension) {
+                fabricImage.scaleToHeight(maxDimension);
+              }
             }
           }
+          
+          // Add the image to the canvas
+          canvasInstance.add(fabricImage);
+          canvasInstance.setActiveObject(fabricImage);
+          canvasInstance.requestRenderAll();
+          
+          // Dispatch to Redux store
+          dispatch({
+            type: 'canvas/setSelectedObject',
+            payload: fabricImage
+          });
+          
+          // Save canvas state
+          setTimeout(() => saveState(canvasInstance), 50);
+        } catch (error) {
+          console.error('Error adding image to canvas:', error)
         }
-        
-        // Add the image to the canvas
-        canvasInstance.add(fabricImage);
-        canvasInstance.setActiveObject(fabricImage);
-        canvasInstance.requestRenderAll();
-        
-        // Dispatch to Redux store
-        dispatch({
-          type: 'canvas/setSelectedObject',
-          payload: fabricImage
-        });
-        
-        // Save canvas state
-        setTimeout(() => saveState(canvasInstance), 50);
+      };
+      
+      img.onerror = function() {
+        console.error('Failed to load image:', imageUrl)
       };
       
       img.src = imageUrl;

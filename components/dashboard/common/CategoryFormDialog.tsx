@@ -1,11 +1,14 @@
-import React, { useEffect, useRef } from "react"
+import React, { useEffect, useRef, useState } from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import { Switch } from "@/components/ui/switch"
+import { Badge } from "@/components/ui/badge"
+import { Separator } from "@/components/ui/separator"
 import { useFormik } from "formik"
 import * as Yup from "yup"
+import { Palette, X } from "lucide-react"
 import type { Category } from "@/types"
 
 interface Props {
@@ -30,12 +33,24 @@ export const CategoryFormDialog: React.FC<Props> = ({ open, onOpenChange, initia
       .replace(/\s+/g, "-")
       .replace(/-+/g, "-")
   const slugEditedRef = useRef(false)
+  
+  // Available design areas and techniques
+  const DESIGN_AREAS = ['front', 'back', 'sleeve', 'chest', 'wrap', 'body', 'strap', 'side', 'top']
+  const DESIGN_TECHNIQUES = ['print', 'embroidery', 'sublimation', 'engraving']
+  
+  // State for design settings
+  const [newArea, setNewArea] = useState('')
+  const [newTechnique, setNewTechnique] = useState('')
+  
   const formik = useFormik({
     initialValues: {
       name: initialValues.name || "",
       slug: initialValues.slug || "",
       description: initialValues.description || "",
       isActive: initialValues.isActive ?? true,
+      isDesignable: initialValues.isDesignable ?? false,
+      designableAreas: initialValues.designableAreas || [],
+      designTechniques: initialValues.designTechniques || [],
     },
     enableReinitialize: true,
     validationSchema: schema,
@@ -83,6 +98,121 @@ export const CategoryFormDialog: React.FC<Props> = ({ open, onOpenChange, initia
             <Switch checked={formik.values.isActive} onCheckedChange={(v) => formik.setFieldValue("isActive", v)} />
             <Label>Active</Label>
           </div>
+          
+          <Separator className="my-4" />
+          
+          {/* Design Settings Section */}
+          <div className="space-y-4">
+            <div className="flex items-center gap-2">
+              <Palette className="h-4 w-4" />
+              <Label className="text-base font-semibold">Design Settings</Label>
+            </div>
+            
+            <div className="flex items-center gap-2">
+              <Switch 
+                checked={formik.values.isDesignable} 
+                onCheckedChange={(v) => formik.setFieldValue("isDesignable", v)} 
+              />
+              <Label>Products in this category can be customized</Label>
+            </div>
+            
+            {formik.values.isDesignable && (
+              <>
+                {/* Designable Areas */}
+                <div className="space-y-2">
+                  <Label>Designable Areas</Label>
+                  <div className="flex flex-wrap gap-2 mb-2">
+                    {formik.values.designableAreas.map((area) => (
+                      <Badge key={area} variant="secondary" className="gap-1">
+                        {area}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const updated = formik.values.designableAreas.filter(a => a !== area)
+                            formik.setFieldValue('designableAreas', updated)
+                          }}
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </Badge>
+                    ))}
+                  </div>
+                  <div className="flex gap-2">
+                    <select
+                      className="flex-1 px-3 py-2 border rounded-md"
+                      value={newArea}
+                      onChange={(e) => setNewArea(e.target.value)}
+                    >
+                      <option value="">Select area...</option>
+                      {DESIGN_AREAS.filter(a => !formik.values.designableAreas.includes(a)).map(area => (
+                        <option key={area} value={area}>{area}</option>
+                      ))}
+                    </select>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => {
+                        if (newArea && !formik.values.designableAreas.includes(newArea)) {
+                          formik.setFieldValue('designableAreas', [...formik.values.designableAreas, newArea])
+                          setNewArea('')
+                        }
+                      }}
+                      disabled={!newArea}
+                    >
+                      Add
+                    </Button>
+                  </div>
+                </div>
+                
+                {/* Design Techniques */}
+                <div className="space-y-2">
+                  <Label>Design Techniques</Label>
+                  <div className="flex flex-wrap gap-2 mb-2">
+                    {formik.values.designTechniques.map((technique) => (
+                      <Badge key={technique} variant="secondary" className="gap-1">
+                        {technique}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const updated = formik.values.designTechniques.filter(t => t !== technique)
+                            formik.setFieldValue('designTechniques', updated)
+                          }}
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </Badge>
+                    ))}
+                  </div>
+                  <div className="flex gap-2">
+                    <select
+                      className="flex-1 px-3 py-2 border rounded-md"
+                      value={newTechnique}
+                      onChange={(e) => setNewTechnique(e.target.value)}
+                    >
+                      <option value="">Select technique...</option>
+                      {DESIGN_TECHNIQUES.filter(t => !formik.values.designTechniques.includes(t)).map(technique => (
+                        <option key={technique} value={technique}>{technique}</option>
+                      ))}
+                    </select>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => {
+                        if (newTechnique && !formik.values.designTechniques.includes(newTechnique)) {
+                          formik.setFieldValue('designTechniques', [...formik.values.designTechniques, newTechnique])
+                          setNewTechnique('')
+                        }
+                      }}
+                      disabled={!newTechnique}
+                    >
+                      Add
+                    </Button>
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+          
           <div className="flex gap-2 justify-end">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel

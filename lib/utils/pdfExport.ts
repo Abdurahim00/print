@@ -1,5 +1,6 @@
 import jsPDF from 'jspdf'
 import 'jspdf-autotable'
+import { CartItemSize, DesignContext, FabricCanvasJSON, VariationImage } from '@/types'
 
 interface OrderItem {
   name: string
@@ -8,9 +9,9 @@ interface OrderItem {
   size?: string
   designPreview?: string
   designId?: string
-  selectedSizes?: any[]
-  designContext?: any
-  designCanvasJSON?: any
+  selectedSizes?: CartItemSize[]
+  designContext?: DesignContext
+  designCanvasJSON?: FabricCanvasJSON
   productId?: string
 }
 
@@ -154,7 +155,7 @@ export function generateOrderPDF(order: Order): jsPDF {
     
     // Size breakdown
     if (item.selectedSizes && item.selectedSizes.length > 0) {
-      const sizeBreakdown = item.selectedSizes.map((s: any) => `${s.size} × ${s.quantity}`).join(', ')
+      const sizeBreakdown = item.selectedSizes.map((s: CartItemSize) => `${s.size} × ${s.quantity}`).join(', ')
       doc.text(`Sizes: ${sizeBreakdown}`, 20, yPos)
       yPos += 6
     }
@@ -202,7 +203,7 @@ export function generateOrderPDF(order: Order): jsPDF {
           doc.setFontSize(9)
           doc.setFont('helvetica', 'normal')
           
-          item.designContext.selectedVariation.variationImages.forEach((img: any, imgIndex: number) => {
+          item.designContext.selectedVariation.variationImages.forEach((img: VariationImage, imgIndex: number) => {
             const isCurrentView = img.angle === item.designContext.viewMode
             const hasDesign = item.designCanvasJSON
             

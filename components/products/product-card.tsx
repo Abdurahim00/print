@@ -5,20 +5,28 @@ import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks"
 import { translations, productCategories } from "@/lib/constants"
 import { Card, CardContent, CardFooter } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Palette  } from "lucide-react"
+import { Palette, ShoppingCart, Eye } from "lucide-react"
+import Link from "next/link"
 import { useRouter } from "next/navigation"
-import Image from "next/image"
-import { useMemo } from "react"
+import { useMemo, memo, useState } from "react"
+// import { ProductImage } from "@/components/ui/optimized-image"
 import { composeProductAndDesign } from "@/lib/utils/imageCompose"
 import { formatSEK } from "@/lib/utils"
+import { addToCart } from "@/lib/redux/slices/cartSlice"
+import { useToast } from "@/hooks/use-toast"
+import { SizeSelectionModal } from "./size-selection-modal"
+import { QuantityModal } from "./quantity-modal"
 
 interface ProductCardProps {
   product: Product
 }
 
-export function ProductCard({ product }: ProductCardProps) {
+function ProductCardComponent({ product }: ProductCardProps) {
   const dispatch = useAppDispatch()
   const router = useRouter()
+  const { toast } = useToast()
+  const [sizeModalOpen, setSizeModalOpen] = useState(false)
+  const [quantityModalOpen, setQuantityModalOpen] = useState(false)
   const { language } = useAppSelector((state) => state.app)
   const t = translations[language]
   const appliedCategoryDesigns = useAppSelector((s: any) => s.app.appliedCategoryDesigns || {})
@@ -28,6 +36,39 @@ export function ProductCard({ product }: ProductCardProps) {
 
   const handleDesignThisProduct = () => {
     router.push(`/design-tool?productId=${product.id}`)
+  }
+
+  const handleAddToCart = () => {
+    console.log('Add to cart clicked for product:', product)
+    console.log('Category:', product.categoryId, 'Has variations:', product.hasVariations)
+    
+    try {
+      // For now, just add directly to cart to test if button works
+      dispatch(addToCart(product))
+      toast({
+        title: "Added to cart",
+        description: `${product.name} has been added to your cart`,
+      })
+      
+      // Uncomment below to use modals when they're working
+      /*
+      // Check if product needs size selection (apparel or has variations)
+      if (product.categoryId === 'apparel' || product.hasVariations) {
+        console.log('Opening size modal')
+        setSizeModalOpen(true)
+      } else {
+        console.log('Opening quantity modal')
+        setQuantityModalOpen(true)
+      }
+      */
+    } catch (error) {
+      console.error('Error adding to cart:', error)
+      toast({
+        title: "Error",
+        description: "Failed to add item to cart",
+        variant: "destructive"
+      })
+    }
   }
 
   const categoryName = useMemo(() => {
@@ -45,13 +86,15 @@ export function ProductCard({ product }: ProductCardProps) {
   }, [appliedCategoryDesigns, product.categoryId, designs])
 
   return (
-    <Card className="overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300 flex flex-col border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
-      <div className="relative w-full aspect-[4/3]">
-        <Image
+    <Card className={`overflow-hidden group transition-all duration-300 flex flex-col h-full border-2 border-black dark:border-white bg-white dark:bg-gray-900 rounded-xl ${
+      product.inStock ? 'hover:scale-105' : 'opacity-60'
+    }`}>
+      <Link href={`/product/${product.id}`} className="relative w-full aspect-[4/3] overflow-hidden bg-gray-100 dark:bg-gray-800 flex-shrink-0 cursor-pointer">
+        <img
           src={product.image || "/placeholder.svg"}
           alt={product.name}
-          fill
-          className="object-cover rounded-t-lg"
+          className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+          loading="lazy"
         />
         {appliedDesignForCategory && (
           <>
@@ -75,33 +118,72 @@ export function ProductCard({ product }: ProductCardProps) {
             })()}
           </>
         )}
-        {/* Favorites removed */}
-      </div>
-      <CardContent className="p-4 flex-grow flex flex-col">
-        <h3 className="font-semibold text-lg text-slate-900 dark:text-slate-100">{product.name}</h3>
-        {activeCoupon && activeCoupon.discountType === "percentage" && product.eligibleForCoupons ? (
-          <div className="mt-1">
-            <span className="text-purple-700 dark:text-purple-300 font-bold mr-2">
-              {formatSEK(product.price * (1 - activeCoupon.discountValue / 100))}
+        {/* Out of Stock Overlay */}
+        {!product.inStock && (
+          <div className="absolute inset-0 bg-black/70 flex items-center justify-center z-30">
+            <span className="text-white font-black uppercase text-lg bg-red-500 px-4 py-2 rounded-lg">
+              Out of Stock
             </span>
-            <span className="text-slate-400 line-through">{formatSEK(product.price)}</span>
           </div>
-        ) : (
-          <p className="text-purple-600 dark:text-purple-400 font-medium mt-1">{formatSEK(product.price)}</p>
         )}
-        <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{categoryName}</p>
-       
+      </Link>
+      <CardContent className="p-4 flex-grow flex flex-col justify-between border-t-2 border-black dark:border-white">
+        <div>
+          <h3 className="font-black text-sm lg:text-base uppercase text-black dark:text-white line-clamp-2">{product.name}</h3>
+          <p className="text-xs font-bold uppercase text-gray-500 dark:text-gray-400 mt-1">{categoryName}</p>
+        </div>
+        <div className="mt-3">
+          {activeCoupon && activeCoupon.discountType === "percentage" && product.eligibleForCoupons ? (
+            <div>
+              <span className="text-xl lg:text-2xl font-black text-black dark:text-white">
+                {formatSEK(product.price * (1 - activeCoupon.discountValue / 100))}
+              </span>
+              <span className="text-gray-400 line-through text-xs lg:text-sm ml-2">{formatSEK(product.price)}</span>
+            </div>
+          ) : (
+            <p className="text-xl lg:text-2xl font-black text-black dark:text-white">
+              {formatSEK(product.price)}
+            </p>
+          )}
+        </div>
       </CardContent>
-      <CardFooter className="p-4 border-t dark:border-slate-700">
-        <Button
-          className="w-full bg-purple-900 hover:bg-purple-800 text-white shadow-md"
-          onClick={handleDesignThisProduct}
-          disabled={!product.inStock}
-        >
-          <Palette  className="mr-2 h-4 w-4" />
-          Design this product
-        </Button>
+      <CardFooter className="p-3 lg:p-4 pt-0 border-t-2 border-black dark:border-white">
+        <div className="flex gap-2 w-full">
+          <Button
+            className="flex-1 min-h-[36px] lg:min-h-[40px] bg-black text-white dark:bg-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200 font-bold uppercase text-[10px] sm:text-xs lg:text-sm transition-all flex items-center justify-center px-2"
+            onClick={handleAddToCart}
+            disabled={!product.inStock}
+          >
+            <ShoppingCart className="h-3 w-3 lg:h-4 lg:w-4 xl:mr-1 flex-shrink-0" />
+            <span className="hidden xl:inline truncate">Add to Cart</span>
+            <span className="xl:hidden truncate">Cart</span>
+          </Button>
+          <Button
+            className="w-[40px] lg:w-[44px] min-h-[36px] lg:min-h-[40px] border-2 border-black dark:border-white bg-transparent text-black dark:text-white hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black transition-all flex items-center justify-center p-0"
+            onClick={handleDesignThisProduct}
+            disabled={!product.inStock}
+            title="Design this product"
+          >
+            <Palette className="h-4 w-4 lg:h-5 lg:w-5" />
+          </Button>
+        </div>
       </CardFooter>
+      
+      {/* Size Selection Modal */}
+      <SizeSelectionModal
+        open={sizeModalOpen}
+        onOpenChange={setSizeModalOpen}
+        product={product}
+      />
+      
+      {/* Quantity Modal */}
+      <QuantityModal
+        open={quantityModalOpen}
+        onOpenChange={setQuantityModalOpen}
+        product={product}
+      />
     </Card>
   )
 }
+
+export const ProductCard = memo(ProductCardComponent)

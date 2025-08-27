@@ -1,3 +1,27 @@
+// Canvas and Design Types
+export interface FabricCanvasJSON {
+  version: string;
+  objects: Array<{
+    type: string;
+    [key: string]: unknown;
+  }>;
+  background?: string;
+  [key: string]: unknown;
+}
+
+export interface DesignData {
+  canvasJSON: FabricCanvasJSON;
+  metadata?: {
+    width?: number;
+    height?: number;
+    zoom?: number;
+    [key: string]: unknown;
+  };
+}
+
+export type TranslationFunction = (key: string) => string;
+export type TranslationObject = typeof import('@/lib/constants').translations.en;
+
 export interface User {
   id: string
   email: string
@@ -88,7 +112,7 @@ export interface CartItem extends Product {
   /** Base product id preserved when cart item id is made unique per design */
   productId?: string;
   /** Full Fabric.js canvas JSON to reproduce design precisely */
-  designCanvasJSON?: any;
+  designCanvasJSON?: FabricCanvasJSON;
 }
 
 export interface Order {
@@ -108,7 +132,7 @@ export interface Order {
     selectedSizes?: CartItemSize[]
     /** Preserve full design context and canvas for production */
     designContext?: DesignContext
-    designCanvasJSON?: any
+    designCanvasJSON?: FabricCanvasJSON
     /** Base product id for reference */
     productId?: string
   }>
@@ -131,13 +155,13 @@ export interface Design {
   type: string
   preview: string
   userId: string // User's MongoDB _id as string
-  designData: any
+  designData: DesignData
   status: "Draft" | "Completed" | "In Review"
 }
 
 export interface ProductCategory {
   id: string
-  name: (t: any) => string
+  name: (t: TranslationObject) => string
 }
 
 export interface Vehicle {
@@ -249,6 +273,10 @@ export interface Category {
   isActive: boolean
   createdAt?: Date
   updatedAt?: Date
+  // Design capabilities
+  isDesignable?: boolean
+  designableAreas?: string[]
+  designTechniques?: string[]
 }
 
 export interface Subcategory {
@@ -259,4 +287,9 @@ export interface Subcategory {
   isActive: boolean
   createdAt?: Date
   updatedAt?: Date
+  // Design capabilities
+  isDesignable?: boolean
+  designableAreas?: string[]
+  designTechniques?: string[]
+  inheritDesignSettings?: boolean
 }

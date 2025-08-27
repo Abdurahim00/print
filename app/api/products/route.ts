@@ -1,10 +1,51 @@
 import { NextRequest, NextResponse } from "next/server"
 import { ProductService } from "@/lib/services/productService"
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    const products = await ProductService.getAllProducts()
-    return NextResponse.json(products)
+    const { searchParams } = new URL(request.url)
+    
+    // Pagination parameters
+    const page = parseInt(searchParams.get('page') || '1')
+    const limit = parseInt(searchParams.get('limit') || '20')
+    const skip = (page - 1) * limit
+    
+    // Filter parameters
+    const categoryId = searchParams.get('categoryId')
+    const subcategoryId = searchParams.get('subcategoryId')
+    const search = searchParams.get('search')
+    const sortBy = searchParams.get('sortBy') || 'featured'
+    const minPrice = searchParams.get('minPrice')
+    const maxPrice = searchParams.get('maxPrice')
+    
+    // Build filter object
+    const filter: any = {}
+    if (categoryId) filter.categoryId = categoryId
+    if (subcategoryId) filter.subcategoryId = subcategoryId
+    if (search) filter.search = search
+    if (minPrice || maxPrice) {
+      filter.price = {}
+      if (minPrice) filter.price.$gte = parseFloat(minPrice)
+      if (maxPrice) filter.price.$lte = parseFloat(maxPrice)
+    }
+    
+    // Get paginated products with total count
+    const result = await ProductService.getPaginatedProducts({
+      filter,
+      skip,
+      limit,
+      sortBy
+    })
+    
+    return NextResponse.json({
+      products: result.products,
+      pagination: {
+        page,
+        limit,
+        total: result.total,
+        totalPages: Math.ceil(result.total / limit)
+      }
+    })
   } catch (error) {
     console.error("Error fetching products:", error)
     return NextResponse.json(

@@ -614,7 +614,7 @@ export function OperationsDashboard() {
                                   Category: {(item as any).designContext.selectedTemplate.category}
                                 </p>
                                 <p className="text-sm text-purple-700 dark:text-purple-300">
-                                  Price: {(item as any).designContext.selectedTemplate.price === 'free' ? 'Free' : `${(item as any).designContext.selectedTemplate.price} SEK`}
+                                  Price: {(item as any).designContext.selectedTemplate.price === 'free' ? 'Free' : (item as any).designContext.selectedTemplate.price}
                                 </p>
                               </div>
                             </div>

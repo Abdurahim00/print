@@ -8,6 +8,10 @@ export interface CategoryDocument {
   isActive: boolean
   createdAt: Date
   updatedAt: Date
+  // Design capabilities
+  isDesignable?: boolean
+  designableAreas?: string[] // ['front', 'back', 'sleeve', 'chest', 'wrap']
+  designTechniques?: string[] // ['print', 'embroidery', 'sublimation', 'engraving']
 }
 
 export interface SubcategoryDocument {
@@ -18,5 +22,10 @@ export interface SubcategoryDocument {
   isActive: boolean
   createdAt: Date
   updatedAt: Date
+  // Design capabilities (can override parent category)
+  isDesignable?: boolean
+  designableAreas?: string[]
+  designTechniques?: string[]
+  inheritDesignSettings?: boolean // If true, use parent category's design settings
 }
 

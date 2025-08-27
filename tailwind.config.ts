@@ -13,6 +13,15 @@ const config: Config = {
   theme: {
   	extend: {
   		colors: {
+  			// MR MERCH Brand Colors
+  			'brand': {
+  				'black': '#000000',
+  				'green': '#4ADE80',
+  				'lime': '#84CC16',
+  				'yellow': '#FDE047',
+  				'orange': '#FB923C',
+  				'red': '#EF4444',
+  			},
   			background: 'hsl(var(--background))',
   			foreground: 'hsl(var(--foreground))',
   			card: {

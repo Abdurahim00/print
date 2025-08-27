@@ -1,0 +1,1121 @@
+[
+{
+    "Title": "Basic-T Man 150",
+    "description": "Klassisk T-shirt i singel jersey.Rund hals och necktape i elastan.Tear off!® -etikett för egen märkning.Finns i 23 färger och 8 storlekar!",
+    "image_urls": [
+        "https://static.unpr.io/media/1200/IMAGE-682475777d61e.jpg",
+        "https://static.unpr.io/media/1200/IMAGE-6824757989493.jpg",
+        "https://static.unpr.io/media/1200/IMAGE-6824757a884ab.jpg"
+    ],
+    "Sizes": [
+        "S",
+        "M",
+        "L",
+        "XL",
+        "XXL",
+        "3XL",
+        "4XL",
+        "5XL"
+    ],
+    "Article_no": "JN797-bl",
+    "price_before_tax": "69.38 kr/st",
+    "price_after_tax": "693.75 kr",
+    "brand_info": "",
+    "product_info": {
+        "Pris/st": "85.00",
+        "Artikelnummer": "JN797-bl",
+        "Material": "100 % bomull (150g)",
+        "Tvättråd": "Max 40 C",
+        "Tryckinfo": "Tryckkostnad förutsätter ett tryckfärdigt original och avser standardfärger",
+        "Förpackning": "Polybag",
+        "Prisinformation": "Alla priser är SEK inkl. moms. Tryckkostnad förutsätter ett tryckfärdigt original."
+    },
+    "variants_dict": [
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/196319900-451268/basic-t-man-150",
+            "variant_name": "Ash",
+            "variant_image": "https://static.unpr.io/itemimage/1200/products/full/IMAGE-68246a4f5ff72.jpg"
+        },
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/196319900-451269/basic-t-man-150",
+            "variant_name": "Black",
+            "variant_image": "https://static.unpr.io/itemimage/1200/products/full/IMAGE-68246a514975e.jpg"
+        },
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/196319900-451270/basic-t-man-150",
+            "variant_name": "Brown",
+            "variant_image": "https://static.unpr.io/itemimage/1200/products/full/IMAGE-68246a52894be.jpg"
+        },
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/196319900-451271/basic-t-man-150",
+            "variant_name": "Dark royal",
+            "variant_image": "https://static.unpr.io/itemimage/1200/products/full/IMAGE-68246a542596e.jpg"
+        },
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/196319900-451272/basic-t-man-150",
+            "variant_name": "Dark-green",
+            "variant_image": "https://static.unpr.io/itemimage/1200/products/full/IMAGE-68246a5595f9f.jpg"
+        },
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/196319900-451273/basic-t-man-150",
+            "variant_name": "Dark-grey",
+            "variant_image": "https://static.unpr.io/itemimage/1200/products/full/IMAGE-68246a57dd1b3.jpg"
+        },
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/196319900-451274/basic-t-man-150",
+            "variant_name": "Gold-yellow",
+            "variant_image": "https://static.unpr.io/itemimage/1200/products/full/IMAGE-68246a5a41b87.jpg"
+        },
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/196319900-451275/basic-t-man-150",
+            "variant_name": "Graphite",
+            "variant_image": "https://static.unpr.io/itemimage/1200/products/full/IMAGE-68246a5c7e4b6.jpg"
+        },
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/196319900-451276/basic-t-man-150",
+            "variant_name": "Grey-heather",
+            "variant_image": "https://static.unpr.io/itemimage/1200/products/full/IMAGE-68246a5ef36e7.jpg"
+        },
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/196319900-451277/basic-t-man-150",
+            "variant_name": "Irish-green",
+            "variant_image": "https://static.unpr.io/itemimage/1200/products/full/IMAGE-68246a6066229.jpg"
+        },
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/196319900-451278/basic-t-man-150",
+            "variant_name": "Lime-green",
+            "variant_image": "https://static.unpr.io/itemimage/1200/products/full/IMAGE-68246a6287b93.jpg"
+        },
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/196319900-451279/basic-t-man-150",
+            "variant_name": "Navy",
+            "variant_image": "https://static.unpr.io/itemimage/1200/products/full/IMAGE-68246a6389c16.jpg"
+        },
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/196319900-451280/basic-t-man-150",
+            "variant_name": "Olive",
+            "variant_image": "https://static.unpr.io/itemimage/1200/products/full/IMAGE-68246a64ba5a4.jpg"
+        },
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/196319900-451281/basic-t-man-150",
+            "variant_name": "Orange",
+            "variant_image": "https://static.unpr.io/itemimage/1200/products/full/IMAGE-68246a658bd08.jpg"
+        },
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/196319900-451282/basic-t-man-150",
+            "variant_name": "Petrol",
+            "variant_image": "https://static.unpr.io/itemimage/1200/products/full/IMAGE-68246a67a249f.jpg"
+        },
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/196319900-451283/basic-t-man-150",
+            "variant_name": "Pink",
+            "variant_image": "https://static.unpr.io/itemimage/1200/products/full/IMAGE-68246a68a2029.jpg"
+        },
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/196319900-451284/basic-t-man-150",
+            "variant_name": "Red",
+            "variant_image": "https://static.unpr.io/itemimage/1200/products/full/IMAGE-68246a6a705a9.jpg"
+        },
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/196319900-451285/basic-t-man-150",
+            "variant_name": "Royal",
+            "variant_image": "https://static.unpr.io/itemimage/1200/products/full/IMAGE-68246a6e0cbac.jpg"
+        },
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/196319900-451286/basic-t-man-150",
+            "variant_name": "Sky-blue",
+            "variant_image": "https://static.unpr.io/itemimage/1200/products/full/IMAGE-68246a6f8a6ea.jpg"
+        },
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/196319900-451287/basic-t-man-150",
+            "variant_name": "Turquoise",
+            "variant_image": "https://static.unpr.io/itemimage/1200/products/full/IMAGE-68246a715b65b.jpg"
+        },
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/196319900-451288/basic-t-man-150",
+            "variant_name": "White",
+            "variant_image": "https://static.unpr.io/itemimage/1200/products/full/IMAGE-68246a7325f8b.jpg"
+        },
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/196319900-451289/basic-t-man-150",
+            "variant_name": "Wine",
+            "variant_image": "https://static.unpr.io/itemimage/1200/products/full/IMAGE-68246a741ff97.jpg"
+        },
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/196319900-451290/basic-t-man-150",
+            "variant_name": "Yellow",
+            "variant_image": "https://static.unpr.io/itemimage/1200/products/full/IMAGE-68246a7537e09.jpg"
+        }
+    ]
+},
+{
+    "Title": "Original T-shirt Barn",
+    "description": "Prisvärd T-shirt för barn, perfekt för kampanjer. Lycra i hals-ribben för ökad slitstyrka.",
+    "image_urls": [],
+    "Sizes": [
+        "3-4yrs",
+        "5-6yrs",
+        "7-8yrs",
+        "9-11yrs",
+        "12-13yrs",
+        "14-15yrs"
+    ],
+    "Article_no": "61019_White",
+    "price_before_tax": "48.13 kr/st",
+    "price_after_tax": "721.88 kr",
+    "brand_info": "",
+    "product_info": {
+        "Pris/st": "48.13",
+        "Artikelnummer": "61019_White",
+        "Material": "100% bomull",
+        "Vikt": "Heather Grey 97% bomull 3% polyester",
+        "Övriga detaljer": "Klipp bort etiketten",
+        "Prisinformation": "Alla priser är SEK inkl. moms."
+    },
+    "variants_dict": [
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/88605986-162549/original-t-shirt-barn",
+            "variant_name": "Navy",
+            "variant_image": "https://static.unpr.io/itemimage/774/products/full/IMAGE-68acc9344a1f5.jpg"
+        },
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/88605986-162550/original-t-shirt-barn",
+            "variant_name": "White",
+            "variant_image": "https://static.unpr.io/itemimage/774/products/full/IMAGE-68acc936acfb9.jpg"
+        },
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/88605986-162551/original-t-shirt-barn",
+            "variant_name": "Sunflower",
+            "variant_image": "https://static.unpr.io/itemimage/774/products/full/IMAGE-68acc928da677.jpg"
+        },
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/88605986-162552/original-t-shirt-barn",
+            "variant_name": "Black",
+            "variant_image": "https://static.unpr.io/itemimage/774/products/full/IMAGE-68acc92f1b453.jpg"
+        },
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/88605986-162553/original-t-shirt-barn",
+            "variant_name": "Bottle green",
+            "variant_image": "https://static.unpr.io/itemimage/774/products/full/IMAGE-68acc925c42b7.jpg"
+        },
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/88605986-162554/original-t-shirt-barn",
+            "variant_name": "Red",
+            "variant_image": "https://static.unpr.io/itemimage/774/products/full/IMAGE-68acc927a676e.jpg"
+        },
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/88605986-162555/original-t-shirt-barn",
+            "variant_name": "Burgundy",
+            "variant_image": "https://static.unpr.io/itemimage/774/products/full/IMAGE-68acc92bd63bd.jpg"
+        },
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/88605986-162556/original-t-shirt-barn",
+            "variant_name": "Orange",
+            "variant_image": "https://static.unpr.io/itemimage/774/products/full/IMAGE-68acc92e4894f.jpg"
+        },
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/88605986-162557/original-t-shirt-barn",
+            "variant_name": "Kelly green",
+            "variant_image": "https://static.unpr.io/itemimage/774/products/full/IMAGE-68acc92419d7c.jpg"
+        },
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/88605986-162558/original-t-shirt-barn",
+            "variant_name": "Royal blue",
+            "variant_image": "https://static.unpr.io/itemimage/774/products/full/IMAGE-68acc93331785.jpg"
+        },
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/88605986-162559/original-t-shirt-barn",
+            "variant_name": "Fuchsia",
+            "variant_image": "https://static.unpr.io/itemimage/774/products/full/IMAGE-68acc931818a2.jpg"
+        },
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/88605986-162560/original-t-shirt-barn",
+            "variant_name": "Classic olive",
+            "variant_image": "https://static.unpr.io/itemimage/774/products/full/IMAGE-68acc9324c7e8.jpg"
+        },
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/88605986-162561/original-t-shirt-barn",
+            "variant_name": "Heather grey",
+            "variant_image": "https://static.unpr.io/itemimage/774/products/full/IMAGE-68acc936009c6.jpg"
+        },
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/88605986-162562/original-t-shirt-barn",
+            "variant_name": "Deep navy",
+            "variant_image": "https://static.unpr.io/itemimage/774/products/full/IMAGE-68acc92fe72fe.jpg"
+        },
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/88605986-162563/original-t-shirt-barn",
+            "variant_name": "Brick red",
+            "variant_image": "https://static.unpr.io/itemimage/774/products/full/IMAGE-68acc92d784b9.jpg"
+        },
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/88605986-162564/original-t-shirt-barn",
+            "variant_name": "Light graphite",
+            "variant_image": "https://static.unpr.io/itemimage/774/products/full/IMAGE-68acc926b1f7b.jpg"
+        },
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/88605986-162565/original-t-shirt-barn",
+            "variant_name": "Yellow",
+            "variant_image": "https://static.unpr.io/itemimage/774/products/full/IMAGE-68acc930bca73.jpg"
+        },
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/88605986-162566/original-t-shirt-barn",
+            "variant_name": "Lime",
+            "variant_image": "https://static.unpr.io/itemimage/774/products/full/IMAGE-68acc9350fc1d.jpg"
+        },
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/88605986-162569/original-t-shirt-barn",
+            "variant_name": "Azure blue",
+            "variant_image": "https://static.unpr.io/itemimage/774/products/full/IMAGE-68acc924d0b23.jpg"
+        },
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/88605986-1235114/original-t-shirt-barn",
+            "variant_name": "New purple",
+            "variant_image": "https://static.unpr.io/itemimage/774/products/full/IMAGE-68acc92cc4e12.jpg"
+        },
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/88605986-1778688/original-t-shirt-barn",
+            "variant_name": "New sky blue",
+            "variant_image": "https://static.unpr.io/itemimage/774/products/full/IMAGE-68acc92b0eb9b.jpg"
+        }
+    ]
+},
+{
+    "Title": "Printer - Light T-shirt Lady",
+    "description": "Modern  T-shirt med förstärkta axelsömmar och nacke. Dammodell. Stretchig 2-lagers ribb i halshål. Oeko-tex certifierad.",
+    "image_urls": [],
+    "Sizes": [
+        "XS",
+        "S",
+        "M",
+        "L",
+        "XL",
+        "XXL"
+    ],
+    "Article_no": "2264028-935",
+    "price_before_tax": "98.75 kr/st",
+    "price_after_tax": "987.50 kr",
+    "brand_info": "Printer\nPrinter Active Wear erbjuder profilkläder med hög kvalitet till ett lägre pris. Kollektionen distribueras i hela Europa samt Australien. Det tummas aldrig på kvaliteten när det gäller material, sömnad och formgivning men genom en enkel och ren design, där detaljer ibland väljs bort till förmån för priset, kan Printer leva upp till sin filosofi \"Best Value in Large Volumes\".\nVisa samtliga produkter frånPrinter",
+    "product_info": {
+        "Pris/st": "98.75",
+        "Artikelnummer": "2264028-935",
+        "Material": "100% bomull, 140 g/m² (120 gråmel. 85% bomull/15% viskos)",
+        "Ursprungsland": "Bangladesh",
+        "Förpackning": "50 st",
+        "Leveranstid": "1-2 dagar. Varor som ej finns på svenskt lager, 10-14 dagar.",
+        "Modell": "Dam",
+        "Vikt": "0.17000 gram",
+        "Volym": "0.00060 gram",
+        "Tvättråd": "MachineWash60, DoNotBleach, DoNotTumble, IroningMediumTemp, DoNotDryClean",
+        "Storlek": "XS",
+        "Övrig information": "Kan beställas separat. Kostnad tillkommer.",
+        "Prisinformation": "Alla priser är SEK inkl. moms."
+    },
+    "variants_dict": [
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/162790390-368558/printer-light-t-shirt-lady",
+            "variant_name": "Vit",
+            "variant_image": "https://static.unpr.io/itemimage/487/products/full/IMAGE-64e5d359be80a.jpg"
+        },
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/162790390-368559/printer-light-t-shirt-lady",
+            "variant_name": "Gråmelerad",
+            "variant_image": "https://static.unpr.io/itemimage/487/products/full/IMAGE-64e5d359d18bc.jpg"
+        },
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/162790390-368560/printer-light-t-shirt-lady",
+            "variant_name": "Röd",
+            "variant_image": "https://static.unpr.io/itemimage/487/products/full/IMAGE-64e5d35a06fa5.jpg"
+        },
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/162790390-368561/printer-light-t-shirt-lady",
+            "variant_name": "Oceanblå",
+            "variant_image": "https://static.unpr.io/itemimage/487/products/full/IMAGE-64e5d35b2a3b3.jpg"
+        },
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/162790390-368562/printer-light-t-shirt-lady",
+            "variant_name": "Friskt grön",
+            "variant_image": "https://static.unpr.io/itemimage/487/products/full/IMAGE-64e5d35b48991.jpg"
+        },
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/162790390-368563/printer-light-t-shirt-lady",
+            "variant_name": "Svart",
+            "variant_image": "https://static.unpr.io/itemimage/487/products/full/IMAGE-64e5d35b8d18e.jpg"
+        },
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/162790390-368564/printer-light-t-shirt-lady",
+            "variant_name": "Stålgrå",
+            "variant_image": "https://static.unpr.io/itemimage/487/products/full/IMAGE-64e5d35bad378.jpg"
+        },
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/162790390-799726/printer-light-t-shirt-lady",
+            "variant_name": "Marin",
+            "variant_image": "https://static.unpr.io/itemimage/487/products/full/IMAGE-64e5d35a2f8e1.jpg"
+        },
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/162790390-799727/printer-light-t-shirt-lady",
+            "variant_name": "Mörkt marin",
+            "variant_image": "https://static.unpr.io/itemimage/487/products/full/IMAGE-6735f929e3312.jpg"
+        },
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/162790390-1077253/printer-light-t-shirt-lady",
+            "variant_name": "Mörk marin",
+            "variant_image": "https://static.unpr.io/itemimage/487/products/full/IMAGE-64e5d35b1cc03.jpg"
+        }
+    ]
+},
+{
+    "Title": "Heros kortärmad herrtröja",
+    "description": "Heros kortärmad t-shirt herr är perfekt för alla evenemang. De korta ärmarna och designen med rund hals ger en mångsidig och vanlig passform vilket gör den lämplig för en rad olika aktiviteter. Tillverkad av 150 g/m² bomull är den lätt och bekväm att bära. Dessutom är bomullsmaterialet mjukt vid beröring och perfekt för högkvalitativ varumärkesmärkning. Tack vare den invändiga nacketiketten som enkelt kan tas bort i två segment lämnar designen utrymme för anpassad interiörmärkning samtidigt som storleksinformationen behålls.",
+    "image_urls": [
+        "https://static.unpr.io/media/800/IMAGE-64448d548ba76.jpg",
+        "https://static.unpr.io/media/800/IMAGE-64448d54f2a4d.jpg",
+        "https://static.unpr.io/media/800/IMAGE-64448d5559c21.jpg",
+        "https://static.unpr.io/media/800/IMAGE-64448d55b9ee7.jpg",
+        "https://static.unpr.io/media/800/IMAGE-64448d562218f.jpg",
+        "https://static.unpr.io/media/800/IMAGE-64448d569f195.jpg",
+        "https://static.unpr.io/media/800/163f2eaeccf23e.jpg",
+        "https://static.unpr.io/media/800/IMAGE-64448d571ca24.jpg",
+        "https://static.unpr.io/media/800/IMAGE-64448d57abd4b.jpg",
+        "https://static.unpr.io/media/800/IMAGE-64448d57da901.jpg"
+    ],
+    "Sizes": [
+        "XS",
+        "S",
+        "M",
+        "L",
+        "XL",
+        "2XL",
+        "3XL",
+        "2XS"
+    ],
+    "Article_no": "3802823",
+    "price_before_tax": "48.75 kr/st",
+    "price_after_tax": "731.25 kr",
+    "brand_info": "Elevate\nVäskor och accessoarer som med en moderiktig kombination av utomhusliv och urbana trender.\nVisa samtliga produkter frånElevate",
+    "product_info": {
+        "Pris/st": "48.75",
+        "Artikelnummer": "3802823",
+        "Dam/Herr": "Male",
+        "Ursprungsland": "BANGLADESH",
+        "Material": "Single jersey av 100% BCI Bomull, 150 g/m2",
+        "Antal i kartong": "100st",
+        "Bruttovikt": "13kg",
+        "Nettovikt": "12.35kg",
+        "Minsta antal vid order": "Produkten kan beställas i färre antal men en avgift kan då tillkomma",
+        "Certifikat": "BSCI",
+        "Prisinformation": "Alla priser är SEK inkl. moms. Tryckkostnad förutsätter ett tryckfärdigt original."
+    },
+    "variants_dict": [
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/162463868-469030/heros-kortarmad-herrtroja",
+            "variant_name": "Vit",
+            "variant_image": "https://static.unpr.io/itemimage/800/products/full/163f2eaeaea082.jpg"
+        },
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/162463868-469031/heros-kortarmad-herrtroja",
+            "variant_name": "Gul",
+            "variant_image": "https://static.unpr.io/itemimage/800/products/full/163f2eaeb94dec.jpg"
+        },
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/162463868-469032/heros-kortarmad-herrtroja",
+            "variant_name": "Magenta",
+            "variant_image": "https://static.unpr.io/itemimage/800/products/full/163f2eaec37d32.jpg"
+        },
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/162463868-469033/heros-kortarmad-herrtroja",
+            "variant_name": "Ljusrosa",
+            "variant_image": "https://static.unpr.io/itemimage/800/products/full/163f2eaeccf23e.jpg"
+        },
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/162463868-469034/heros-kortarmad-herrtroja",
+            "variant_name": "Vinröd",
+            "variant_image": "https://static.unpr.io/itemimage/800/products/full/163f2eaed6645d.jpg"
+        },
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/162463868-469035/heros-kortarmad-herrtroja",
+            "variant_name": "Röd",
+            "variant_image": "https://static.unpr.io/itemimage/800/products/full/163f2eaedec21b.jpg"
+        },
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/162463868-469036/heros-kortarmad-herrtroja",
+            "variant_name": "Orange",
+            "variant_image": "https://static.unpr.io/itemimage/800/products/full/163f2eaee8b244.jpg"
+        },
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/162463868-469037/heros-kortarmad-herrtroja",
+            "variant_name": "Ljusblå",
+            "variant_image": "https://static.unpr.io/itemimage/800/products/full/163f2eaef205ef.jpg"
+        },
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/162463868-469038/heros-kortarmad-herrtroja",
+            "variant_name": "Blå",
+            "variant_image": "https://static.unpr.io/itemimage/800/products/full/163f2eaefad802.jpg"
+        },
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/162463868-469039/heros-kortarmad-herrtroja",
+            "variant_name": "Marinblå",
+            "variant_image": "https://static.unpr.io/itemimage/800/products/full/163f2eaf04e172.jpg"
+        },
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/162463868-469040/heros-kortarmad-herrtroja",
+            "variant_name": "Aqua",
+            "variant_image": "https://static.unpr.io/itemimage/800/products/full/163f2eaf0e2b68.jpg"
+        },
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/162463868-469041/heros-kortarmad-herrtroja",
+            "variant_name": "Skogsgrön",
+            "variant_image": "https://static.unpr.io/itemimage/800/products/full/163f2eaf176da1.jpg"
+        },
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/162463868-469042/heros-kortarmad-herrtroja",
+            "variant_name": "äpplegrön",
+            "variant_image": "https://static.unpr.io/itemimage/800/products/full/163f2eaf20fbd2.jpg"
+        },
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/162463868-469043/heros-kortarmad-herrtroja",
+            "variant_name": "Ormbunkegrön",
+            "variant_image": "https://static.unpr.io/itemimage/800/products/full/163f2eaf299b4f.jpg"
+        },
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/162463868-469044/heros-kortarmad-herrtroja",
+            "variant_name": "Militärgrön",
+            "variant_image": "https://static.unpr.io/itemimage/800/products/full/163f2eaf335aea.jpg"
+        },
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/162463868-469045/heros-kortarmad-herrtroja",
+            "variant_name": "Stormgrå",
+            "variant_image": "https://static.unpr.io/itemimage/800/products/full/163f2eaf3cda24.jpg"
+        },
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/162463868-469046/heros-kortarmad-herrtroja",
+            "variant_name": "Ljusgrå",
+            "variant_image": "https://static.unpr.io/itemimage/800/products/full/163f2eaf45f007.jpg"
+        },
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/162463868-469047/heros-kortarmad-herrtroja",
+            "variant_name": "Gråmelange",
+            "variant_image": "https://static.unpr.io/itemimage/800/products/full/163f2eaf4e6744.jpg"
+        },
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/162463868-469048/heros-kortarmad-herrtroja",
+            "variant_name": "Heather charcoal",
+            "variant_image": "https://static.unpr.io/itemimage/800/products/full/163f2eaf5978d0.jpg"
+        },
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/162463868-469049/heros-kortarmad-herrtroja",
+            "variant_name": "Svart",
+            "variant_image": "https://static.unpr.io/itemimage/800/products/full/163f2eaf642c91.jpg"
+        }
+    ]
+},
+{
+    "Title": "Printer - Light T-shirt Rsx",
+    "description": "Modern T-shirt med förstärkta axelsömmar och nacke. Stretchig 2-lagers ribb i halshål. Oeko-tex certifierad.",
+    "image_urls": [],
+    "Sizes": [
+        "XS",
+        "S",
+        "M",
+        "L",
+        "XL",
+        "XXL",
+        "XXXL",
+        "4XL",
+        "5XL"
+    ],
+    "Article_no": "2264027-120",
+    "price_before_tax": "98.75 kr/st",
+    "price_after_tax": "987.50 kr",
+    "brand_info": "Printer\nPrinter Active Wear erbjuder profilkläder med hög kvalitet till ett lägre pris. Kollektionen distribueras i hela Europa samt Australien. Det tummas aldrig på kvaliteten när det gäller material, sömnad och formgivning men genom en enkel och ren design, där detaljer ibland väljs bort till förmån för priset, kan Printer leva upp till sin filosofi \"Best Value in Large Volumes\".\nVisa samtliga produkter frånPrinter",
+    "product_info": {
+        "Pris/st": "98.75",
+        "Artikelnummer": "2264027-120",
+        "Material": "100% bomull (120 gråmel. 85% bomull/15% viskos), 140 g/m².",
+        "Ursprungsland": "Bangladesh",
+        "Förpackning": "50 st",
+        "Leveranstid": "1-2 dagar. Varor som ej finns på svenskt lager, 10-14 dagar.",
+        "Modell": "Herr",
+        "Vikt": "0.21000 gram",
+        "Volym": "0.00060 gram",
+        "Tvättråd": "MachineWash60, DoNotBleach, DoNotTumble, IroningMediumTemp, DoNotDryClean",
+        "Storlek": "XS",
+        "Övrig information": "Kan beställas separat. Kostnad tillkommer.",
+        "Prisinformation": "Alla priser är SEK inkl. moms."
+    },
+    "variants_dict": [
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/162781094-368550/printer-light-t-shirt-rsx",
+            "variant_name": "Vit",
+            "variant_image": "https://static.unpr.io/itemimage/487/products/full/IMAGE-64e5d355d5704.jpg"
+        },
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/162781094-368551/printer-light-t-shirt-rsx",
+            "variant_name": "Gråmelerad",
+            "variant_image": "https://static.unpr.io/itemimage/487/products/full/IMAGE-64e5d355ee82a.jpg"
+        },
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/162781094-368552/printer-light-t-shirt-rsx",
+            "variant_name": "Röd",
+            "variant_image": "https://static.unpr.io/itemimage/487/products/full/IMAGE-64e5d3560b44d.jpg"
+        },
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/162781094-368553/printer-light-t-shirt-rsx",
+            "variant_name": "Marin",
+            "variant_image": "https://static.unpr.io/itemimage/487/products/full/IMAGE-64e5d3561b212.jpg"
+        },
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/162781094-368554/printer-light-t-shirt-rsx",
+            "variant_name": "Oceanblå",
+            "variant_image": "https://static.unpr.io/itemimage/487/products/full/IMAGE-64e5d356a2246.jpg"
+        },
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/162781094-368555/printer-light-t-shirt-rsx",
+            "variant_name": "Friskt grön",
+            "variant_image": "https://static.unpr.io/itemimage/487/products/full/IMAGE-64e5d357512cb.jpg"
+        },
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/162781094-368556/printer-light-t-shirt-rsx",
+            "variant_name": "Svart",
+            "variant_image": "https://static.unpr.io/itemimage/487/products/full/IMAGE-64e5d3575f4a8.jpg"
+        },
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/162781094-368557/printer-light-t-shirt-rsx",
+            "variant_name": "Stålgrå",
+            "variant_image": "https://static.unpr.io/itemimage/487/products/full/IMAGE-64e5d357833b9.jpg"
+        },
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/162781094-1077252/printer-light-t-shirt-rsx",
+            "variant_name": "Mörk marin",
+            "variant_image": "https://static.unpr.io/itemimage/487/products/full/IMAGE-64e5d3566c49a.jpg"
+        },
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/162781094-1564552/printer-light-t-shirt-rsx",
+            "variant_name": "Mörkt marin",
+            "variant_image": "https://static.unpr.io/itemimage/487/products/full/IMAGE-6735f95e1bba2.jpg"
+        }
+    ]
+},
+{
+    "Title": "Girls Valueweight T",
+    "description": "UTGÅENDE ARTIKEL!T-shirt utformad för flickor med kortare ärmar och smalare halslinning i bomull/lycra. Sidosömmar för en flickigare passform.",
+    "image_urls": [],
+    "Sizes": [
+        "3-4yrs",
+        "5-6yrs",
+        "7-8yrs",
+        "9-11yrs",
+        "12-13yrs",
+        "14-15yrs"
+    ],
+    "Article_no": "61005_White",
+    "price_before_tax": "46.25 kr/st",
+    "price_after_tax": "693.75 kr",
+    "brand_info": "",
+    "product_info": {
+        "Pris/st": "46.25",
+        "Artikelnummer": "61005_White",
+        "Material": "100 % bomull, Belcoro® garn från USA",
+        "Vikt": "Färg 165 g/m2",
+        "Övriga detaljer": "Tear away label",
+        "Prisinformation": "Alla priser är SEK inkl. moms."
+    },
+    "variants_dict": [
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/88242280-160344/girls-valueweight-t",
+            "variant_name": "White",
+            "variant_image": "https://static.unpr.io/itemimage/774/products/full/IMAGE-68acea900b41f.jpg"
+        },
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/88242280-160345/girls-valueweight-t",
+            "variant_name": "Black",
+            "variant_image": "https://static.unpr.io/itemimage/774/products/full/IMAGE-68acea91183c4.jpg"
+        },
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/88242280-160346/girls-valueweight-t",
+            "variant_name": "Deep navy",
+            "variant_image": "https://static.unpr.io/itemimage/774/products/full/IMAGE-68acea900b41f.jpg"
+        },
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/88242280-160348/girls-valueweight-t",
+            "variant_name": "Light pink",
+            "variant_image": "https://static.unpr.io/itemimage/774/products/full/IMAGE-68acea900b41f.jpg"
+        },
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/88242280-160349/girls-valueweight-t",
+            "variant_name": "Red",
+            "variant_image": "https://static.unpr.io/itemimage/774/products/full/IMAGE-68acea900b41f.jpg"
+        },
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/88242280-789736/girls-valueweight-t",
+            "variant_name": "Kelly green",
+            "variant_image": "https://static.unpr.io/itemimage/774/products/full/IMAGE-68acea900b41f.jpg"
+        },
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/88242280-1781115/girls-valueweight-t",
+            "variant_name": "Fuchsia",
+            "variant_image": "https://static.unpr.io/itemimage/774/products/full/IMAGE-68acea91e161f.jpg"
+        }
+    ]
+},
+{
+    "Title": "Klassisk T-shirt Barn",
+    "description": "Klassisk T-shirt till barn.",
+    "image_urls": [],
+    "Sizes": [
+        "1-2yrs",
+        "2-3yrs",
+        "3-4yrs",
+        "5-6yrs",
+        "7-8yrs",
+        "9-11yrs",
+        "12-13yrs",
+        "14-15yrs"
+    ],
+    "Article_no": "61033_Royal Blue",
+    "price_before_tax": "61.88 kr/st",
+    "price_after_tax": "618.75 kr",
+    "brand_info": "",
+    "product_info": {
+        "Pris/st": "61.88",
+        "Artikelnummer": "61033_Royal Blue",
+        "Material": "100% bomull",
+        "Vikt": "Ash 99% bomull 1% polyester",
+        "Övriga detaljer": "Klipp bort etiketten",
+        "Prisinformation": "Alla priser är SEK inkl. moms."
+    },
+    "variants_dict": [
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/88239956-160300/klassisk-t-shirt-barn",
+            "variant_name": "Azure blue",
+            "variant_image": "https://static.unpr.io/itemimage/774/products/full/IMAGE-68acc96c11e7e.jpg"
+        },
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/88239956-160301/klassisk-t-shirt-barn",
+            "variant_name": "Bottle green",
+            "variant_image": "https://static.unpr.io/itemimage/774/products/full/IMAGE-68acc95d84581.jpg"
+        },
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/88239956-160302/klassisk-t-shirt-barn",
+            "variant_name": "Black",
+            "variant_image": "https://static.unpr.io/itemimage/774/products/full/IMAGE-68acc960ab3cf.jpg"
+        },
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/88239956-160303/klassisk-t-shirt-barn",
+            "variant_name": "Burgundy",
+            "variant_image": "https://static.unpr.io/itemimage/774/products/full/IMAGE-68acc95c972b3.jpg"
+        },
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/88239956-160304/klassisk-t-shirt-barn",
+            "variant_name": "Deep navy",
+            "variant_image": "https://static.unpr.io/itemimage/774/products/full/IMAGE-68acc9643b0e8.jpg"
+        },
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/88239956-160305/klassisk-t-shirt-barn",
+            "variant_name": "Heather grey",
+            "variant_image": "https://static.unpr.io/itemimage/774/products/full/IMAGE-68acc96377504.jpg"
+        },
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/88239956-160306/klassisk-t-shirt-barn",
+            "variant_name": "Kelly green",
+            "variant_image": "https://static.unpr.io/itemimage/774/products/full/IMAGE-68acc96987166.jpg"
+        },
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/88239956-160307/klassisk-t-shirt-barn",
+            "variant_name": "Natural",
+            "variant_image": "https://static.unpr.io/itemimage/774/products/full/IMAGE-68acc95fe33cb.jpg"
+        },
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/88239956-160308/klassisk-t-shirt-barn",
+            "variant_name": "Navy",
+            "variant_image": "https://static.unpr.io/itemimage/774/products/full/IMAGE-68acc96b302a2.jpg"
+        },
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/88239956-160309/klassisk-t-shirt-barn",
+            "variant_name": "Orange",
+            "variant_image": "https://static.unpr.io/itemimage/774/products/full/IMAGE-68acc96a57028.jpg"
+        },
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/88239956-160312/klassisk-t-shirt-barn",
+            "variant_name": "Red",
+            "variant_image": "https://static.unpr.io/itemimage/774/products/full/IMAGE-68acc96186005.jpg"
+        },
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/88239956-160315/klassisk-t-shirt-barn",
+            "variant_name": "Sunflower",
+            "variant_image": "https://static.unpr.io/itemimage/774/products/full/IMAGE-68acc95bb6786.jpg"
+        },
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/88239956-160316/klassisk-t-shirt-barn",
+            "variant_name": "White",
+            "variant_image": "https://static.unpr.io/itemimage/774/products/full/IMAGE-68acc959df6c3.jpg"
+        },
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/88239956-160317/klassisk-t-shirt-barn",
+            "variant_name": "Yellow",
+            "variant_image": "https://static.unpr.io/itemimage/774/products/full/IMAGE-68acc96516104.jpg"
+        },
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/88239956-369403/klassisk-t-shirt-barn",
+            "variant_name": "Heather navy",
+            "variant_image": "https://static.unpr.io/itemimage/774/products/full/IMAGE-68acc95eb2ebb.jpg"
+        },
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/88239956-369404/klassisk-t-shirt-barn",
+            "variant_name": "Heather green",
+            "variant_image": "https://static.unpr.io/itemimage/774/products/full/IMAGE-68acc965db49f.jpg"
+        },
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/88239956-369405/klassisk-t-shirt-barn",
+            "variant_name": "Lime",
+            "variant_image": "https://static.unpr.io/itemimage/774/products/full/IMAGE-68acc9583d2c4.jpg"
+        },
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/88239956-369406/klassisk-t-shirt-barn",
+            "variant_name": "Dark heather grey",
+            "variant_image": "https://static.unpr.io/itemimage/774/products/full/IMAGE-68acc96d3eb0a.jpg"
+        },
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/88239956-369407/klassisk-t-shirt-barn",
+            "variant_name": "Heather royal",
+            "variant_image": "https://static.unpr.io/itemimage/774/products/full/IMAGE-68acc9629ad42.jpg"
+        },
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/88239956-369408/klassisk-t-shirt-barn",
+            "variant_name": "Fuchsia",
+            "variant_image": "https://static.unpr.io/itemimage/774/products/full/IMAGE-68acc96e256f5.jpg"
+        },
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/88239956-369409/klassisk-t-shirt-barn",
+            "variant_name": "Heather red",
+            "variant_image": "https://static.unpr.io/itemimage/774/products/full/IMAGE-68acc95adc9c5.jpg"
+        },
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/88239956-695698/klassisk-t-shirt-barn",
+            "variant_name": "Light pink",
+            "variant_image": "https://static.unpr.io/itemimage/774/products/full/IMAGE-68acc959280d0.jpg"
+        },
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/88239956-1778705/klassisk-t-shirt-barn",
+            "variant_name": "New purple",
+            "variant_image": "https://static.unpr.io/itemimage/774/products/full/IMAGE-68acc968b1c18.jpg"
+        },
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/88239956-1778706/klassisk-t-shirt-barn",
+            "variant_name": "New sky blue",
+            "variant_image": "https://static.unpr.io/itemimage/774/products/full/IMAGE-68acc966def17.jpg"
+        },
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/88239956-1778707/klassisk-t-shirt-barn",
+            "variant_name": "Royal blue",
+            "variant_image": "https://static.unpr.io/itemimage/774/products/full/IMAGE-68acc967bc89f.jpg"
+        }
+    ]
+},
+{
+    "Title": "Kids Iconic T",
+    "description": "Rundhalsad T-shirt för barn i 100% ringspunnen kammad bomull. Modern passform.",
+    "image_urls": [],
+    "Sizes": [
+        "3-4yrs",
+        "5-6yrs",
+        "7-8yrs",
+        "9-11yrs",
+        "12-13yrs",
+        "14-15yrs"
+    ],
+    "Article_no": "61023_Black",
+    "price_before_tax": "63.13 kr/st",
+    "price_after_tax": "631.25 kr",
+    "brand_info": "",
+    "product_info": {
+        "Pris/st": "63.13",
+        "Artikelnummer": "61023_Black",
+        "Material": "100% bomull",
+        "Vikt": "Heather-färger 50% polyester 50% bomull",
+        "Övriga detaljer": "Tear away label",
+        "Prisinformation": "Alla priser är SEK inkl. moms."
+    },
+    "variants_dict": [
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/163123884-369387/kids-iconic-t",
+            "variant_name": "Royal blue",
+            "variant_image": "https://static.unpr.io/itemimage/774/products/full/IMAGE-68acc9443b794.jpg"
+        },
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/163123884-369388/kids-iconic-t",
+            "variant_name": "Fuchsia",
+            "variant_image": "https://static.unpr.io/itemimage/774/products/full/IMAGE-68acc9450d40a.jpg"
+        },
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/163123884-369389/kids-iconic-t",
+            "variant_name": "Red",
+            "variant_image": "https://static.unpr.io/itemimage/774/products/full/IMAGE-68acc93d18e33.jpg"
+        },
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/163123884-369390/kids-iconic-t",
+            "variant_name": "Sunflower",
+            "variant_image": "https://static.unpr.io/itemimage/774/products/full/IMAGE-68acc93b55fd0.jpg"
+        },
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/163123884-369392/kids-iconic-t",
+            "variant_name": "White",
+            "variant_image": "https://static.unpr.io/itemimage/774/products/full/IMAGE-68acc945be2de.jpg"
+        },
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/163123884-369394/kids-iconic-t",
+            "variant_name": "Forest green",
+            "variant_image": "https://static.unpr.io/itemimage/774/products/full/IMAGE-68acc93a7e228.jpg"
+        },
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/163123884-369395/kids-iconic-t",
+            "variant_name": "Kelly green",
+            "variant_image": "https://static.unpr.io/itemimage/774/products/full/IMAGE-68acc94133695.jpg"
+        },
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/163123884-369396/kids-iconic-t",
+            "variant_name": "Heather grey",
+            "variant_image": "https://static.unpr.io/itemimage/774/products/full/IMAGE-68acc9422e9c5.jpg"
+        },
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/163123884-369397/kids-iconic-t",
+            "variant_name": "Heather purple",
+            "variant_image": "https://static.unpr.io/itemimage/774/products/full/IMAGE-68acc9434a666.jpg"
+        },
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/163123884-369398/kids-iconic-t",
+            "variant_name": "Deep navy",
+            "variant_image": "https://static.unpr.io/itemimage/774/products/full/IMAGE-68acc939bf033.jpg"
+        },
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/163123884-369399/kids-iconic-t",
+            "variant_name": "Light graphite",
+            "variant_image": "https://static.unpr.io/itemimage/774/products/full/IMAGE-68acc947797b3.jpg"
+        },
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/163123884-369400/kids-iconic-t",
+            "variant_name": "Black",
+            "variant_image": "https://static.unpr.io/itemimage/774/products/full/IMAGE-68acc949106d8.jpg"
+        },
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/163123884-749618/kids-iconic-t",
+            "variant_name": "Azure blue",
+            "variant_image": "https://static.unpr.io/itemimage/774/products/full/IMAGE-68acc946abf87.jpg"
+        },
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/163123884-749619/kids-iconic-t",
+            "variant_name": "Navy",
+            "variant_image": "https://static.unpr.io/itemimage/774/products/full/IMAGE-68acc9379568d.jpg"
+        },
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/163123884-749620/kids-iconic-t",
+            "variant_name": "Neomint",
+            "variant_image": "https://static.unpr.io/itemimage/774/products/full/IMAGE-68acc94839152.jpg"
+        },
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/163123884-992744/kids-iconic-t",
+            "variant_name": "New sky blue",
+            "variant_image": "https://static.unpr.io/itemimage/774/products/full/IMAGE-68acc949f30ce.jpg"
+        },
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/163123884-992745/kids-iconic-t",
+            "variant_name": "Orange",
+            "variant_image": "https://static.unpr.io/itemimage/774/products/full/IMAGE-68acc93f1171e.jpg"
+        },
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/163123884-992746/kids-iconic-t",
+            "variant_name": "Softlavender",
+            "variant_image": "https://static.unpr.io/itemimage/774/products/full/IMAGE-68acc93c37adb.jpg"
+        },
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/163123884-1533057/kids-iconic-t",
+            "variant_name": "Sage",
+            "variant_image": "https://static.unpr.io/itemimage/774/products/full/IMAGE-68acc93894492.jpg"
+        },
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/163123884-1533058/kids-iconic-t",
+            "variant_name": "Powderrose",
+            "variant_image": "https://static.unpr.io/itemimage/774/products/full/IMAGE-68acc93fd1755.jpg"
+        }
+    ]
+},
+{
+    "Title": "Girls Iconic T",
+    "description": "UTGÅENDE ARTIKEL!Rundhalsad T-shirt i 100% ringspunnen kammad bomull. Sidosömmar för en mer nätt och flickig passform.",
+    "image_urls": [],
+    "Sizes": [
+        "3-4yrs",
+        "5-6yrs",
+        "7-8yrs",
+        "9-11yrs",
+        "12-13yrs",
+        "14-15yrs"
+    ],
+    "Article_no": "61025_Light Graphite",
+    "price_before_tax": "49.38 kr/st",
+    "price_after_tax": "740.63 kr",
+    "brand_info": "",
+    "product_info": {
+        "Pris/st": "49.38",
+        "Artikelnummer": "61025_Light Graphite",
+        "Material": "100% bomull",
+        "Vikt": "Heather-färger 50% polyester 50% bomull",
+        "Övriga detaljer": "Tear away label",
+        "Prisinformation": "Alla priser är SEK inkl. moms."
+    },
+    "variants_dict": [
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/166312412-749621/girls-iconic-t",
+            "variant_name": "New purple",
+            "variant_image": "https://static.unpr.io/itemimage/774/products/full/IMAGE-68acc94b16932.jpg"
+        },
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/166312412-749622/girls-iconic-t",
+            "variant_name": "Light pink",
+            "variant_image": "https://static.unpr.io/itemimage/774/products/full/IMAGE-68acc94b16932.jpg"
+        },
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/166312412-749623/girls-iconic-t",
+            "variant_name": "Heather navy",
+            "variant_image": "https://static.unpr.io/itemimage/774/products/full/IMAGE-68acc94b16932.jpg"
+        },
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/166312412-749627/girls-iconic-t",
+            "variant_name": "Red",
+            "variant_image": "https://static.unpr.io/itemimage/774/products/full/IMAGE-68acc94d192b1.jpg"
+        },
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/166312412-749628/girls-iconic-t",
+            "variant_name": "Deep navy",
+            "variant_image": "https://static.unpr.io/itemimage/774/products/full/IMAGE-68acc94b16932.jpg"
+        },
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/166312412-749629/girls-iconic-t",
+            "variant_name": "Light graphite",
+            "variant_image": "https://static.unpr.io/itemimage/774/products/full/IMAGE-68acc94b16932.jpg"
+        },
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/166312412-749630/girls-iconic-t",
+            "variant_name": "Zinc",
+            "variant_image": "https://static.unpr.io/itemimage/774/products/full/IMAGE-68acc94b16932.jpg"
+        },
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/166312412-749631/girls-iconic-t",
+            "variant_name": "Azure blue",
+            "variant_image": "https://static.unpr.io/itemimage/774/products/full/IMAGE-68acc94b16932.jpg"
+        },
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/166312412-749632/girls-iconic-t",
+            "variant_name": "Sunflower",
+            "variant_image": "https://static.unpr.io/itemimage/774/products/full/IMAGE-68acc94e06b56.jpg"
+        },
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/166312412-749633/girls-iconic-t",
+            "variant_name": "Neomint",
+            "variant_image": "https://static.unpr.io/itemimage/774/products/full/IMAGE-68acc94b16932.jpg"
+        },
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/166312412-749635/girls-iconic-t",
+            "variant_name": "Forest green",
+            "variant_image": "https://static.unpr.io/itemimage/774/products/full/IMAGE-68acc94b16932.jpg"
+        },
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/166312412-749636/girls-iconic-t",
+            "variant_name": "Fuchsia",
+            "variant_image": "https://static.unpr.io/itemimage/774/products/full/IMAGE-68acc94b16932.jpg"
+        },
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/166312412-749637/girls-iconic-t",
+            "variant_name": "White",
+            "variant_image": "https://static.unpr.io/itemimage/774/products/full/IMAGE-68acc94be80b0.jpg"
+        },
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/166312412-749638/girls-iconic-t",
+            "variant_name": "Dark heather grey",
+            "variant_image": "https://static.unpr.io/itemimage/774/products/full/IMAGE-68acc94b16932.jpg"
+        },
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/166312412-749639/girls-iconic-t",
+            "variant_name": "Heather purple",
+            "variant_image": "https://static.unpr.io/itemimage/774/products/full/IMAGE-68acc94b16932.jpg"
+        }
+    ]
+},
+{
+    "Title": "Ladies Original T",
+    "description": "Prisvärd damt-shirt, perfekt för kampanjer. Lycra i hals-ribben för ökad hållbarhet.UTGÅENDE FÄRGER: Classic Olive, Yellow, New Purple, Navy, Sunflower, Bottle Green, Burgundy, Orange, Kelly Green, Deep Navy, Brick Red, Light Graphite, Lime, Sky Blue, Azure Blue",
+    "image_urls": [],
+    "Sizes": [
+        "XS",
+        "S",
+        "M",
+        "L",
+        "XL",
+        "XXL"
+    ],
+    "Article_no": "61420_Yellow",
+    "price_before_tax": "41.88 kr/st",
+    "price_after_tax": "628.13 kr",
+    "brand_info": "",
+    "product_info": {
+        "Pris/st": "41.88",
+        "Artikelnummer": "61420_Yellow",
+        "Material": "100% bomull",
+        "Vikt": "Heather Grey 97% bomull 3% polyester",
+        "Övriga detaljer": "Klipp bort etiketten",
+        "Prisinformation": "Alla priser är SEK inkl. moms."
+    },
+    "variants_dict": [
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/88604824-162528/ladies-original-t",
+            "variant_name": "White",
+            "variant_image": "https://static.unpr.io/itemimage/774/products/full/IMAGE-68acc9e506a29.jpg"
+        },
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/88604824-162529/ladies-original-t",
+            "variant_name": "Black",
+            "variant_image": "https://static.unpr.io/itemimage/774/products/full/IMAGE-68acc9e9d6912.jpg"
+        },
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/88604824-162533/ladies-original-t",
+            "variant_name": "Red",
+            "variant_image": "https://static.unpr.io/itemimage/774/products/full/IMAGE-68acc9e8e9766.jpg"
+        },
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/88604824-162537/ladies-original-t",
+            "variant_name": "Royal blue",
+            "variant_image": "https://static.unpr.io/itemimage/774/products/full/IMAGE-68acc9e7db2dd.jpg"
+        },
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/88604824-162538/ladies-original-t",
+            "variant_name": "Fuchsia",
+            "variant_image": "https://static.unpr.io/itemimage/774/products/full/IMAGE-68acc9e2b94ee.jpg"
+        },
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/88604824-162539/ladies-original-t",
+            "variant_name": "Classic olive",
+            "variant_image": "https://static.unpr.io/itemimage/774/products/full/IMAGE-68acc9e03851a.jpg"
+        },
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/88604824-162540/ladies-original-t",
+            "variant_name": "Heather grey",
+            "variant_image": "https://static.unpr.io/itemimage/774/products/full/IMAGE-68acc9e109bb1.jpg"
+        },
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/88604824-162541/ladies-original-t",
+            "variant_name": "Deep navy",
+            "variant_image": "https://static.unpr.io/itemimage/774/products/full/IMAGE-68acc9e40432b.jpg"
+        },
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/88604824-162544/ladies-original-t",
+            "variant_name": "Yellow",
+            "variant_image": "https://static.unpr.io/itemimage/774/products/full/IMAGE-68acc9e1cf73f.jpg"
+        },
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/88604824-1235115/ladies-original-t",
+            "variant_name": "New purple",
+            "variant_image": "https://static.unpr.io/itemimage/774/products/full/IMAGE-68acc9e717e3e.jpg"
+        }
+    ]
+}
+]

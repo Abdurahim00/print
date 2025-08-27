@@ -136,7 +136,7 @@ export function SizeQuantityModal({ open, onOpenChange, onAddToCart }: SizeQuant
             swatch_image: selectedProduct.image 
           },
           images: individualImages,
-          price: selectedProduct.price,
+          price: selectedProduct.price || (selectedProduct as any).basePrice,
           inStock: (selectedProduct as any).inStock || true,
           stockQuantity: 0,
           isDefault: true
@@ -176,8 +176,9 @@ export function SizeQuantityModal({ open, onOpenChange, onAddToCart }: SizeQuant
         return false
       }
     } else {
-      // For single products, check main product price
-      if (selectedProduct.price === undefined || selectedProduct.price === null) {
+      // For single products, check main product price or basePrice
+      const productPrice = selectedProduct.price || (selectedProduct as any).basePrice
+      if (productPrice === undefined || productPrice === null) {
         return false
       }
     }
@@ -191,7 +192,7 @@ export function SizeQuantityModal({ open, onOpenChange, onAddToCart }: SizeQuant
       console.log('🛒 [SizeQuantityModal] Initializing modal with product:', {
         productName: selectedProduct.name,
         hasVariations: (selectedProduct as any).hasVariations,
-        productPrice: selectedProduct.price,
+        productPrice: selectedProduct.price || (selectedProduct as any).basePrice,
         productColor,
         viewMode,
         // Debug single product data
@@ -219,9 +220,10 @@ export function SizeQuantityModal({ open, onOpenChange, onAddToCart }: SizeQuant
       
       if ((selectedProduct as any).hasVariations && currentVariation) {
         // For variation products, use the existing logic
-        // Priority 1: Use main product price if it's significantly higher than variation price
-        if (selectedProduct.price !== undefined && selectedProduct.price !== null) {
-          const mainProductPrice = Number(selectedProduct.price)
+        // Priority 1: Use main product price (or basePrice) if it's significantly higher than variation price
+        const productPriceField = selectedProduct.price || (selectedProduct as any).basePrice
+        if (productPriceField !== undefined && productPriceField !== null) {
+          const mainProductPrice = Number(productPriceField)
           const variationPrice = currentVariation.price !== undefined ? Number(currentVariation.price) : 0
           
           // If main product price is significantly higher, use it instead of variation price
@@ -247,10 +249,11 @@ export function SizeQuantityModal({ open, onOpenChange, onAddToCart }: SizeQuant
           }
         }
       } else {
-        // For single products, use the main product price
-        if (selectedProduct.price !== undefined && selectedProduct.price !== null) {
+        // For single products, use the main product price or basePrice
+        const productPriceField = selectedProduct.price || (selectedProduct as any).basePrice
+        if (productPriceField !== undefined && productPriceField !== null) {
           // Handle case where price might be a string like "888 kr"
-          let rawPrice = selectedProduct.price
+          let rawPrice = productPriceField
           if (typeof rawPrice === 'string') {
             // Extract numeric value from price string
             const numericMatch = rawPrice.match(/(\d+(?:[.,]\d+)?)/)
@@ -263,7 +266,7 @@ export function SizeQuantityModal({ open, onOpenChange, onAddToCart }: SizeQuant
           productBasePrice = Number(rawPrice)
           
           console.log('🛒 [SizeQuantityModal] Single product price parsing:', {
-            originalPrice: selectedProduct.price,
+            originalPrice: productPriceField,
             rawPrice,
             parsedPrice: productBasePrice
           })
@@ -273,25 +276,47 @@ export function SizeQuantityModal({ open, onOpenChange, onAddToCart }: SizeQuant
       console.log('🛒 [SizeQuantityModal] Price calculation result:', {
         hasVariations: (selectedProduct as any).hasVariations,
         currentVariation: currentVariation ? { id: currentVariation.id, price: currentVariation.price } : null,
-        mainProductPrice: selectedProduct.price,
-        mainProductPriceType: typeof selectedProduct.price,
+        mainProductPrice: selectedProduct.price || (selectedProduct as any).basePrice,
+        mainProductPriceType: typeof (selectedProduct.price || (selectedProduct as any).basePrice),
         calculatedBasePrice: productBasePrice
       })
       
       setBasePrice(productBasePrice)
       
       // Create size options with actual pricing
-      const sizeOptions = [
-        { size: "XS", price: 0, inStock: true, stockQuantity: 100 },
-        { size: "S", price: 0, inStock: true, stockQuantity: 100 },
-        { size: "M", price: 0, inStock: true, stockQuantity: 100 },
-        { size: "L", price: 0, inStock: true, stockQuantity: 100 },
-        { size: "XL", price: 0, inStock: true, stockQuantity: 100 },
-        { size: "XXL", price: 5, inStock: true, stockQuantity: 50 },
-        { size: "3XL", price: 10, inStock: true, stockQuantity: 25 },
-        { size: "4XL", price: 15, inStock: true, stockQuantity: 15 },
-        { size: "5XL", price: 20, inStock: true, stockQuantity: 10 },
-      ]
+      // Check if product has sizePrices from Prendo import
+      let sizeOptions = []
+      
+      if ((selectedProduct as any).sizePrices && Object.keys((selectedProduct as any).sizePrices).length > 0) {
+        // Use Prendo size prices
+        sizeOptions = Object.entries((selectedProduct as any).sizePrices).map(([size, data]: [string, any]) => ({
+          size: size,
+          price: 0, // Price difference from base (already included in basePrice)
+          inStock: data.isAvailable !== false,
+          stockQuantity: 100
+        }))
+      } else if ((selectedProduct as any).sizes && Array.isArray((selectedProduct as any).sizes)) {
+        // Use sizes array from Prendo import
+        sizeOptions = (selectedProduct as any).sizes.map((size: string) => ({
+          size: size,
+          price: 0, // No price difference
+          inStock: true,
+          stockQuantity: 100
+        }))
+      } else {
+        // Default size options
+        sizeOptions = [
+          { size: "XS", price: 0, inStock: true, stockQuantity: 100 },
+          { size: "S", price: 0, inStock: true, stockQuantity: 100 },
+          { size: "M", price: 0, inStock: true, stockQuantity: 100 },
+          { size: "L", price: 0, inStock: true, stockQuantity: 100 },
+          { size: "XL", price: 0, inStock: true, stockQuantity: 100 },
+          { size: "XXL", price: 5, inStock: true, stockQuantity: 50 },
+          { size: "3XL", price: 10, inStock: true, stockQuantity: 25 },
+          { size: "4XL", price: 15, inStock: true, stockQuantity: 15 },
+          { size: "5XL", price: 20, inStock: true, stockQuantity: 10 },
+        ]
+      }
       
       // Calculate actual prices for each size
       const sizePrices = sizeOptions.map(size => ({
@@ -442,19 +467,27 @@ export function SizeQuantityModal({ open, onOpenChange, onAddToCart }: SizeQuant
 
   // Handle add to cart
   const handleAddToCart = async () => {
+    console.log('🛒 handleAddToCart called')
+    console.log('Selected sizes:', selectedSizes)
+    
     // Filter out sizes with quantity 0
     const sizesToAdd = selectedSizes.filter(item => item.quantity > 0)
+    console.log('Sizes to add:', sizesToAdd)
     
     if (sizesToAdd.length === 0) {
-      // Show error or notification that no sizes selected
+      console.log('No sizes selected, returning')
+      alert('Please select at least one size and quantity')
       return
     }
     
     // Get the current variation to ensure we're adding the correct variant
     const currentVariation = getCurrentVariation()
     if (!currentVariation) {
+      console.log('No current variation found, returning')
+      alert('Please select a product variation')
       return
     }
+    console.log('Current variation:', currentVariation)
     
     // Get all designed angles for the current variation from the design persistence system
     const getAllDesignedAngles = () => {
@@ -711,6 +744,8 @@ export function SizeQuantityModal({ open, onOpenChange, onAddToCart }: SizeQuant
       }))
     }
 
+    console.log('Dispatching addToCartWithSizes action')
+    
     // Dispatch action to add to cart with sizes and complete product context
     dispatch(addToCartWithSizes({
       product: { ...productWithContext },
@@ -721,6 +756,8 @@ export function SizeQuantityModal({ open, onOpenChange, onAddToCart }: SizeQuant
       // If we have a saved design, we could include its ID here
       // designId: savedDesignId
     }))
+    
+    console.log('Cart action dispatched successfully')
     
     // Also call the callback if provided
     if (onAddToCart) {

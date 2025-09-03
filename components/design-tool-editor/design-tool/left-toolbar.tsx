@@ -62,7 +62,7 @@ export function LeftToolbar() {
   }
 
   return (
-    <div className="w-16 lg:w-20 bg-white/95 backdrop-blur-sm border-r border-gray-200/80 flex flex-col items-center py-4 lg:py-6 shadow-lg">
+    <div className="w-20 lg:w-24 bg-white/95 backdrop-blur-sm border-r border-gray-200/80 flex flex-col items-center py-4 lg:py-6 shadow-lg">
       <TooltipProvider>
         {/* Main Tools */}
         <div className="space-y-2 lg:space-y-3">
@@ -76,14 +76,15 @@ export function LeftToolbar() {
                   <Button
                     variant={isSelected ? "default" : "ghost"}
                     size="icon"
-                    className={`w-11 h-11 lg:w-14 lg:h-14 flex flex-col items-center justify-center rounded-2xl transition-all duration-300 shadow-sm hover:shadow-md ${
+                    className={`w-16 h-20 lg:w-20 lg:h-24 flex flex-col items-center justify-center gap-1 rounded-2xl transition-all duration-300 shadow-sm hover:shadow-md p-2 ${
                       isSelected 
-                        ? "bg-purple-700 hover:bg-purple-700 text-white shadow-lg scale-105 hover:scale-110" 
+                        ? "bg-black hover:bg-gray-800 text-white shadow-lg scale-105 hover:scale-110" 
                         : "hover:bg-gray-50 hover:scale-105 text-gray-600 hover:text-gray-800"
                     }`}
                     onClick={() => handleToolSelect(tool.id)}
                   >
                     <Icon className="w-5 h-5 lg:w-6 lg:h-6" />
+                    <span className="text-[10px] lg:text-xs font-medium">{tool.label}</span>
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent side="right" className="bg-gray-900 text-white border-gray-700">
@@ -104,11 +105,12 @@ export function LeftToolbar() {
               <Button
                 variant="ghost"
                 size="icon"
-                className="w-11 h-11 lg:w-14 lg:h-14 flex flex-col items-center justify-center rounded-2xl transition-all duration-300 hover:bg-gray-50 hover:scale-105 disabled:opacity-30 disabled:hover:scale-100 disabled:hover:bg-transparent text-gray-600 hover:text-gray-800 shadow-sm hover:shadow-md"
+                className="w-16 h-20 lg:w-20 lg:h-24 flex flex-col items-center justify-center gap-1 rounded-2xl transition-all duration-300 hover:bg-gray-50 hover:scale-105 disabled:opacity-30 disabled:hover:scale-100 disabled:hover:bg-transparent text-gray-600 hover:text-gray-800 shadow-sm hover:shadow-md p-2"
                 onClick={() => handleUndo(fabricCanvas)}
                 disabled={!canUndo || !fabricCanvas}
               >
                 <Undo2 className="w-4 h-4 lg:w-5 lg:h-5" />
+                <span className="text-[10px] lg:text-xs font-medium">Undo</span>
               </Button>
             </TooltipTrigger>
             <TooltipContent side="right" className="bg-gray-900 text-white border-gray-700">
@@ -121,11 +123,12 @@ export function LeftToolbar() {
               <Button
                 variant="ghost"
                 size="icon"
-                className="w-11 h-11 lg:w-14 lg:h-14 flex flex-col items-center justify-center rounded-2xl transition-all duration-300 hover:bg-gray-50 hover:scale-105 disabled:opacity-30 disabled:hover:scale-100 disabled:hover:bg-transparent text-gray-600 hover:text-gray-800 shadow-sm hover:shadow-md"
+                className="w-16 h-20 lg:w-20 lg:h-24 flex flex-col items-center justify-center gap-1 rounded-2xl transition-all duration-300 hover:bg-gray-50 hover:scale-105 disabled:opacity-30 disabled:hover:scale-100 disabled:hover:bg-transparent text-gray-600 hover:text-gray-800 shadow-sm hover:shadow-md p-2"
                 onClick={() => handleRedo(fabricCanvas)}
                 disabled={!canRedo || !fabricCanvas}
               >
                 <Redo2 className="w-4 h-4 lg:w-5 lg:h-5" />
+                <span className="text-[10px] lg:text-xs font-medium">Redo</span>
               </Button>
             </TooltipTrigger>
             <TooltipContent side="right" className="bg-gray-900 text-white border-gray-700">

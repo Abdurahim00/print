@@ -33,6 +33,9 @@ interface DesignState {
   variationDesigns: VariationDesign[];
   currentDesignId: string | null;
   autoSaveEnabled: boolean;
+  // Design pricing
+  hasDesignElements: boolean;
+  designAreaPercentage: number; // Percentage of canvas area covered by design (0-100)
 }
 
 const initialState: DesignState = {
@@ -51,6 +54,8 @@ const initialState: DesignState = {
   variationDesigns: [],
   currentDesignId: null,
   autoSaveEnabled: true,
+  hasDesignElements: false,
+  designAreaPercentage: 0,
 }
 
 const designSlice = createSlice({
@@ -121,6 +126,12 @@ const designSlice = createSlice({
     },
     setLoadingProduct: (state, action) => {
       state.isLoadingProduct = action.payload
+    },
+    setHasDesignElements: (state, action) => {
+      state.hasDesignElements = action.payload
+    },
+    setDesignAreaPercentage: (state, action) => {
+      state.designAreaPercentage = action.payload
     },
     // New reducers for variation design persistence
     saveVariationDesign: (state, action) => {
@@ -247,6 +258,8 @@ export const {
   setLoading,
   setError,
   setLoadingProduct,
+  setHasDesignElements,
+  setDesignAreaPercentage,
   // New actions
   saveVariationDesign,
   loadVariationDesign,

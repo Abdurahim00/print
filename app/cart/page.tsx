@@ -71,13 +71,13 @@ export default function CartPage() {
 
   if (cart.length === 0) {
     return (
-      <div className="text-center py-12 flex flex-col items-center justify-center min-h-[calc(100vh-250px)]">
-        <ShoppingCart className="mx-auto h-20 w-20 text-slate-400 dark:text-slate-500 mb-6" />
-        <h1 className="text-4xl font-bold mb-4 text-slate-900 dark:text-white">{t.cart}</h1>
-        <p className="text-lg text-slate-600 dark:text-slate-300 mb-8">{t.yourCartIsEmpty}</p>
+      <div className="text-center py-8 sm:py-12 flex flex-col items-center justify-center min-h-[calc(100vh-250px)] px-4">
+        <ShoppingCart className="mx-auto h-16 w-16 sm:h-20 sm:w-20 text-slate-400 dark:text-slate-500 mb-4 sm:mb-6" />
+        <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3 sm:mb-4 text-slate-900 dark:text-white">{t.cart}</h1>
+        <p className="text-base sm:text-lg text-slate-600 dark:text-slate-300 mb-6 sm:mb-8">{t.yourCartIsEmpty}</p>
         <Button 
           size="lg" 
-          className="bg-purple-600 hover:bg-purple-700 text-white shadow-lg"
+          className="bg-purple-600 hover:bg-purple-700 text-white shadow-lg min-h-[44px] touch-manipulation"
           onClick={() => router.push('/products')}
         >
           <span className="flex items-center">{t.browseProducts}</span>
@@ -87,11 +87,137 @@ export default function CartPage() {
   }
 
   return (
-    <div className="space-y-8">
-      <h1 className="text-4xl font-bold text-center text-slate-900 dark:text-white">{t.cart}</h1>
+    <div className="space-y-4 sm:space-y-6 lg:space-y-8 px-2 sm:px-4 lg:px-0">
+      <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-center text-slate-900 dark:text-white">{t.cart}</h1>
       <Card className="shadow-xl border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
         <CardContent className="p-0">
-          <div className="overflow-x-auto">
+          {/* Mobile View */}
+          <div className="block lg:hidden">
+            {cart.map((item, index) => {
+              // Helper functions for mobile view
+              const getProductDisplayImage = () => {
+                if (item.designPreview) return item.designPreview
+                if ((item as any).designContext?.selectedVariation) {
+                  const variation = (item as any).designContext.selectedVariation
+                  const viewMode = (item as any).designContext.viewMode || "front"
+                  const imageForAngle = variation.variationImages?.find((img: any) => img.angle === viewMode && img.url)
+                  if (imageForAngle) return imageForAngle.url
+                  const frontImage = variation.variationImages?.find((img: any) => img.angle === "front" && img.url)
+                  if (frontImage) return frontImage.url
+                  if (variation.colorSwatchImage) return variation.colorSwatchImage
+                }
+                return item.image || "/placeholder.svg"
+              }
+              
+              const getProductDisplayName = () => {
+                let displayName = item.name
+                if ((item as any).designContext?.selectedVariation) {
+                  const variation = (item as any).designContext.selectedVariation
+                  displayName += ` (${variation.colorName})`
+                }
+                return displayName
+              }
+              
+              const getItemPrice = () => {
+                if (typeof item.price === 'number') return item.price
+                if (typeof item.price === 'string') {
+                  const cleanPrice = String(item.price).replace(/[^\d.-]/g, '')
+                  return parseFloat(cleanPrice) || 0
+                }
+                if (item.selectedSizes && item.selectedSizes.length > 0) {
+                  const totalPrice = item.selectedSizes.reduce((sum, size) => sum + (size.price * size.quantity), 0)
+                  return totalPrice / item.quantity
+                }
+                return 0
+              }
+              
+              const itemPrice = getItemPrice()
+              const itemTotal = itemPrice * item.quantity
+              
+              return (
+                <div key={item.id} className={`p-4 border-b border-slate-200 dark:border-slate-700 ${
+                  index % 2 === 0 ? "bg-white dark:bg-slate-800" : "bg-slate-50/50 dark:bg-slate-800/20"
+                }`}>
+                  <div className="flex gap-3 mb-3">
+                    <div className="relative flex-shrink-0">
+                      <Image
+                        src={getProductDisplayImage()}
+                        alt={getProductDisplayName()}
+                        width={80}
+                        height={80}
+                        className="rounded-md object-cover border border-slate-200 dark:border-slate-700"
+                      />
+                      {item.designPreview && (
+                        <div className="absolute -top-1 -right-1 bg-blue-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                          ✨
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-medium text-slate-900 dark:text-white text-sm line-clamp-2">{getProductDisplayName()}</h3>
+                      <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">{itemPrice.toFixed(2)} SEK</p>
+                      {item.selectedSizes && item.selectedSizes.filter(s => s.quantity > 0).length > 0 && (
+                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                          Sizes: {item.selectedSizes.filter(s => s.quantity > 0).map(s => `${s.size}: ${s.quantity}`).join(', ')}
+                        </p>
+                      )}
+                      {(item as any).designContext && (
+                        <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                          {(item as any).designContext.viewMode && (
+                            <span className="mr-2">View: {(item as any).designContext.viewMode}</span>
+                          )}
+                          {(item as any).designContext.selectedTemplate && (
+                            <span>Template: {(item as any).designContext.selectedTemplate.name}</span>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-red-500 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20 flex-shrink-0"
+                      onClick={() => handleRemoveItem(item.id)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-1.5">
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        className="h-8 w-8 bg-transparent border-slate-300 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-700 touch-manipulation"
+                        onClick={() => handleUpdateQuantity(item.id, item.quantity - 1)}
+                      >
+                        <Minus className="h-3 w-3" />
+                      </Button>
+                      <Input
+                        type="number"
+                        value={item.quantity}
+                        onChange={(e) => handleUpdateQuantity(item.id, Number.parseInt(e.target.value) || 0)}
+                        className="w-14 h-8 text-center appearance-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none border-slate-300 dark:border-slate-600 text-sm"
+                        min="1"
+                      />
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        className="h-8 w-8 bg-transparent border-slate-300 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-700 touch-manipulation"
+                        onClick={() => handleUpdateQuantity(item.id, item.quantity + 1)}
+                      >
+                        <Plus className="h-3 w-3" />
+                      </Button>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-semibold text-slate-900 dark:text-white text-base">{itemTotal.toFixed(2)} SEK</p>
+                    </div>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+          
+          {/* Desktop View */}
+          <div className="hidden lg:block overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow className="bg-slate-50 dark:bg-slate-700/50">
@@ -319,15 +445,15 @@ export default function CartPage() {
             </Table>
           </div>
         </CardContent>
-        <CardFooter className="flex flex-col items-end gap-4 p-6 bg-slate-50 dark:bg-slate-800/50 border-t border-slate-200 dark:border-slate-700">
-          <div className="w-full sm:w-1/2 md:w-1/3 space-y-3 text-base">
+        <CardFooter className="flex flex-col items-end gap-4 p-4 sm:p-6 bg-slate-50 dark:bg-slate-800/50 border-t border-slate-200 dark:border-slate-700">
+          <div className="w-full sm:w-2/3 md:w-1/2 lg:w-1/3 space-y-2 sm:space-y-3 text-sm sm:text-base">
             <div className="flex justify-between text-slate-700 dark:text-slate-300">
               <span>Subtotal:</span>
                   <span>{subtotal.toFixed(2)} SEK</span>
             </div>
             {discountAmount > 0 && (
               <div className="flex justify-between text-green-600">
-                <span>Coupon discount{activeCoupon?.code ? ` (${activeCoupon.code})` : ''}:</span>
+                <span className="text-sm sm:text-base">Coupon{activeCoupon?.code ? ` (${activeCoupon.code})` : ''}:</span>
                 <span>-{discountAmount.toFixed(2)} SEK</span>
               </div>
             )}
@@ -336,18 +462,18 @@ export default function CartPage() {
               <span>{vatAmount.toFixed(2)} SEK</span>
             </div>
             <Separator className="bg-slate-300 dark:bg-slate-600" />
-            <div className="flex justify-between font-bold text-xl text-slate-900 dark:text-white">
+            <div className="flex justify-between font-bold text-lg sm:text-xl text-slate-900 dark:text-white">
               <span>{t.total}:</span>
               <span>{cartTotal.toFixed(2)} SEK</span>
             </div>
           </div>
           <Button 
             size="lg" 
-            className="w-full sm:w-auto bg-purple-900 hover:bg-purple-800 hover:text-white text-white shadow-lg"
+            className="w-full sm:w-auto bg-purple-900 hover:bg-purple-800 hover:text-white text-white shadow-lg min-h-[44px] touch-manipulation"
             onClick={() => router.push('/checkout')}
           >
-            <span className="flex items-center">
-              {t.checkout} <Truck className="ml-2 h-5 w-5" />
+            <span className="flex items-center justify-center">
+              {t.checkout} <Truck className="ml-2 h-4 w-4 sm:h-5 sm:w-5" />
             </span>
           </Button>
         </CardFooter>

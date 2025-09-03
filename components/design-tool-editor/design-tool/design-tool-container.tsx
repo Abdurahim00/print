@@ -8,7 +8,7 @@ import { RightPanel } from "./right-panel"
 import { ProductModal } from "./modals/product-modal"
 import { TemplateModal } from "./modals/template-modal"
 import { setShowProductModal, setShowTemplateModal } from "@/lib/redux/designToolSlices/designSlice"
-import { fetchProducts } from "@/lib/redux/slices/productsSlice"
+import { fetchDesignableProducts } from "@/lib/redux/slices/productsSlice"
 import { RootState } from "@/lib/redux/store"
 import { Button } from "@/components/ui/button"
 
@@ -19,13 +19,13 @@ export function DesignToolContainer() {
 
   console.log('🛠️ [DesignToolContainer] Modal states:', { showProductModal, showTemplateModal, productsCount: products?.length, loading })
 
-  // Fetch regular products on mount for the product modal
+  // Fetch only designable products for the design tool
   useEffect(() => {
-    dispatch(fetchProducts() as any)
+    dispatch(fetchDesignableProducts() as any)
   }, [dispatch])
 
   return (
-    <div className="flex flex-col h-screen bg-gray-50 overflow-hidden">
+    <div className="flex flex-col h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50 overflow-hidden">
       <div className="flex flex-1 overflow-hidden">
         <LeftToolbar />
 

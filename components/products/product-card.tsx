@@ -3,12 +3,13 @@
 import type { Product } from "@/types"
 import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks"
 import { translations, productCategories } from "@/lib/constants"
+import { getProductImage } from "@/lib/utils/product-image"
 import { Card, CardContent, CardFooter } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Palette, ShoppingCart, Eye } from "lucide-react"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
-import { useMemo, memo, useState } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
+import { useMemo, memo, useState, useEffect } from "react"
 // import { ProductImage } from "@/components/ui/optimized-image"
 import { composeProductAndDesign } from "@/lib/utils/imageCompose"
 import { formatSEK } from "@/lib/utils"
@@ -16,6 +17,7 @@ import { addToCart } from "@/lib/redux/slices/cartSlice"
 import { useToast } from "@/hooks/use-toast"
 import { SizeSelectionModal } from "./size-selection-modal"
 import { QuantityModal } from "./quantity-modal"
+import { fetchCategories } from "@/lib/redux/slices/categoriesSlice"
 
 interface ProductCardProps {
   product: Product
@@ -24,15 +26,25 @@ interface ProductCardProps {
 function ProductCardComponent({ product }: ProductCardProps) {
   const dispatch = useAppDispatch()
   const router = useRouter()
+  const searchParams = useSearchParams()
   const { toast } = useToast()
   const [sizeModalOpen, setSizeModalOpen] = useState(false)
   const [quantityModalOpen, setQuantityModalOpen] = useState(false)
+  const [imageLoaded, setImageLoaded] = useState(false)
+  const [imageError, setImageError] = useState(false)
   const { language } = useAppSelector((state) => state.app)
   const t = translations[language]
   const appliedCategoryDesigns = useAppSelector((s: any) => s.app.appliedCategoryDesigns || {})
   const designs = useAppSelector((s: any) => s.designs.items)
   const activeCoupon = useAppSelector((s: any) => s.coupons.activeCoupon)
   const allCategories = useAppSelector((s: any) => s.categories.categories)
+
+  // Ensure categories are loaded
+  useEffect(() => {
+    if (allCategories.length === 0) {
+      dispatch(fetchCategories())
+    }
+  }, [dispatch, allCategories.length])
 
   const handleDesignThisProduct = () => {
     router.push(`/design-tool?productId=${product.id}`)
@@ -78,6 +90,22 @@ function ProductCardComponent({ product }: ProductCardProps) {
     return fromConstants || product.categoryId
   }, [allCategories, product.categoryId, t])
 
+  // Check if product is customizable based on category
+  const isCustomizable = useMemo(() => {
+    const category = allCategories.find((c: any) => c.id === product.categoryId)
+    // Debug logging
+    if (product.name.toLowerCase().includes('giveaway') || category?.name?.toLowerCase().includes('giveaway')) {
+      console.log('Giveaway product check:', {
+        productName: product.name,
+        categoryId: product.categoryId,
+        category: category,
+        designableAreas: category?.designableAreas,
+        hasDesignableAreas: category?.designableAreas && category.designableAreas.length > 0
+      })
+    }
+    return category?.designableAreas && category.designableAreas.length > 0
+  }, [allCategories, product.categoryId])
+
   // Resolve category-level applied design (set by "Preview on other products" from designs tab)
   const appliedDesignForCategory = useMemo(() => {
     const mappedId = appliedCategoryDesigns[product.categoryId]
@@ -86,15 +114,35 @@ function ProductCardComponent({ product }: ProductCardProps) {
   }, [appliedCategoryDesigns, product.categoryId, designs])
 
   return (
-    <Card className={`overflow-hidden group transition-all duration-300 flex flex-col h-full border-2 border-black dark:border-white bg-white dark:bg-gray-900 rounded-xl ${
-      product.inStock ? 'hover:scale-105' : 'opacity-60'
+    <Card className={`overflow-hidden group transition-all duration-300 flex flex-col h-full border-2 border-black dark:border-white bg-white dark:bg-gray-900 rounded-lg sm:rounded-xl ${
+      product.inStock ? 'hover:scale-102 sm:hover:scale-105' : 'opacity-60'
     }`}>
-      <Link href={`/product/${product.id}`} className="relative w-full aspect-[4/3] overflow-hidden bg-gray-100 dark:bg-gray-800 flex-shrink-0 cursor-pointer">
+      <Link 
+        href={`/product/${product.id}${searchParams.toString() ? `?from=${encodeURIComponent(searchParams.toString())}` : ''}`} 
+        className="relative w-full aspect-[4/3] overflow-hidden bg-gray-100 dark:bg-gray-800 flex-shrink-0 cursor-pointer"
+      >
+        {/* Loading skeleton while image loads */}
+        {!imageLoaded && !imageError && (
+          <div className="absolute inset-0 bg-gray-200 dark:bg-gray-700 animate-pulse" />
+        )}
+        
         <img
-          src={product.image || "/placeholder.svg"}
+          src={imageError ? "/placeholder.jpg" : getProductImage(product)}
           alt={product.name}
-          className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+          className={`absolute inset-0 w-full h-full object-contain p-2 bg-gray-50 group-hover:scale-105 transition-transform duration-500 ${
+            imageLoaded ? 'opacity-100' : 'opacity-0'
+          }`}
           loading="lazy"
+          onLoad={() => setImageLoaded(true)}
+          onError={(e) => {
+            // Try to fallback to placeholder if image fails
+            const target = e.target as HTMLImageElement
+            if (target.src !== '/placeholder.jpg') {
+              target.src = '/placeholder.jpg'
+            }
+            setImageError(true)
+            setImageLoaded(true)
+          }}
         />
         {appliedDesignForCategory && (
           <>
@@ -127,45 +175,46 @@ function ProductCardComponent({ product }: ProductCardProps) {
           </div>
         )}
       </Link>
-      <CardContent className="p-4 flex-grow flex flex-col justify-between border-t-2 border-black dark:border-white">
+      <CardContent className="p-3 sm:p-4 flex-grow flex flex-col justify-between border-t-2 border-black dark:border-white">
         <div>
-          <h3 className="font-black text-sm lg:text-base uppercase text-black dark:text-white line-clamp-2">{product.name}</h3>
-          <p className="text-xs font-bold uppercase text-gray-500 dark:text-gray-400 mt-1">{categoryName}</p>
+          <h3 className="font-black text-xs sm:text-sm lg:text-base uppercase text-black dark:text-white line-clamp-2">{product.name}</h3>
+          <p className="text-[10px] sm:text-xs font-bold uppercase text-gray-500 dark:text-gray-400 mt-1">{categoryName}</p>
         </div>
         <div className="mt-3">
           {activeCoupon && activeCoupon.discountType === "percentage" && product.eligibleForCoupons ? (
             <div>
-              <span className="text-xl lg:text-2xl font-black text-black dark:text-white">
+              <span className="text-base sm:text-xl lg:text-2xl font-black text-black dark:text-white">
                 {formatSEK(product.price * (1 - activeCoupon.discountValue / 100))}
               </span>
-              <span className="text-gray-400 line-through text-xs lg:text-sm ml-2">{formatSEK(product.price)}</span>
+              <span className="text-gray-400 line-through text-[10px] sm:text-xs lg:text-sm ml-1 sm:ml-2">{formatSEK(product.price)}</span>
             </div>
           ) : (
-            <p className="text-xl lg:text-2xl font-black text-black dark:text-white">
+            <p className="text-base sm:text-xl lg:text-2xl font-black text-black dark:text-white">
               {formatSEK(product.price)}
             </p>
           )}
         </div>
       </CardContent>
-      <CardFooter className="p-3 lg:p-4 pt-0 border-t-2 border-black dark:border-white">
-        <div className="flex gap-2 w-full">
+      <CardFooter className="p-2 sm:p-3 lg:p-4 pt-0 border-t-2 border-black dark:border-white">
+        <div className="flex gap-1.5 sm:gap-2 w-full">
           <Button
-            className="flex-1 min-h-[36px] lg:min-h-[40px] bg-black text-white dark:bg-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200 font-bold uppercase text-[10px] sm:text-xs lg:text-sm transition-all flex items-center justify-center px-2"
+            className={`${isCustomizable ? 'flex-1' : 'w-full'} min-h-[44px] sm:min-h-[40px] lg:min-h-[44px] bg-black text-white dark:bg-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200 font-bold uppercase text-[11px] sm:text-xs lg:text-sm transition-all flex items-center justify-center px-2 sm:px-3 touch-manipulation`}
             onClick={handleAddToCart}
             disabled={!product.inStock}
           >
-            <ShoppingCart className="h-3 w-3 lg:h-4 lg:w-4 xl:mr-1 flex-shrink-0" />
-            <span className="hidden xl:inline truncate">Add to Cart</span>
-            <span className="xl:hidden truncate">Cart</span>
+            <ShoppingCart className="h-4 w-4 sm:h-3 sm:w-3 lg:h-4 lg:w-4 mr-1 sm:mr-0 lg:mr-1 flex-shrink-0" />
+            <span className="truncate">Add to Cart</span>
           </Button>
-          <Button
-            className="w-[40px] lg:w-[44px] min-h-[36px] lg:min-h-[40px] border-2 border-black dark:border-white bg-transparent text-black dark:text-white hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black transition-all flex items-center justify-center p-0"
-            onClick={handleDesignThisProduct}
-            disabled={!product.inStock}
-            title="Design this product"
-          >
-            <Palette className="h-4 w-4 lg:h-5 lg:w-5" />
-          </Button>
+          {isCustomizable && (
+            <Button
+              className="w-[44px] sm:w-[40px] lg:w-[44px] min-h-[44px] sm:min-h-[40px] lg:min-h-[44px] border-2 border-black dark:border-white bg-transparent text-black dark:text-white hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black transition-all flex items-center justify-center p-0 touch-manipulation"
+              onClick={handleDesignThisProduct}
+              disabled={!product.inStock}
+              title="Design this product"
+            >
+              <Palette className="h-5 w-5 sm:h-4 sm:w-4 lg:h-5 lg:w-5" />
+            </Button>
+          )}
         </div>
       </CardFooter>
       

@@ -277,6 +277,8 @@ export interface Category {
   isDesignable?: boolean
   designableAreas?: string[]
   designTechniques?: string[]
+  // Design pricing
+  designUpchargePercent?: number
 }
 
 export interface Subcategory {

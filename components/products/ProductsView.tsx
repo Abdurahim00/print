@@ -3,21 +3,24 @@
 import { Card, CardContent, CardFooter } from "@/components/ui/card"
 import { useEffect, useMemo, useState } from "react"
 import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks"
-import { fetchProducts } from "@/lib/redux/slices/productsSlice"
+import { fetchProducts, fetchCategoryCounts } from "@/lib/redux/slices/productsSlice"
+import { fetchCategories, fetchSubcategories } from "@/lib/redux/slices/categoriesSlice"
 import { translations } from "@/lib/constants"
+import { useRouter, useSearchParams } from "next/navigation"
 import { ProductCard } from "@/components/products/product-card"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Search, Filter, SlidersHorizontal, X, ChevronDown, ChevronRight, ChevronLeft } from "lucide-react"
 import { setFilters, setPage } from "@/lib/redux/slices/productsSlice"
 import { Skeleton } from "@/components/ui/skeleton"
-import { fetchCategories, fetchSubcategories } from "@/lib/redux/slices/categoriesSlice"
 import Link from "next/link"
 import { motion, AnimatePresence } from "framer-motion"
 
 export function ProductsView({ categorySlug, subcategorySlug }: { categorySlug?: string; subcategorySlug?: string }) {
   const dispatch = useAppDispatch()
-  const { items: products, loading, error, pagination, filters } = useAppSelector((state) => state.products)
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const { items: products, loading, error, pagination, filters, categoryCounts } = useAppSelector((state) => state.products)
   const { language } = useAppSelector((state) => state.app)
   const sessionUser = useAppSelector((s: any) => s.auth.user)
   const t = translations[language]
@@ -25,65 +28,134 @@ export function ProductsView({ categorySlug, subcategorySlug }: { categorySlug?:
 
   const cats = useAppSelector((s: any) => s.categories.categories)
   const subs = useAppSelector((s: any) => s.categories.subcategories)
-  const [searchTerm, setSearchTerm] = useState("")
+  
+  // Initialize state from URL parameters
+  const [searchTerm, setSearchTerm] = useState(searchParams.get('search') || "")
   const [showFilters, setShowFilters] = useState(false)
-  const [sortBy, setSortBy] = useState("featured")
-  const [selectedCategoryFilter, setSelectedCategoryFilter] = useState<string | null>(null)
-  const [selectedSubcategoryFilter, setSelectedSubcategoryFilter] = useState<string | null>(null)
+  const [sortBy, setSortBy] = useState(searchParams.get('sortBy') || "featured")
+  const [selectedCategoryFilter, setSelectedCategoryFilter] = useState<string | null>(searchParams.get('filterCategory'))
+  const [selectedSubcategoryFilter, setSelectedSubcategoryFilter] = useState<string | null>(searchParams.get('filterSubcategory'))
   const [expandedCategories, setExpandedCategories] = useState<string[]>([])
-  const [priceRange, setPriceRange] = useState({ min: 0, max: 10000 })
-  const [currentPage, setCurrentPage] = useState(1)
+  const [priceRange, setPriceRange] = useState({ 
+    min: parseInt(searchParams.get('minPrice') || '0'), 
+    max: parseInt(searchParams.get('maxPrice') || '10000') 
+  })
+  const [currentPage, setCurrentPage] = useState(parseInt(searchParams.get('page') || '1'))
 
-  // Initial load with pagination
+  // Update URL when filters change
+  const updateURL = (params: Record<string, string | undefined>) => {
+    const url = new URL(window.location.href)
+    Object.entries(params).forEach(([key, value]) => {
+      if (value) {
+        url.searchParams.set(key, value)
+      } else {
+        url.searchParams.delete(key)
+      }
+    })
+    router.push(url.pathname + url.search)
+  }
+  
+  // Initial load with parallel fetching
   useEffect(() => {
     const loadData = async () => {
       try {
-        // Load categories first
-        await dispatch(fetchCategories())
-        await dispatch(fetchSubcategories())
+        // Load all data in parallel for better performance
+        const promises = [
+          dispatch(fetchCategories()),
+          dispatch(fetchSubcategories()),
+          dispatch(fetchCategoryCounts({ 
+            search: searchTerm || undefined,
+            minPrice: priceRange.min > 0 ? priceRange.min : undefined,
+            maxPrice: priceRange.max < 10000 ? priceRange.max : undefined
+          }))
+        ]
         
-        // Then load products with initial pagination
-        const category = categorySlug ? cats.find((c: any) => c.slug === categorySlug) : null
-        await dispatch(fetchProducts({ 
-          page: 1, 
-          limit: 20,
-          categoryId: category?.id
-        }))
+        // Only fetch products if we don't have categories yet
+        // Otherwise wait for categories to load first
+        if (cats.length > 0 || !categorySlug) {
+          const category = categorySlug ? cats.find((c: any) => c.slug === categorySlug) : null
+          promises.push(
+            dispatch(fetchProducts({ 
+              page: currentPage, 
+              limit: 20,
+              categoryId: category?.id || selectedCategoryFilter || undefined,
+              subcategoryId: selectedSubcategoryFilter || undefined,
+              search: searchTerm || undefined,
+              sortBy: sortBy,
+              minPrice: priceRange.min > 0 ? priceRange.min : undefined,
+              maxPrice: priceRange.max < 10000 ? priceRange.max : undefined
+            }))
+          )
+        }
+        
+        await Promise.all(promises)
+        
+        // If we had a category slug but no categories loaded yet, load products now
+        if (categorySlug && cats.length === 0) {
+          await dispatch(fetchProducts({ 
+            page: currentPage, 
+            limit: 20
+          }))
+        }
       } catch (err) {
         console.error('Failed to load products:', err)
       }
     }
     loadData()
     
-    // Set timeout to show error after 15 seconds (only if still loading)
+    // Set timeout to show error after 10 seconds (reduced from 15)
     const timer = setTimeout(() => {
       if (loading) {
         setLoadTimeout(true)
       }
-    }, 15000)
+    }, 10000)
     
     return () => clearTimeout(timer)
   }, [dispatch, categorySlug])
   
-  // Handle filter changes
+  // Handle filter changes with optimized debouncing
   useEffect(() => {
     const loadFilteredProducts = async () => {
       setLoadTimeout(false) // Reset timeout when making a new request
-      await dispatch(fetchProducts({
-        page: currentPage,
-        limit: 20,
-        categoryId: selectedCategoryFilter || undefined,
-        subcategoryId: selectedSubcategoryFilter || undefined,
+      
+      // Update URL parameters
+      updateURL({
+        page: currentPage > 1 ? currentPage.toString() : undefined,
         search: searchTerm || undefined,
-        sortBy: sortBy,
-        minPrice: priceRange.min > 0 ? priceRange.min : undefined,
-        maxPrice: priceRange.max < 10000 ? priceRange.max : undefined
-      }))
+        sortBy: sortBy !== 'featured' ? sortBy : undefined,
+        filterCategory: selectedCategoryFilter || undefined,
+        filterSubcategory: selectedSubcategoryFilter || undefined,
+        minPrice: priceRange.min > 0 ? priceRange.min.toString() : undefined,
+        maxPrice: priceRange.max < 10000 ? priceRange.max.toString() : undefined
+      })
+      
+      // Fetch products and category counts
+      await Promise.all([
+        dispatch(fetchProducts({
+          page: currentPage,
+          limit: 20,
+          categoryId: selectedCategoryFilter || undefined,
+          subcategoryId: selectedSubcategoryFilter || undefined,
+          search: searchTerm || undefined,
+          sortBy: sortBy,
+          minPrice: priceRange.min > 0 ? priceRange.min : undefined,
+          maxPrice: priceRange.max < 10000 ? priceRange.max : undefined
+        })),
+        dispatch(fetchCategoryCounts({
+          search: searchTerm || undefined,
+          minPrice: priceRange.min > 0 ? priceRange.min : undefined,
+          maxPrice: priceRange.max < 10000 ? priceRange.max : undefined
+        }))
+      ])
     }
+    
+    // Only debounce search and price range, apply filters immediately
+    const shouldDebounce = searchTerm !== "" || priceRange.min > 0 || priceRange.max < 10000
+    const debounceDelay = shouldDebounce ? 300 : 0 // Reduced from 500ms
     
     const debounceTimer = setTimeout(() => {
       loadFilteredProducts()
-    }, 500)
+    }, debounceDelay)
     
     return () => clearTimeout(debounceTimer)
   }, [dispatch, currentPage, selectedCategoryFilter, selectedSubcategoryFilter, searchTerm, sortBy, priceRange])
@@ -130,31 +202,31 @@ export function ProductsView({ categorySlug, subcategorySlug }: { categorySlug?:
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-black">
       {/* Hero Section */}
-      <div className="relative bg-black text-white py-16 px-4">
+      <div className="relative bg-black text-white py-8 sm:py-12 lg:py-16 px-4">
         <div className="absolute inset-0 bg-gradient-to-r from-green-500 via-yellow-500 via-orange-500 to-red-500 opacity-20" />
         <div className="relative max-w-7xl mx-auto text-center">
-          <h1 className="text-5xl font-black uppercase tracking-wider mb-4">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black uppercase tracking-wider mb-2 sm:mb-4">
             {selectedCategory ? selectedCategory.name : t.products}
           </h1>
-          <p className="text-xl opacity-90">
+          <p className="text-sm sm:text-base md:text-lg lg:text-xl opacity-90">
             {selectedSubcategory ? selectedSubcategory.name : t.viewProducts}
           </p>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 py-8">
+      <div className="max-w-7xl mx-auto px-2 sm:px-4 py-4 sm:py-6 lg:py-8">
         {/* Search and Controls Bar */}
-        <div className="bg-white dark:bg-gray-900 rounded-2xl border-2 border-black dark:border-white p-6 mb-8">
-          <div className="flex flex-col lg:flex-row gap-4">
+        <div className="bg-white dark:bg-gray-900 rounded-xl sm:rounded-2xl border-2 border-black dark:border-white p-3 sm:p-4 lg:p-6 mb-4 sm:mb-6 lg:mb-8">
+          <div className="flex flex-col gap-3 sm:gap-4">
             {/* Search Bar */}
-            <div className="flex-1 relative">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+            <div className="relative">
+              <Search className="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 h-4 sm:h-5 w-4 sm:w-5 text-gray-400" />
               <Input
                 type="search"
                 placeholder={t.searchProducts || "Search products..."}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="h-12 pl-12 pr-4 border-2 border-black dark:border-white rounded-xl font-bold"
+                className="h-10 sm:h-12 pl-10 sm:pl-12 pr-3 sm:pr-4 border-2 border-black dark:border-white rounded-lg sm:rounded-xl font-bold text-sm sm:text-base"
               />
             </div>
             
@@ -163,16 +235,17 @@ export function ProductsView({ categorySlug, subcategorySlug }: { categorySlug?:
               {/* Filter Toggle */}
               <Button
                 onClick={() => setShowFilters(!showFilters)}
-                className={`h-12 px-6 border-2 font-bold uppercase transition-all ${
+                className={`h-10 sm:h-12 px-3 sm:px-6 border-2 font-bold uppercase transition-all text-xs sm:text-sm ${
                   showFilters 
                     ? 'bg-black text-white dark:bg-white dark:text-black' 
                     : 'bg-transparent border-black text-black dark:border-white dark:text-white hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black'
                 }`}
               >
-                <Filter className="h-5 w-5 mr-2" />
-                Filters
+                <Filter className="h-4 sm:h-5 w-4 sm:w-5 mr-1 sm:mr-2" />
+                <span className="hidden sm:inline">Filters</span>
+                <span className="sm:hidden">Filter</span>
                 {(selectedCategoryFilter || selectedSubcategoryFilter) && (
-                  <span className="ml-2 px-2 py-0.5 bg-white text-black dark:bg-black dark:text-white rounded-full text-xs">
+                  <span className="ml-1 sm:ml-2 px-1.5 sm:px-2 py-0.5 bg-white text-black dark:bg-black dark:text-white rounded-full text-[10px] sm:text-xs">
                     {(selectedCategoryFilter ? 1 : 0) + (selectedSubcategoryFilter ? 1 : 0)}
                   </span>
                 )}
@@ -182,12 +255,12 @@ export function ProductsView({ categorySlug, subcategorySlug }: { categorySlug?:
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
-                className="h-12 px-4 border-2 border-black dark:border-white bg-transparent rounded-xl font-bold uppercase cursor-pointer"
+                className="flex-1 sm:flex-none h-10 sm:h-12 px-2 sm:px-4 border-2 border-black dark:border-white bg-transparent rounded-lg sm:rounded-xl font-bold uppercase cursor-pointer text-xs sm:text-sm"
               >
                 <option value="featured">Featured</option>
-                <option value="price-asc">Price: Low to High</option>
-                <option value="price-desc">Price: High to Low</option>
-                <option value="newest">Newest First</option>
+                <option value="price-asc">Low → High</option>
+                <option value="price-desc">High → Low</option>
+                <option value="newest">Newest</option>
               </select>
             </div>
           </div>
@@ -239,15 +312,138 @@ export function ProductsView({ categorySlug, subcategorySlug }: { categorySlug?:
           )}
         </div>
         
-        <div className="flex gap-8">
-          {/* Filters Sidebar */}
+        {/* Mobile Filters Dropdown */}
+        <AnimatePresence>
+          {showFilters && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              className="lg:hidden bg-white dark:bg-gray-900 rounded-xl border-2 border-black dark:border-white p-4 mb-4 overflow-hidden"
+            >
+              <div className="space-y-4">
+                {/* Categories Filter */}
+                <div>
+                  <h4 className="font-bold uppercase text-sm mb-2 text-black dark:text-white">Categories</h4>
+                  <div className="space-y-2 max-h-60 overflow-y-auto">
+                    {cats.filter((c: any) => c.isActive).map((category: any) => {
+                      const categorySubcategories = subs.filter((s: any) => s.categoryId === category.id && s.isActive)
+                      const isExpanded = expandedCategories.includes(category.id)
+                      const isCategorySelected = selectedCategoryFilter === category.id
+                      const categoryCount = categoryCounts.find(cc => cc.categoryId === category.id)
+                      const count = categoryCount?.count || 0
+                      
+                      return (
+                        <div key={category.id}>
+                          <button
+                            onClick={() => {
+                              if (categorySubcategories.length > 0) {
+                                // Toggle expand/collapse
+                                setExpandedCategories(prev => 
+                                  prev.includes(category.id) 
+                                    ? prev.filter(id => id !== category.id)
+                                    : [...prev, category.id]
+                                )
+                              } else {
+                                // Select category if no subcategories
+                                setSelectedCategoryFilter(
+                                  selectedCategoryFilter === category.id ? null : category.id
+                                )
+                                setSelectedSubcategoryFilter(null)
+                              }
+                            }}
+                            className={`w-full text-left px-3 py-2 rounded-lg border-2 transition-all font-bold text-sm flex items-center justify-between ${
+                              isCategorySelected
+                                ? 'bg-black text-white dark:bg-white dark:text-black border-black dark:border-white'
+                                : 'border-gray-300 dark:border-gray-700 hover:border-black dark:hover:border-white'
+                            }`}
+                          >
+                            <span className="flex items-center gap-1">
+                              {categorySubcategories.length > 0 && (
+                                <ChevronRight className={`h-3 w-3 transition-transform ${isExpanded ? 'rotate-90' : ''}`} />
+                              )}
+                              {category.name}
+                            </span>
+                            {count > 0 && (
+                              <span className="text-xs opacity-60">({count})</span>
+                            )}
+                          </button>
+                          
+                          {/* Subcategories */}
+                          {isExpanded && categorySubcategories.length > 0 && (
+                            <div className="mt-1 ml-4 space-y-1">
+                              <button
+                                onClick={() => {
+                                  setSelectedCategoryFilter(category.id)
+                                  setSelectedSubcategoryFilter(null)
+                                }}
+                                className={`w-full text-left px-2 py-1.5 rounded-md border transition-all text-xs ${
+                                  selectedCategoryFilter === category.id && !selectedSubcategoryFilter
+                                    ? 'bg-gray-900 text-white dark:bg-gray-100 dark:text-black border-gray-900 dark:border-gray-100'
+                                    : 'border-gray-300 dark:border-gray-600 hover:border-gray-900 dark:hover:border-gray-100'
+                                }`}
+                              >
+                                All {category.name}
+                              </button>
+                              {categorySubcategories.map((subcategory: any) => {
+                                const subCount = categoryCount?.subcategories?.find(sc => sc.subcategoryId === subcategory.id)?.count || 0
+                                return (
+                                  <button
+                                  key={subcategory.id}
+                                  onClick={() => {
+                                    setSelectedCategoryFilter(category.id)
+                                    setSelectedSubcategoryFilter(subcategory.id)
+                                  }}
+                                  className={`w-full text-left px-2 py-1.5 rounded-md border transition-all text-xs ${
+                                    selectedSubcategoryFilter === subcategory.id
+                                      ? 'bg-gray-900 text-white dark:bg-gray-100 dark:text-black border-gray-900 dark:border-gray-100'
+                                      : 'border-gray-300 dark:border-gray-600 hover:border-gray-900 dark:hover:border-gray-100'
+                                  }`}
+                                >
+                                  <div className="flex justify-between items-center">
+                                    <span>{subcategory.name}</span>
+                                    {subCount > 0 && (
+                                      <span className="text-xs opacity-60">({subCount})</span>
+                                    )}
+                                  </div>
+                                </button>
+                                )
+                              })}
+                            </div>
+                          )}
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+                
+                {/* Clear Filters */}
+                <button
+                  onClick={() => {
+                    setSelectedCategoryFilter(null)
+                    setSelectedSubcategoryFilter(null)
+                    setPriceRange({ min: 0, max: 10000 })
+                    setSearchTerm("")
+                    setShowFilters(false)
+                  }}
+                  className="w-full border-2 border-black dark:border-white bg-white hover:bg-black text-black hover:text-white dark:bg-gray-800 dark:text-white dark:hover:bg-white dark:hover:text-black font-bold uppercase text-sm py-2 px-4 rounded-lg transition-all"
+                >
+                  Clear All Filters
+                </button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+        
+        <div className="flex flex-col lg:flex-row gap-4 sm:gap-6 lg:gap-8">
+          {/* Desktop Filters Sidebar */}
           <AnimatePresence>
             {showFilters && (
               <motion.div
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
-                className="w-64 flex-shrink-0"
+                className="hidden lg:block w-64 flex-shrink-0"
               >
                 <div className="bg-white dark:bg-gray-900 rounded-2xl border-2 border-black dark:border-white p-6 sticky top-4">
                   <h3 className="text-lg font-black uppercase mb-6">Filter By</h3>
@@ -403,8 +599,8 @@ export function ProductsView({ categorySlug, subcategorySlug }: { categorySlug?:
             )}
           </AnimatePresence>
           
-          {/* Products Grid */}
-          <div className="flex-1">
+          {/* Products Grid - Always full width on mobile */}
+          <div className="flex-1 min-w-0 w-full">
 
             {loading && loadTimeout ? (
               <div className="text-center py-20">
@@ -420,13 +616,13 @@ export function ProductsView({ categorySlug, subcategorySlug }: { categorySlug?:
                 </div>
               </div>
             ) : loading ? (
-              <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              <div className="grid gap-3 sm:gap-4 lg:gap-6 grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4">
                 {[...Array(12)].map((_, i) => (
                   <ProductCardSkeleton key={i} />
                 ))}
               </div>
             ) : filteredAndSortedProducts.length > 0 ? (
-              <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              <div className="grid gap-3 sm:gap-4 lg:gap-6 grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4">
                 {filteredAndSortedProducts.map((product, index) => (
                   <motion.div
                     key={product.id}
@@ -464,25 +660,26 @@ export function ProductsView({ categorySlug, subcategorySlug }: { categorySlug?:
         
         {/* Results Count and Pagination */}
         {!loading && pagination && (
-          <div className="mt-8 space-y-4">
+          <div className="mt-6 sm:mt-8 space-y-3 sm:space-y-4">
             <div className="text-center">
-              <p className="text-sm font-bold uppercase text-gray-600 dark:text-gray-400">
+              <p className="text-xs sm:text-sm font-bold uppercase text-gray-600 dark:text-gray-400">
                 Showing {Math.min(pagination.limit * (pagination.page - 1) + 1, pagination.total)}-{Math.min(pagination.limit * pagination.page, pagination.total)} of {pagination.total} products
               </p>
             </div>
             
             {/* Pagination Controls */}
             {pagination.totalPages > 1 && (
-              <div className="flex justify-center items-center gap-2">
+              <div className="flex flex-col sm:flex-row justify-center items-center gap-2">
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
                   disabled={currentPage === 1}
-                  className="border-2 border-black dark:border-white font-bold"
+                  className="border-2 border-black dark:border-white font-bold text-xs sm:text-sm min-h-[36px] sm:min-h-[40px] touch-manipulation"
                 >
-                  <ChevronLeft className="h-4 w-4" />
-                  Previous
+                  <ChevronLeft className="h-3 sm:h-4 w-3 sm:w-4" />
+                  <span className="hidden sm:inline">Previous</span>
+                  <span className="sm:hidden">Prev</span>
                 </Button>
                 
                 <div className="flex gap-1">
@@ -502,7 +699,7 @@ export function ProductsView({ categorySlug, subcategorySlug }: { categorySlug?:
                   
                   {/* Ellipsis if needed */}
                   {currentPage > 3 && (
-                    <span className="px-2 flex items-center">...</span>
+                    <span className="px-1 sm:px-2 flex items-center text-xs sm:text-sm">...</span>
                   )}
                   
                   {/* Current page and neighbors */}
@@ -518,11 +715,11 @@ export function ProductsView({ categorySlug, subcategorySlug }: { categorySlug?:
                         variant={currentPage === page ? "default" : "outline"}
                         size="sm"
                         onClick={() => setCurrentPage(page)}
-                        className={`min-w-[40px] border-2 ${
+                        className={`min-w-[32px] sm:min-w-[40px] min-h-[32px] sm:min-h-[40px] border-2 text-xs sm:text-sm ${
                           currentPage === page
                             ? "bg-black text-white dark:bg-white dark:text-black border-black dark:border-white"
                             : "border-gray-300 dark:border-gray-600"
-                        } font-bold`}
+                        } font-bold touch-manipulation`}
                       >
                         {page}
                       </Button>
@@ -556,10 +753,11 @@ export function ProductsView({ categorySlug, subcategorySlug }: { categorySlug?:
                   size="sm"
                   onClick={() => setCurrentPage(Math.min(pagination.totalPages, currentPage + 1))}
                   disabled={currentPage === pagination.totalPages}
-                  className="border-2 border-black dark:border-white font-bold"
+                  className="border-2 border-black dark:border-white font-bold text-xs sm:text-sm min-h-[36px] sm:min-h-[40px] touch-manipulation"
                 >
-                  Next
-                  <ChevronRight className="h-4 w-4" />
+                  <span className="hidden sm:inline">Next</span>
+                  <span className="sm:hidden">Next</span>
+                  <ChevronRight className="h-3 sm:h-4 w-3 sm:w-4" />
                 </Button>
               </div>
             )}

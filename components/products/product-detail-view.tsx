@@ -1,9 +1,10 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import Image from "next/image"
+import { getProductImage, getAllProductImages } from "@/lib/utils/product-image"
 import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks"
 import { addToCart } from "@/lib/redux/slices/cartSlice"
 import { translations } from "@/lib/constants"
@@ -23,7 +24,6 @@ import {
   Truck,
   Shield,
   Star,
-  Heart,
   Share2,
   Check
 } from "lucide-react"
@@ -61,99 +61,163 @@ export function ProductDetailView({
   selectedVariantId 
 }: ProductDetailViewProps) {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const dispatch = useAppDispatch()
   const { toast } = useToast()
   const { language } = useAppSelector((state) => state.app)
   const t = translations[language]
+  
+  // Get the 'from' parameter to preserve navigation state
+  const fromParams = searchParams.get('from')
   
   // State
   const [selectedImage, setSelectedImage] = useState(0)
   const [selectedVariant, setSelectedVariant] = useState<any>(null)
   const [selectedSize, setSelectedSize] = useState<string>("")
   const [quantity, setQuantity] = useState(1)
-  const [isWishlisted, setIsWishlisted] = useState(false)
   const [currentPrice, setCurrentPrice] = useState<number>(0)
   
   // Get the main display image for the current selection
   const getMainImage = () => {
     if (selectedVariant) {
-      return selectedVariant.variant_image || selectedVariant.image || product.image || '/placeholder.svg'
+      return selectedVariant.variant_image || selectedVariant.image || getProductImage(product)
     }
-    return product.image || '/placeholder.svg'
+    return getProductImage(product)
   }
   
   // Get all angle images for the current product/variant (NOT color variants)
   const getAllAngleImages = () => {
     const imagesWithLabels = []
+    const seenUrls = new Set()
     
-    // Check for actual angle images (front, back, side views of the SAME product)
-    // These are different photography angles, not different color variants
+    // Helper to add image if not duplicate
+    const addImage = (url: string, label: string) => {
+      if (url && typeof url === 'string' && url.trim() !== '' && url !== '/placeholder.jpg' && !seenUrls.has(url)) {
+        seenUrls.add(url)
+        imagesWithLabels.push({ url, label })
+      }
+    }
     
-    // First check if this specific variant has angle images
+    // Get all images from the product using our utility
+    const allImages = getAllProductImages(product)
+    
+    // First, add main image if exists
+    const mainImage = getProductImage(product)
+    if (mainImage && mainImage !== '/placeholder.jpg') {
+      addImage(mainImage, 'Main')
+    }
+    
+    // If selected variant has specific images, prioritize those
     if (selectedVariant) {
+      if (selectedVariant.variant_image) {
+        addImage(selectedVariant.variant_image, 'Variant')
+      }
+      if (selectedVariant.image) {
+        addImage(selectedVariant.image, 'View')
+      }
       if (selectedVariant.frontImage) {
-        imagesWithLabels.push({ url: selectedVariant.frontImage, label: 'Front' })
+        addImage(selectedVariant.frontImage, 'Front')
       }
       if (selectedVariant.backImage) {
-        imagesWithLabels.push({ url: selectedVariant.backImage, label: 'Back' })
+        addImage(selectedVariant.backImage, 'Back')
       }
-      if (selectedVariant.leftImage) {
-        imagesWithLabels.push({ url: selectedVariant.leftImage, label: 'Left' })
-      }
-      if (selectedVariant.rightImage) {
-        imagesWithLabels.push({ url: selectedVariant.rightImage, label: 'Right' })
-      }
-      if (selectedVariant.materialImage) {
-        imagesWithLabels.push({ url: selectedVariant.materialImage, label: 'Material' })
-      }
-      
-      // Only add images array if they represent different angles, not different variants
-      // This would be for products that have model shots, detail shots, etc.
-      if (selectedVariant.angleImages && Array.isArray(selectedVariant.angleImages)) {
-        selectedVariant.angleImages.forEach((img: any) => {
+      if (selectedVariant.images && Array.isArray(selectedVariant.images)) {
+        selectedVariant.images.forEach((img: any, idx: number) => {
           const url = typeof img === 'object' && img.url ? img.url : img
-          const label = typeof img === 'object' && img.label ? img.label : `View ${imagesWithLabels.length + 1}`
-          if (url && !imagesWithLabels.find(i => i.url === url)) {
-            imagesWithLabels.push({ url, label })
-          }
+          addImage(url, `View ${idx + 1}`)
         })
       }
     }
     
-    // If no variant-specific angles, check product-level angle images
+    // Add product-level images
+    if (product.frontImage) {
+      addImage(product.frontImage, 'Front')
+    }
+    if (product.backImage) {
+      addImage(product.backImage, 'Back')
+    }
+    if (product.leftImage) {
+      addImage(product.leftImage, 'Left')
+    }
+    if (product.rightImage) {
+      addImage(product.rightImage, 'Right')
+    }
+    if (product.materialImage) {
+      addImage(product.materialImage, 'Material')
+    }
+    
+    // Add from images array
+    if (product.images && Array.isArray(product.images)) {
+      product.images.forEach((img: any, idx: number) => {
+        const url = typeof img === 'object' && img.url ? img.url : img
+        addImage(url, `Image ${idx + 1}`)
+      })
+    }
+    
+    // Always add variant images for multi-angle view
+    if (product.variants && Array.isArray(product.variants)) {
+      // If we already have angle images, only add unique variant angles
+      // Otherwise add all variant images
+      const needAllVariantImages = imagesWithLabels.length === 0
+      
+      product.variants.forEach((variant: any, vIdx: number) => {
+        const variantName = variant.variant_name || variant.color?.name || `Style ${vIdx + 1}`
+        
+        if (variant.variant_image) {
+          addImage(variant.variant_image, variantName)
+        }
+        if (variant.image && variant.image !== variant.variant_image) {
+          addImage(variant.image, `${variantName} - Alt`)
+        }
+        
+        // Add front/back/side images from variants if they exist
+        if (variant.frontImage) {
+          addImage(variant.frontImage, `${variantName} - Front`)
+        }
+        if (variant.backImage) {
+          addImage(variant.backImage, `${variantName} - Back`)
+        }
+        if (variant.leftImage) {
+          addImage(variant.leftImage, `${variantName} - Left`)
+        }
+        if (variant.rightImage) {
+          addImage(variant.rightImage, `${variantName} - Right`)
+        }
+        
+        if (variant.images && Array.isArray(variant.images)) {
+          variant.images.forEach((img: any, idx: number) => {
+            const url = typeof img === 'object' && img.url ? img.url : img
+            addImage(url, `${variantName} - View ${idx + 1}`)
+          })
+        }
+      })
+    }
+    
+    // Add variation images if still no images
+    if (imagesWithLabels.length === 0 && product.variations && Array.isArray(product.variations)) {
+      product.variations.forEach((variation: any, vIdx: number) => {
+        if (variation.images && Array.isArray(variation.images)) {
+          variation.images.forEach((img: any, idx: number) => {
+            let url: string
+            if (typeof img === 'string') {
+              url = img
+            } else if (img && typeof img === 'object' && img.url) {
+              url = img.url
+            } else {
+              return
+            }
+            addImage(url, `Style ${vIdx + 1} - View ${idx + 1}`)
+          })
+        }
+      })
+    }
+    
+    // If still no images, ensure we at least have the main product image
     if (imagesWithLabels.length === 0) {
-      if (product.frontImage) {
-        imagesWithLabels.push({ url: product.frontImage, label: 'Front' })
+      const fallbackImage = getProductImage(product)
+      if (fallbackImage && fallbackImage !== '/placeholder.jpg') {
+        imagesWithLabels.push({ url: fallbackImage, label: 'Main' })
       }
-      if (product.backImage) {
-        imagesWithLabels.push({ url: product.backImage, label: 'Back' })
-      }
-      if (product.leftImage) {
-        imagesWithLabels.push({ url: product.leftImage, label: 'Left' })
-      }
-      if (product.rightImage) {
-        imagesWithLabels.push({ url: product.rightImage, label: 'Right' })
-      }
-      if (product.materialImage) {
-        imagesWithLabels.push({ url: product.materialImage, label: 'Material' })
-      }
-      
-      // Only add from images array if they're actual angle shots, not variant colors
-      if (product.angleImages && Array.isArray(product.angleImages)) {
-        product.angleImages.forEach((img: any) => {
-          const url = typeof img === 'object' && img.url ? img.url : img
-          const label = typeof img === 'object' && img.label ? img.label : `View ${imagesWithLabels.length + 1}`
-          if (url && !imagesWithLabels.find(i => i.url === url)) {
-            imagesWithLabels.push({ url, label })
-          }
-        })
-      }
-    }
-    
-    // If we only have one image or no angle images, don't show the gallery
-    // Just return empty array - the main image will be shown without thumbnails
-    if (imagesWithLabels.length <= 1) {
-      return []
     }
     
     return imagesWithLabels
@@ -163,9 +227,11 @@ export function ProductDetailView({
   const mainImage = getMainImage()
   
   // Get available sizes
-  const availableSizes = product.sizes || 
-    (product.sizePrices ? Object.keys(product.sizePrices) : null) ||
-    ['S', 'M', 'L', 'XL', 'XXL']
+  const availableSizes = product.sizes && product.sizes.length > 0 
+    ? product.sizes
+    : (product.sizePrices && Object.keys(product.sizePrices).length > 0 
+        ? Object.keys(product.sizePrices)
+        : [])
   
   // Initialize selected variant
   useEffect(() => {
@@ -239,7 +305,14 @@ export function ProductDetailView({
   
   // Handle add to cart
   const handleAddToCart = () => {
-    if (availableSizes.length > 1 && !selectedSize) {
+    console.log('Add to Cart clicked')
+    console.log('Product:', product)
+    console.log('Available sizes:', availableSizes)
+    console.log('Selected size:', selectedSize)
+    console.log('Current price:', currentPrice)
+    
+    // Check if size selection is required
+    if (availableSizes && availableSizes.length > 0 && !selectedSize) {
       toast({
         title: "Please select a size",
         description: "Choose a size before adding to cart",
@@ -248,23 +321,53 @@ export function ProductDetailView({
       return
     }
     
-    const cartItem = {
+    // Create cart item with proper structure
+    const cartItem: any = {
       ...product,
       id: product._id || product.id,
-      quantity,
-      selectedSize,
-      selectedVariant: selectedVariant ? {
-        id: selectedVariant.id,
-        color: selectedVariant.color,
-        image: selectedVariant.image || selectedVariant.images?.[0]
-      } : null
+      productId: product._id || product.id,
+      quantity: 1, // Set quantity to 1 per item
+      price: currentPrice > 0 ? currentPrice : (product.price || product.basePrice || 0),
+      basePrice: product.basePrice || product.price || 0,
+      image: selectedVariant?.image || selectedVariant?.variant_image || product.image,
+      name: product.name
     }
     
-    dispatch(addToCart(cartItem))
-    toast({
-      title: "Added to cart",
-      description: `${product.name} has been added to your cart`,
-    })
+    // Add selected size if applicable
+    if (selectedSize) {
+      cartItem.selectedSize = selectedSize
+    }
+    
+    // Add variant information if selected
+    if (selectedVariant) {
+      cartItem.selectedVariant = {
+        id: selectedVariant.id,
+        name: selectedVariant.variant_name || selectedVariant.color?.name || 'Variant',
+        color: selectedVariant.color,
+        image: selectedVariant.variant_image || selectedVariant.image || selectedVariant.images?.[0]
+      }
+    }
+    
+    console.log('Cart item being added:', cartItem)
+    
+    try {
+      // Dispatch to cart - add multiple times for quantity
+      for (let i = 0; i < quantity; i++) {
+        dispatch(addToCart(cartItem))
+      }
+      
+      toast({
+        title: "Added to cart",
+        description: `${quantity} × ${product.name} has been added to your cart`,
+      })
+    } catch (error) {
+      console.error('Error adding to cart:', error)
+      toast({
+        title: "Error",
+        description: "Failed to add item to cart",
+        variant: "destructive"
+      })
+    }
   }
   
   // Handle design button
@@ -283,17 +386,24 @@ export function ProductDetailView({
             Home
           </Link>
           <ChevronRight className="h-4 w-4 text-gray-400" />
+          <Link 
+            href={`/products${fromParams ? `?${fromParams}` : ''}`}
+            className="text-gray-500 hover:text-black dark:hover:text-white"
+          >
+            Products
+          </Link>
           {category && (
             <>
+              <ChevronRight className="h-4 w-4 text-gray-400" />
               <Link 
-                href={`/products/${category.slug}`}
+                href={`/products/${category.slug}${fromParams ? `?${fromParams}` : ''}`}
                 className="text-gray-500 hover:text-black dark:hover:text-white"
               >
                 {category.name}
               </Link>
-              <ChevronRight className="h-4 w-4 text-gray-400" />
             </>
           )}
+          <ChevronRight className="h-4 w-4 text-gray-400" />
           <span className="text-black dark:text-white font-semibold">{product.name}</span>
         </nav>
       </div>
@@ -304,8 +414,8 @@ export function ProductDetailView({
           
           {/* Image Gallery */}
           <div className="flex gap-3">
-            {/* Vertical Thumbnail Gallery - Only show when there are multiple angle images */}
-            {angleImages.length > 0 && (
+            {/* Vertical Thumbnail Gallery - Show when there are multiple angle images */}
+            {angleImages.length > 1 && (
               <div className="hidden md:flex flex-col gap-2 overflow-y-auto max-h-[600px] custom-scrollbar">
                 {angleImages.map((imgData, idx) => (
                   <button
@@ -321,7 +431,7 @@ export function ProductDetailView({
                       src={imgData.url || "/placeholder.svg"}
                       alt={`${product.name} - ${imgData.label}`}
                       fill
-                      className="object-cover"
+                      className="object-contain p-2 bg-gray-50"
                       sizes="80px"
                     />
                     {/* Angle label */}
@@ -340,7 +450,7 @@ export function ProductDetailView({
                   src={angleImages.length > 0 ? (angleImages[selectedImage]?.url || mainImage) : mainImage}
                   alt={`${product.name}${angleImages[selectedImage] ? ` - ${angleImages[selectedImage].label}` : ''}`}
                   fill
-                  className="object-cover"
+                  className="object-contain p-2 bg-gray-50"
                   priority
                   sizes="(max-width: 768px) 100vw, 50vw"
                 />
@@ -355,16 +465,16 @@ export function ProductDetailView({
                   </div>
                 )}
                 
-                {/* Mobile Image Counter with Angle Label - Only show for products with angle images */}
-                {angleImages.length > 0 && (
+                {/* Mobile Image Counter with Angle Label - Show for products with multiple angle images */}
+                {angleImages.length > 1 && (
                   <div className="md:hidden absolute bottom-4 right-4 bg-black/70 text-white px-3 py-1.5 rounded-md text-sm">
                     <span className="font-bold">{angleImages[selectedImage]?.label}</span>
                     <span className="ml-2 opacity-80">{selectedImage + 1}/{angleImages.length}</span>
                   </div>
                 )}
                 
-                {/* Mobile Navigation Arrows - Only show for products with angle images */}
-                {angleImages.length > 0 && (
+                {/* Mobile Navigation Arrows - Show for products with multiple angle images */}
+                {angleImages.length > 1 && (
                   <>
                     <button
                       onClick={() => setSelectedImage(Math.max(0, selectedImage - 1))}
@@ -392,8 +502,8 @@ export function ProductDetailView({
                 )}
               </div>
               
-              {/* Mobile Thumbnail Dots - Only show for products with angle images */}
-              {angleImages.length > 0 && (
+              {/* Mobile Thumbnail Dots - Show for products with multiple angle images */}
+              {angleImages.length > 1 && (
                 <div className="md:hidden flex justify-center gap-1 mt-3">
                   {angleImages.map((_, idx) => (
                     <button
@@ -415,12 +525,7 @@ export function ProductDetailView({
           <div className="space-y-6">
             {/* Header */}
             <div>
-              {product.brand && (
-                <p className="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  {product.brand}
-                </p>
-              )}
-              <h1 className="text-3xl font-black text-black dark:text-white uppercase mt-2">
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-black text-black dark:text-white uppercase">
                 {product.name}
               </h1>
               <div className="flex flex-wrap gap-4 mt-2 text-sm text-gray-500 dark:text-gray-400">
@@ -451,7 +556,7 @@ export function ProductDetailView({
             {/* Price */}
             <div className="space-y-2">
               <div className="flex items-baseline gap-3">
-                <span className="text-4xl font-black text-black dark:text-white">
+                <span className="text-2xl sm:text-3xl lg:text-4xl font-black text-black dark:text-white">
                   {currentPrice > 0 ? currentPrice.toFixed(2) : 'Price on request'}
                 </span>
                 {product.originalData?.priceAfterTax && (
@@ -505,7 +610,7 @@ export function ProductDetailView({
                               src={variantImage}
                               alt={variantName}
                               fill
-                              className="object-cover"
+                              className="object-contain p-2 bg-gray-50"
                               sizes="64px"
                             />
                           ) : (
@@ -530,7 +635,7 @@ export function ProductDetailView({
             )}
             
             {/* Size Selection */}
-            {availableSizes.length > 1 && (
+            {availableSizes.length > 0 && (
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <Label className="font-bold">Size</Label>
@@ -615,38 +720,30 @@ export function ProductDetailView({
                 </Button>
               )}
               
-              <div className="flex gap-3">
+              <div className="flex justify-center">
                 <Button
                   variant="outline"
-                  className="flex-1 border-2 border-black dark:border-white"
-                  onClick={() => setIsWishlisted(!isWishlisted)}
-                >
-                  <Heart className={`h-5 w-5 mr-2 ${isWishlisted ? 'fill-red-500 text-red-500' : ''}`} />
-                  Wishlist
-                </Button>
-                <Button
-                  variant="outline"
-                  className="flex-1 border-2 border-black dark:border-white"
+                  className="border-2 border-black dark:border-white px-8"
                 >
                   <Share2 className="h-5 w-5 mr-2" />
-                  Share
+                  Share Product
                 </Button>
               </div>
             </div>
             
             {/* Trust Badges */}
-            <div className="grid grid-cols-3 gap-4 pt-4">
+            <div className="grid grid-cols-3 gap-2 sm:gap-4 pt-4">
               <div className="flex flex-col items-center text-center">
-                <Package className="h-8 w-8 text-gray-600 dark:text-gray-400 mb-2" />
-                <span className="text-xs font-bold uppercase">Free Returns</span>
+                <Package className="h-6 sm:h-8 w-6 sm:w-8 text-gray-600 dark:text-gray-400 mb-1 sm:mb-2" />
+                <span className="text-[10px] sm:text-xs font-bold uppercase">Free Returns</span>
               </div>
               <div className="flex flex-col items-center text-center">
-                <Truck className="h-8 w-8 text-gray-600 dark:text-gray-400 mb-2" />
-                <span className="text-xs font-bold uppercase">Fast Shipping</span>
+                <Truck className="h-6 sm:h-8 w-6 sm:w-8 text-gray-600 dark:text-gray-400 mb-1 sm:mb-2" />
+                <span className="text-[10px] sm:text-xs font-bold uppercase">Fast Shipping</span>
               </div>
               <div className="flex flex-col items-center text-center">
-                <Shield className="h-8 w-8 text-gray-600 dark:text-gray-400 mb-2" />
-                <span className="text-xs font-bold uppercase">Secure Payment</span>
+                <Shield className="h-6 sm:h-8 w-6 sm:w-8 text-gray-600 dark:text-gray-400 mb-1 sm:mb-2" />
+                <span className="text-[10px] sm:text-xs font-bold uppercase">Secure Payment</span>
               </div>
             </div>
           </div>

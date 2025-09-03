@@ -52,7 +52,7 @@ export function RightPanel({ isMobile = false }: { isMobile?: boolean }) {
             <Button 
               onClick={() => dispatch(setShowProductModal(true))}
               variant="outline"
-              className="border-purple-200 text-purple-700 hover:bg-purple-50"
+              className="border-gray-200 text-gray-700 hover:bg-gray-50"
             >
               Browse Products
             </Button>
@@ -314,7 +314,7 @@ export function RightPanel({ isMobile = false }: { isMobile?: boolean }) {
         <div className="p-3 border-b border-gray-200 flex-shrink-0">
           <Button 
             onClick={handleSaveDesign}
-            className="w-full bg-purple-700 hover:bg-purple-700 text-white transition-all duration-200 hover:scale-105"
+            className="w-full bg-black hover:bg-gray-800 text-white transition-all duration-200 hover:scale-105"
             size="sm"
             disabled={isSaving || !selectedProduct}
           >
@@ -339,12 +339,12 @@ export function RightPanel({ isMobile = false }: { isMobile?: boolean }) {
   }
 
   return (
-    <div className="w-72 lg:w-80 bg-white border-l border-gray-200 flex flex-col h-full">
+    <div className="w-72 lg:w-80 bg-white/95 backdrop-blur-sm border-l border-gray-200/60 flex flex-col h-full shadow-xl">
       <TopHeader />
       <div className="p-3 border-b border-gray-200 flex-shrink-0">
         <Button 
           onClick={handleSaveDesign}
-          className="w-full bg-purple-600 hover:bg-purple-700 text-white transition-all duration-200 hover:scale-105"
+          className="w-full bg-black hover:bg-gray-800 text-white transition-all duration-200 hover:scale-105"
           size="sm"
           disabled={isSaving || !selectedProduct}
         >
@@ -382,7 +382,7 @@ export function RightPanel({ isMobile = false }: { isMobile?: boolean }) {
                 setShowAuthDialog(false)
                 router.push('/login?returnUrl=/design-tool')
               }}
-              className="bg-purple-700 hover:bg-purple-700 text-white"
+              className="bg-black hover:bg-gray-800 text-white"
             >
               Sign In
             </Button>

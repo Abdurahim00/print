@@ -51,6 +51,7 @@ export const CategoryFormDialog: React.FC<Props> = ({ open, onOpenChange, initia
       isDesignable: initialValues.isDesignable ?? false,
       designableAreas: initialValues.designableAreas || [],
       designTechniques: initialValues.designTechniques || [],
+      designUpchargePercent: initialValues.designUpchargePercent || 0,
     },
     enableReinitialize: true,
     validationSchema: schema,
@@ -208,6 +209,27 @@ export const CategoryFormDialog: React.FC<Props> = ({ open, onOpenChange, initia
                       Add
                     </Button>
                   </div>
+                </div>
+                
+                {/* Design Upcharge Pricing */}
+                <div className="space-y-2">
+                  <Label>Design Upcharge %</Label>
+                  <div className="flex items-center gap-2">
+                    <Input
+                      type="number"
+                      name="designUpchargePercent"
+                      value={formik.values.designUpchargePercent}
+                      onChange={formik.handleChange}
+                      min="0"
+                      max="100"
+                      step="1"
+                      className="w-24"
+                    />
+                    <span className="text-sm text-gray-600">%</span>
+                  </div>
+                  <p className="text-xs text-gray-500">
+                    Price increase when a design is added (e.g., 15 = 15% increase)
+                  </p>
                 </div>
               </>
             )}

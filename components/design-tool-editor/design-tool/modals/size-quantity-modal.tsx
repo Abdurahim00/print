@@ -778,33 +778,34 @@ export function SizeQuantityModal({ open, onOpenChange, onAddToCart }: SizeQuant
   return (
  
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md sm:max-w-lg md:max-w-xl h-full  overflow-y-auto">
+      <DialogContent className="max-w-md sm:max-w-lg md:max-w-2xl overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-xl font-bold">
-            Select Size & Quantity
-            {purchaseLimits && (
-              <span className="block text-sm font-normal text-gray-600 mt-1">
-                Order Limit: Maximum {purchaseLimits.maxQuantityPerOrder} items per order
-              </span>
-            )}
+          <DialogTitle className="text-xl font-bold flex items-center justify-between">
+            <span>Choose Your Size & Quantity</span>
+            <ChevronRight className="w-5 h-5 text-gray-600" />
           </DialogTitle>
+          {purchaseLimits && (
+            <p className="text-sm text-gray-600 mt-1">
+              Max {purchaseLimits.maxQuantityPerOrder} items per order
+            </p>
+          )}
         </DialogHeader>
         
         {/* Product Info Display */}
         {selectedProduct && (
-          <div className="mb-4 p-3 bg-gray-50 rounded-lg">
-            <div className="flex items-center gap-3">
+          <div className="mb-4 p-4 bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl border border-gray-200">
+            <div className="flex items-center gap-4">
               {selectedProduct.image && (
                 <img 
                   src={selectedProduct.image} 
                   alt={selectedProduct.name}
-                  className="w-16 h-16 object-cover rounded"
+                  className="w-20 h-20 object-cover rounded-lg shadow-sm"
                 />
               )}
-              <div>
-                <h3 className="font-semibold text-gray-900">{selectedProduct.name}</h3>
-                <p className="text-sm font-medium text-blue-600">
-                  Base Price: {formatPrice(basePrice)}
+              <div className="flex-1">
+                <h3 className="font-semibold text-gray-900 text-lg">{selectedProduct.name}</h3>
+                <p className="text-sm text-gray-600 mt-1">
+                  Starting from <span className="font-bold text-gray-900">{formatPrice(basePrice)}</span>
                 </p>
               </div>
             </div>
@@ -836,16 +837,17 @@ export function SizeQuantityModal({ open, onOpenChange, onAddToCart }: SizeQuant
           </Alert>
         )}
         
-        <div className="max-h-[60vh] overflow-y-auto pr-1">
-        
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-1/3">Size</TableHead>
-                <TableHead className="w-1/3 text-right">Price</TableHead>
-                <TableHead className="w-1/3 text-center">Quantity</TableHead>
-              </TableRow>
-            </TableHeader>
+        <div className="mb-4">
+          <h4 className="text-sm font-medium text-gray-700 mb-3">Select your sizes:</h4>
+          <div className="max-h-[50vh] overflow-y-auto pr-1 border rounded-lg">
+            <Table>
+              <TableHeader className="bg-gray-50">
+                <TableRow>
+                  <TableHead className="w-1/3 font-semibold">Size</TableHead>
+                  <TableHead className="w-1/3 text-right font-semibold">Price per item</TableHead>
+                  <TableHead className="w-1/3 text-center font-semibold">Quantity</TableHead>
+                </TableRow>
+              </TableHeader>
             <TableBody>
               {selectedSizes.map((sizeItem, index) => {
                 const stockInfo = availableSizes[index]
@@ -853,15 +855,22 @@ export function SizeQuantityModal({ open, onOpenChange, onAddToCart }: SizeQuant
                 const canIncrease = canIncreaseQuantity(index)
                 
                 return (
-                  <TableRow key={sizeItem.size} className={isOutOfStock ? "opacity-50" : ""}>
-                    <TableCell className="font-medium">{sizeItem.size}</TableCell>
-                    <TableCell className="text-right">{formatPrice(sizeItem.price)}</TableCell>
+                  <TableRow 
+                    key={sizeItem.size} 
+                    className={`${isOutOfStock ? "opacity-50" : ""} ${sizeItem.quantity > 0 ? "bg-gray-50" : ""} transition-colors`}
+                  >
+                    <TableCell className="font-medium">
+                      <span className={`inline-flex items-center justify-center w-12 h-8 rounded-md ${sizeItem.quantity > 0 ? "bg-black text-white" : "bg-gray-100"}`}>
+                        {sizeItem.size}
+                      </span>
+                    </TableCell>
+                    <TableCell className="text-right font-medium">{formatPrice(sizeItem.price)}</TableCell>
                     <TableCell>
                       <div className="flex items-center justify-center gap-2">
                         <Button
                           variant="outline"
                           size="icon"
-                          className="h-8 w-8 rounded-md"
+                          className="h-9 w-9 rounded-full hover:bg-gray-100 hover:border-gray-300"
                           onClick={() => updateQuantity(index, sizeItem.quantity - 1)}
                           disabled={sizeItem.quantity <= 0 || isOutOfStock}
                         >
@@ -871,7 +880,7 @@ export function SizeQuantityModal({ open, onOpenChange, onAddToCart }: SizeQuant
                           type="number"
                           value={sizeItem.quantity}
                           onChange={(e) => updateQuantity(index, parseInt(e.target.value) || 0)}
-                          className="w-12 h-8 text-center [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                          className="w-14 h-9 text-center font-semibold border-gray-200 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                           min="0"
                           max={stockInfo?.stockQuantity || 999}
                           disabled={isOutOfStock}
@@ -879,7 +888,7 @@ export function SizeQuantityModal({ open, onOpenChange, onAddToCart }: SizeQuant
                         <Button
                           variant="outline"
                           size="icon"
-                          className="h-8 w-8 rounded-md"
+                          className="h-9 w-9 rounded-full hover:bg-gray-100 hover:border-gray-300"
                           onClick={() => updateQuantity(index, sizeItem.quantity + 1)}
                           disabled={isOutOfStock || !canIncrease || (stockInfo && sizeItem.quantity >= stockInfo.stockQuantity)}
                         >
@@ -898,12 +907,13 @@ export function SizeQuantityModal({ open, onOpenChange, onAddToCart }: SizeQuant
               })}
             </TableBody>
           </Table>
+          </div>
         </div>
         
-        <div className="border-t pt-4 space-y-3">
+        <div className="bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl p-4 space-y-3">
           <div className="flex justify-between text-sm">
-            <span className="text-gray-500">Total Quantity:</span>
-            <span className="font-medium">{calculateTotalQuantity()} items</span>
+            <span className="text-gray-600 font-medium">Total Quantity:</span>
+            <span className="font-bold text-gray-700">{calculateTotalQuantity()} items</span>
           </div>
           
           {/* Design Costs Breakdown */}
@@ -924,23 +934,23 @@ export function SizeQuantityModal({ open, onOpenChange, onAddToCart }: SizeQuant
             </div>
           )}
           
-          <div className="flex justify-between">
-            <span className="text-gray-900 font-medium">Total Price:</span>
-            <span className="text-lg font-bold text-blue-600">{formatPrice(calculateTotal())}</span>
+          <div className="flex justify-between pt-2 border-t border-gray-200">
+            <span className="text-gray-900 font-semibold">Total Price:</span>
+            <span className="text-xl font-bold text-gray-900">{formatPrice(calculateTotal())}</span>
           </div>
         </div>
         
-        <DialogFooter className="flex sm:justify-between gap-2">
+        <DialogFooter className="flex gap-3 pt-4">
           <DialogClose asChild>
-            <Button variant="outline" className="flex-1">Cancel</Button>
+            <Button variant="outline" className="flex-1 h-12 font-semibold border-gray-300">Cancel</Button>
           </DialogClose>
           <Button 
             onClick={handleAddToCart} 
-            className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
+            className="flex-1 h-12 bg-black hover:bg-gray-800 text-white font-semibold shadow-lg hover:shadow-xl transition-all"
             disabled={calculateTotalQuantity() === 0 || !!quantityError}
           >
-            <ShoppingCart className="mr-2 h-4 w-4" />
-            Add to Cart
+            <ShoppingCart className="mr-2 h-5 w-5" />
+            Add to Cart ({calculateTotalQuantity()})
           </Button>
         </DialogFooter>
       </DialogContent>

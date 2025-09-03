@@ -6,6 +6,8 @@ interface CategoriesState {
   subcategories: Subcategory[]
   loading: boolean
   error: string | null
+  categoriesLoaded: boolean
+  subcategoriesLoaded: boolean
 }
 
 const initialState: CategoriesState = {
@@ -13,13 +15,23 @@ const initialState: CategoriesState = {
   subcategories: [],
   loading: false,
   error: null,
+  categoriesLoaded: false,
+  subcategoriesLoaded: false,
 }
 
-export const fetchCategories = createAsyncThunk("categories/fetchCategories", async () => {
-  const res = await fetch("/api/categories")
-  if (!res.ok) throw new Error("Failed to fetch categories")
-  return res.json()
-})
+export const fetchCategories = createAsyncThunk(
+  "categories/fetchCategories",
+  async (_, { getState }) => {
+    const state = getState() as any
+    // Skip fetch if already loaded
+    if (state.categories.categoriesLoaded) {
+      return state.categories.categories
+    }
+    const res = await fetch("/api/categories")
+    if (!res.ok) throw new Error("Failed to fetch categories")
+    return res.json()
+  }
+)
 
 export const createCategory = createAsyncThunk("categories/createCategory", async (data: Omit<Category, "id">) => {
   const res = await fetch("/api/categories", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) })
@@ -39,12 +51,20 @@ export const deleteCategory = createAsyncThunk("categories/deleteCategory", asyn
   return id
 })
 
-export const fetchSubcategories = createAsyncThunk("categories/fetchSubcategories", async (categoryId?: string) => {
-  const url = categoryId ? `/api/subcategories?categoryId=${categoryId}` : "/api/subcategories"
-  const res = await fetch(url)
-  if (!res.ok) throw new Error("Failed to fetch subcategories")
-  return res.json()
-})
+export const fetchSubcategories = createAsyncThunk(
+  "categories/fetchSubcategories",
+  async (categoryId?: string, { getState }) => {
+    const state = getState() as any
+    // Skip fetch if already loaded and no specific category requested
+    if (!categoryId && state.categories.subcategoriesLoaded) {
+      return state.categories.subcategories
+    }
+    const url = categoryId ? `/api/subcategories?categoryId=${categoryId}` : "/api/subcategories"
+    const res = await fetch(url)
+    if (!res.ok) throw new Error("Failed to fetch subcategories")
+    return res.json()
+  }
+)
 
 export const createSubcategory = createAsyncThunk("categories/createSubcategory", async (data: Omit<Subcategory, "id">) => {
   const res = await fetch("/api/subcategories", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) })
@@ -71,7 +91,7 @@ const slice = createSlice({
   extraReducers: (builder) => {
     builder
       .addCase(fetchCategories.pending, (s) => { s.loading = true; s.error = null })
-      .addCase(fetchCategories.fulfilled, (s, a) => { s.loading = false; s.categories = a.payload })
+      .addCase(fetchCategories.fulfilled, (s, a) => { s.loading = false; s.categories = a.payload; s.categoriesLoaded = true })
       .addCase(fetchCategories.rejected, (s, a) => { s.loading = false; s.error = a.error.message || null })
 
       .addCase(createCategory.fulfilled, (s, a) => { s.categories.unshift(a.payload) })
@@ -82,7 +102,7 @@ const slice = createSlice({
       .addCase(deleteCategory.fulfilled, (s, a) => { s.categories = s.categories.filter((c) => c.id !== a.payload) })
 
       .addCase(fetchSubcategories.pending, (s) => { s.loading = true; s.error = null })
-      .addCase(fetchSubcategories.fulfilled, (s, a) => { s.loading = false; s.subcategories = a.payload })
+      .addCase(fetchSubcategories.fulfilled, (s, a) => { s.loading = false; s.subcategories = a.payload; s.subcategoriesLoaded = true })
       .addCase(fetchSubcategories.rejected, (s, a) => { s.loading = false; s.error = a.error.message || null })
 
       .addCase(createSubcategory.fulfilled, (s, a) => { s.subcategories.unshift(a.payload) })

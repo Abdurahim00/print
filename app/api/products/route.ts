@@ -17,6 +17,7 @@ export async function GET(request: NextRequest) {
     const sortBy = searchParams.get('sortBy') || 'featured'
     const minPrice = searchParams.get('minPrice')
     const maxPrice = searchParams.get('maxPrice')
+    const designableOnly = searchParams.get('designableOnly') === 'true'
     
     // Build filter object
     const filter: any = {}
@@ -28,13 +29,19 @@ export async function GET(request: NextRequest) {
       if (minPrice) filter.price.$gte = parseFloat(minPrice)
       if (maxPrice) filter.price.$lte = parseFloat(maxPrice)
     }
+    if (designableOnly) filter.designableOnly = true
+    
+    // Get fields to return (optimize payload)
+    const fieldsParam = searchParams.get('fields')
+    const fields = fieldsParam ? fieldsParam.split(',') : []
     
     // Get paginated products with total count
     const result = await ProductService.getPaginatedProducts({
       filter,
       skip,
       limit,
-      sortBy
+      sortBy,
+      fields
     })
     
     return NextResponse.json({

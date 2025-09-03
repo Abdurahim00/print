@@ -302,28 +302,30 @@ export function CategoryShowcase() {
         transition={{ duration: 0.3 }}
       >
         <div className="w-full relative group">
-          <div className="flex items-center justify-center">
+          <div className="relative w-full max-w-full overflow-hidden">
             {/* Left scroll button - professional design */}
             {showArrows && (
               <button
                 onClick={() => scroll('left')}
-                className="absolute left-2 top-[48px] -translate-y-1/2 z-10 w-10 h-10 bg-black dark:bg-white text-white dark:text-black flex items-center justify-center hover:scale-110 active:scale-95 transition-all duration-200 opacity-0 group-hover:opacity-100 shadow-xl"
+                className="absolute left-0 sm:left-2 top-[40px] sm:top-[48px] -translate-y-1/2 z-10 w-8 h-8 sm:w-10 sm:h-10 bg-black dark:bg-white text-white dark:text-black flex items-center justify-center hover:scale-110 active:scale-95 transition-all duration-200 opacity-70 sm:opacity-0 sm:group-hover:opacity-100 shadow-xl rounded-full sm:rounded-none"
               >
-                <ChevronLeft className="h-5 w-5" />
+                <ChevronLeft className="h-4 w-4 sm:h-5 sm:w-5" />
               </button>
             )}
 
             {/* Scrollable container with padding for expansion */}
             <motion.div 
               ref={scrollContainerRef}
-              className="flex gap-6 overflow-x-auto scrollbar-hide scroll-smooth py-2 mx-auto"
+              className="flex gap-3 sm:gap-4 lg:gap-6 overflow-x-auto scrollbar-hide scroll-smooth py-2"
               style={{ 
                 scrollbarWidth: 'none' as any, 
                 msOverflowStyle: 'none',
                 marginTop: '8px',
                 marginBottom: '8px',
-                paddingLeft: showArrows ? '60px' : '0',
-                paddingRight: showArrows ? '60px' : '0'
+                paddingLeft: activeCategories.length <= 5 ? '0' : '20px',
+                paddingRight: activeCategories.length <= 5 ? '0' : '20px',
+                justifyContent: activeCategories.length <= 5 ? 'center' : 'flex-start',
+                width: '100%'
               }}
               variants={containerVariants}
               initial="hidden"
@@ -348,16 +350,16 @@ export function CategoryShowcase() {
                         whileTap={{ scale: 0.95 }}
                         transition={{ type: "spring", stiffness: 400, damping: 17 }}
                       >
-                        <div className="w-16 h-16 rounded-full bg-white border-2 border-black dark:border-white flex items-center justify-center shadow-md group-hover:shadow-xl transition-all duration-300">
+                        <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-white border-2 border-black dark:border-white flex items-center justify-center shadow-md group-hover:shadow-xl transition-all duration-300 flex-shrink-0">
                           <img 
                             src={style.iconUrl} 
                             alt={category.name}
-                            className="w-8 h-8 filter transition-all"
+                            className="w-6 h-6 sm:w-8 sm:h-8 filter transition-all"
                             style={{ filter: 'grayscale(100%) contrast(1.5) brightness(0)' }}
                           />
                         </div>
                       </motion.div>
-                      <span className="text-xs font-bold text-black dark:text-white transition-colors text-center max-w-[80px] uppercase">
+                      <span className="text-[10px] sm:text-xs font-bold text-black dark:text-white transition-colors text-center max-w-[60px] sm:max-w-[80px] uppercase line-clamp-2">
                         {category.name}
                       </span>
                     </Link>
@@ -370,9 +372,9 @@ export function CategoryShowcase() {
             {showArrows && (
               <button
                 onClick={() => scroll('right')}
-                className="absolute right-2 top-[48px] -translate-y-1/2 z-10 w-10 h-10 bg-black dark:bg-white text-white dark:text-black flex items-center justify-center hover:scale-110 active:scale-95 transition-all duration-200 opacity-0 group-hover:opacity-100 shadow-xl"
+                className="absolute right-0 sm:right-2 top-[40px] sm:top-[48px] -translate-y-1/2 z-10 w-8 h-8 sm:w-10 sm:h-10 bg-black dark:bg-white text-white dark:text-black flex items-center justify-center hover:scale-110 active:scale-95 transition-all duration-200 opacity-70 sm:opacity-0 sm:group-hover:opacity-100 shadow-xl rounded-full sm:rounded-none"
               >
-                <ChevronRight className="h-5 w-5" />
+                <ChevronRight className="h-4 w-4 sm:h-5 sm:w-5" />
               </button>
             )}
           </div>

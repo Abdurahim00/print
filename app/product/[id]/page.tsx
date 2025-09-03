@@ -100,6 +100,19 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
   const category = product.categoryId ? await getCategory(product.categoryId) : null
   const subcategory = product.subcategoryId ? await getSubcategory(product.subcategoryId) : null
   
+  // Debug logging
+  console.log('🎨 [ProductPage] Design Check:', {
+    productId: product.id,
+    productName: product.name,
+    categoryId: product.categoryId,
+    categoryFetched: !!category,
+    categoryName: category?.name,
+    categoryIsDesignable: category?.isDesignable,
+    subcategoryId: product.subcategoryId,
+    subcategoryFetched: !!subcategory,
+    subcategoryIsDesignable: subcategory?.isDesignable
+  })
+  
   // Determine if product is designable based on category/subcategory settings
   let isDesignable = false
   
@@ -114,6 +127,8 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
     // Fall back to category if no subcategory
     isDesignable = category.isDesignable || false
   }
+  
+  console.log('🎨 [ProductPage] Final isDesignable:', isDesignable)
   
   return (
     <ProductDetailView 

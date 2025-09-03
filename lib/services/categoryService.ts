@@ -16,6 +16,7 @@ function toCategory(doc: CategoryDocument): Category {
     isDesignable: doc.isDesignable || false,
     designableAreas: doc.designableAreas,
     designTechniques: doc.designTechniques,
+    designUpchargePercent: doc.designUpchargePercent || 0,
     createdAt: doc.createdAt,
     updatedAt: doc.updatedAt,
   }
@@ -162,5 +163,12 @@ export async function deleteSubcategory(id: string): Promise<boolean> {
   const collection = db.collection<SubcategoryDocument>(SUBCATEGORIES)
   const res = await collection.deleteOne({ _id: new ObjectId(id) })
   return res.deletedCount === 1
+}
+
+export async function getDesignableCategoryIds(): Promise<string[]> {
+  const db = await getDatabase()
+  const collection = db.collection<CategoryDocument>(CATEGORIES)
+  const docs = await collection.find({ isDesignable: true }).toArray()
+  return docs.map(doc => doc._id!.toString())
 }
 

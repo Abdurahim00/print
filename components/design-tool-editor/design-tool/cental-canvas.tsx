@@ -716,7 +716,7 @@ export function CentralCanvas() {
   }
 
   return (
-    <div className="flex-1 flex flex-col bg-gray-50 overflow-hidden relative">
+    <div className="flex-1 flex flex-col bg-gradient-to-br from-gray-50 via-white to-gray-50 overflow-hidden relative">
       {/* Load saved design component */}
       <LoadSavedDesign onDesignLoaded={handleDesignLoaded} />
       
@@ -725,8 +725,8 @@ export function CentralCanvas() {
         <div className="absolute inset-0 z-50 bg-white/95 backdrop-blur-sm flex items-center justify-center">
           <div className="flex flex-col items-center space-y-4">
             <div className="relative">
-              <div className="w-16 h-16 border-4 border-purple-200 rounded-full animate-pulse"></div>
-              <div className="absolute top-0 left-0 w-16 h-16 border-4 border-purple-600 rounded-full animate-spin border-t-transparent"></div>
+              <div className="w-16 h-16 border-4 border-gray-200 rounded-full animate-pulse"></div>
+              <div className="absolute top-0 left-0 w-16 h-16 border-4 border-gray-600 rounded-full animate-spin border-t-transparent"></div>
             </div>
             <div className="text-center">
               <p className="text-lg font-medium text-gray-900">Loading Product</p>
@@ -740,7 +740,7 @@ export function CentralCanvas() {
       <div className="flex-1 flex items-center justify-center p-2 lg:p-4">
         <div className="relative w-full h-full max-w-4xl max-h-full flex flex-col">
           {/* Main Container - Relative positioning with base/product image */}
-          <div className="flex-1 relative bg-white rounded-xl overflow-hidden border border-gray-200/60 shadow-sm min-h-0">
+          <div className="flex-1 relative bg-white/90 backdrop-blur-sm rounded-2xl overflow-hidden border border-gray-200/60 shadow-xl min-h-0">
             
             {/* Base/Product Image - Background layer */}
             {selectedProduct && currentImage && !isLoadingProduct ? (

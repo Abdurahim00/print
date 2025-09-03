@@ -40,7 +40,8 @@ import {
   FolderTree,
   Shield,
   LogOut,
-  User
+  User,
+  Settings
 } from "lucide-react"
 import { toast } from "sonner"
 import type { Product, User as UserType, Template, Coupon } from "@/types"
@@ -57,6 +58,7 @@ import { CategoryTable } from "./common/CategoryTable"
 import { SubcategoryTable } from "./common/SubcategoryTable"
 import { CategoryFormDialog } from "./common/CategoryFormDialog"
 import { SubcategoryFormDialog } from "./common/SubcategoryFormDialog"
+import { SiteConfigPanel } from "./common/SiteConfigPanel"
 
 // Import form dialog components  
 import { ProductFormDialog } from "./common/ProductFormDialog"
@@ -64,7 +66,7 @@ import { UserFormDialog } from "./common/UserFormDialog"
 import { TemplateFormDialog } from "./common/TemplateFormDialog"
 import { CouponFormDialog } from "./common/CouponFormDialog"
 
-type AdminPage = "users" | "products" | "templates" | "coupons" | "categories" | "subcategories" | "analytics"
+type AdminPage = "users" | "products" | "templates" | "coupons" | "categories" | "subcategories" | "analytics" | "site-config"
 
 interface AdminDashboardNewProps {
   onLogout?: () => void
@@ -131,6 +133,12 @@ export function AdminDashboardNew({ onLogout }: AdminDashboardNewProps) {
       id: "analytics" as AdminPage,
       label: "Analytics",
       icon: BarChart3,
+      count: null,
+    },
+    {
+      id: "site-config" as AdminPage,
+      label: "Site Configuration",
+      icon: Settings,
       count: null,
     },
     {
@@ -669,6 +677,9 @@ export function AdminDashboardNew({ onLogout }: AdminDashboardNewProps) {
           </Card>
         )
 
+      case "site-config":
+        return <SiteConfigPanel />
+      
       case "analytics":
         return (
           <Card className="shadow-lg border-0 bg-white dark:bg-slate-900">

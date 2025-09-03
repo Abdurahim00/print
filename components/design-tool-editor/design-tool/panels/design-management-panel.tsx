@@ -251,7 +251,7 @@ export function DesignManagementPanel({
             </div>
             <div className="flex justify-between">
               <span>Variations with Current View:</span>
-              <span className="font-medium text-purple-600">{stats.variationsWithCurrentView}</span>
+              <span className="font-medium text-gray-600">{stats.variationsWithCurrentView}</span>
             </div>
             <div className="flex justify-between">
               <span>Total Product Variations:</span>

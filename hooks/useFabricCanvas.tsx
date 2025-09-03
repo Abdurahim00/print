@@ -4,7 +4,7 @@ import { useEffect, useRef, useCallback } from "react"
 import * as fabric from "fabric"
 import { useDispatch, useSelector } from "react-redux"
 import { addToHistory, undo, redo } from "../lib/redux/designToolSlices/canvasSlice"
-import { setSelectedTool } from "../lib/redux/designToolSlices/designSlice"
+import { setSelectedTool, setHasDesignElements, setDesignAreaPercentage } from "../lib/redux/designToolSlices/designSlice"
 import { RootState } from "../lib/redux/store"
 
 export const useFabricCanvas = (canvasId: string) => {
@@ -461,8 +461,76 @@ export const useFabricCanvas = (canvasId: string) => {
       dispatch(setSelectedTool("product"));
     });
 
+    // Check if canvas has any design elements and calculate area coverage
+    const checkDesignElements = () => {
+      const objects = canvas.getObjects()
+      const hasDesign = objects.length > 0
+      dispatch(setHasDesignElements(hasDesign))
+      
+      // Calculate total area covered by design elements
+      if (hasDesign) {
+        const canvasWidth = canvas.getWidth()
+        const canvasHeight = canvas.getHeight()
+        const canvasArea = canvasWidth * canvasHeight
+        
+        let totalDesignArea = 0
+        
+        objects.forEach((obj) => {
+          // Get the bounding rect of the object (includes transformations)
+          const boundingRect = obj.getBoundingRect(true, true)
+          const objectArea = boundingRect.width * boundingRect.height
+          totalDesignArea += objectArea
+          
+          console.log('📦 Object area:', {
+            type: obj.type,
+            width: boundingRect.width,
+            height: boundingRect.height,
+            area: objectArea
+          })
+        })
+        
+        // Calculate percentage (capped at 100% for overlapping objects)
+        const areaPercentage = Math.min(100, (totalDesignArea / canvasArea) * 100)
+        dispatch(setDesignAreaPercentage(areaPercentage))
+        
+        console.log('📐 Design area calculation:', {
+          canvasWidth,
+          canvasHeight,
+          canvasArea,
+          totalDesignArea,
+          percentage: areaPercentage.toFixed(2) + '%',
+          objectCount: objects.length
+        })
+      } else {
+        dispatch(setDesignAreaPercentage(0))
+        console.log('📐 No design elements, area = 0%')
+      }
+    }
+
+    canvas.on("object:added", () => {
+      console.log('🎨 Object added event')
+      checkDesignElements()
+    })
+
+    canvas.on("object:removed", () => {
+      console.log('🗑️ Object removed event')
+      checkDesignElements()
+    })
+
     canvas.on("object:modified", () => {
+      console.log('✏️ Object modified event')
       setTimeout(() => saveState(canvas), 50)
+      checkDesignElements()
+    })
+    
+    canvas.on("object:scaling", () => {
+      console.log('📏 Object scaling event')
+      checkDesignElements()
+    })
+    
+    canvas.on("object:moving", () => {
+      console.log('🚶 Object moving event')
+      checkDesignElements()
     })
 
     canvas.on("text:changed", () => {

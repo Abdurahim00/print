@@ -3,9 +3,20 @@ import { ProductService } from "@/lib/services/productService"
 
 export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   try {
+    console.log("Fetching product with ID:", params.id, "Length:", params.id.length)
+    
     const product = await ProductService.getProductById(params.id)
     if (!product) {
-      return NextResponse.json({ error: "Product not found" }, { status: 404 })
+      // If ID is 23 chars, suggest the correct one might have one more character
+      if (params.id.length === 23) {
+        console.log("ID is 23 chars, might be missing last character. Try adding 0-9 or a-f at the end")
+      }
+      return NextResponse.json({ 
+        error: "Product not found",
+        receivedId: params.id,
+        idLength: params.id.length,
+        hint: params.id.length === 23 ? "ID appears to be missing 1 character" : null
+      }, { status: 404 })
     }
     return NextResponse.json(product)
   } catch (error) {

@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Design Area Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        #instructions {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+        }
+        ol {
+            line-height: 1.8;
+        }
+        .code {
+            background: #f0f0f0;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: monospace;
+        }
+        .important {
+            color: #d9534f;
+            font-weight: bold;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div id="instructions">
+        <h1>🎨 Design Area Dynamic Pricing Test</h1>
+        
+        <h2>How to Test:</h2>
+        <ol>
+            <li>Open the browser console (F12 or right-click → Inspect → Console)</li>
+            <li>Navigate to the design tool: <a href="http://localhost:3000/design-tool" target="_blank">http://localhost:3000/design-tool</a></li>
+            <li>Select a product from the <span class="important">Apparel category</span> (T-shirts)</li>
+            <li>Add any design element (text, shape, or image)</li>
+            <li>Watch the console for these messages:
+                <ul>
+                    <li><span class="code">🎨 Object added event</span> - When you add something</li>
+                    <li><span class="code">📏 Object scaling event</span> - When you resize</li>
+                    <li><span class="code">🚶 Object moving event</span> - When you move</li>
+                    <li><span class="code">📐 Design area calculation</span> - Shows percentage</li>
+                    <li><span class="code">💰 Price calculation</span> - Shows price data</li>
+                </ul>
+            </li>
+            <li>Resize the design element and observe:
+                <ul>
+                    <li>The percentage in console logs</li>
+                    <li>The price update in the right panel</li>
+                    <li>The "Design Area: X% of product" display</li>
+                </ul>
+            </li>
+        </ol>
+
+        <h2>Expected Behavior:</h2>
+        <ul>
+            <li>Small design (10% coverage) = 1% price increase</li>
+            <li>Medium design (50% coverage) = 5% price increase</li>
+            <li>Large design (100% coverage) = 10% price increase</li>
+        </ul>
+
+        <h2>Debugging Info:</h2>
+        <p>If the price doesn't update, check the console for:</p>
+        <ul>
+            <li><span class="code">designAreaPercentage</span> value (should change as you resize)</li>
+            <li><span class="code">hasDesignElements</span> (should be true)</li>
+            <li><span class="code">maxUpchargePercent</span> (should be 10 for Apparel)</li>
+        </ul>
+
+        <button onclick="testInConsole()">Test Redux State</button>
+    </div>
+
+    <script>
+        function testInConsole() {
+            const script = `
+// Run this in the console on the design tool page:
+if (window.__REDUX_STORE__) {
+    const state = window.__REDUX_STORE__.getState();
+    console.log('Redux Design State:', {
+        hasDesignElements: state.design.hasDesignElements,
+        designAreaPercentage: state.design.designAreaPercentage,
+        selectedProduct: state.design.selectedProduct?.name,
+        categoryId: state.design.selectedProduct?.categoryId
+    });
+} else {
+    console.log('Redux store not found. Make sure you are on the design tool page.');
+}`;
+            console.log('Copy and run this in the console:\n' + script);
+            alert('Check the console for the test script to copy!');
+        }
+    </script>
+</body>
+</html>

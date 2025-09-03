@@ -42,6 +42,7 @@ export function Navbar() {
   const pathname = usePathname()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [couponModalOpen, setCouponModalOpen] = useState(false)
+  const [searchOpen, setSearchOpen] = useState(false)
   const [mounted, setMounted] = useState(false)
   const { data: session, status } = useSession() // Get session data
   const { language } = useAppSelector((state) => state.app)
@@ -194,9 +195,19 @@ export function Navbar() {
       )}
       
       {/* Main Navbar */}
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex h-16 items-center justify-between">
-          {/* Left Side - Search Field */}
+      <div className="container mx-auto px-3 sm:px-6 lg:px-8">
+        <div className="flex h-14 sm:h-16 items-center justify-between gap-2">
+          {/* Mobile Search Button */}
+          <Button 
+            variant="ghost" 
+            size="icon"
+            className="md:hidden flex-shrink-0"
+            onClick={() => setSearchOpen(true)}
+          >
+            <Search className="h-5 w-5" />
+          </Button>
+
+          {/* Desktop Search Field */}
           <div className="flex-1 max-w-md hidden md:block">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -211,7 +222,13 @@ export function Navbar() {
           {/* Center - Logo */}
           <div className="flex-1 flex justify-center">
             <Link href="/" className="flex items-center gap-2 cursor-pointer">
-              <Image src={Logo} alt="MR MERCH" width={150} height={50} className="object-contain" />
+              <Image 
+                src={Logo} 
+                alt="MR MERCH" 
+                width={150} 
+                height={50} 
+                className="object-contain w-[100px] sm:w-[120px] md:w-[150px] h-auto" 
+              />
             </Link>
           </div>
 
@@ -298,7 +315,7 @@ export function Navbar() {
                     <Menu className="h-5 w-5" />
                   </Button>
                 </SheetTrigger>
-            <SheetContent side="right" className="w-[300px] sm:w-[400px]">
+            <SheetContent side="right" className="w-full sm:w-[400px] max-w-[100vw]">
               <SheetHeader>
                 <SheetTitle className="text-left">{t.platformName}</SheetTitle>
               </SheetHeader>
@@ -463,6 +480,24 @@ export function Navbar() {
           </nav>
         </div>
       </div>
+
+      {/* Mobile Search Modal */}
+      <Dialog open={searchOpen} onOpenChange={setSearchOpen}>
+        <DialogContent className="top-[10%] translate-y-0 max-w-[calc(100vw-2rem)] sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Search Products</DialogTitle>
+          </DialogHeader>
+          <div className="relative mt-4">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <input
+              type="text"
+              placeholder="What are you looking for?"
+              className="w-full pl-10 pr-4 py-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              autoFocus
+            />
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Coupon modal */}
       <Dialog open={couponModalOpen} onOpenChange={setCouponModalOpen}>

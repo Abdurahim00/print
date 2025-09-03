@@ -33,6 +33,9 @@ export function ShareModal({ isOpen, onClose }: ShareModalProps) {
   
   // Generate the current design page URL
   const generateShareUrl = () => {
+    if (typeof window === 'undefined') {
+      return ''
+    }
     const baseUrl = window.location.origin
     const currentPath = window.location.pathname
     const designId = searchParams.get('designId')

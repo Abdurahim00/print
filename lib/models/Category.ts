@@ -12,6 +12,8 @@ export interface CategoryDocument {
   isDesignable?: boolean
   designableAreas?: string[] // ['front', 'back', 'sleeve', 'chest', 'wrap']
   designTechniques?: string[] // ['print', 'embroidery', 'sublimation', 'engraving']
+  // Design pricing
+  designUpchargePercent?: number // Percentage to add when design is added (e.g., 15 for 15%)
 }
 
 export interface SubcategoryDocument {

@@ -12,6 +12,57 @@ interface FetchProductsParams {
   maxPrice?: number
 }
 
+// Cache for products to avoid redundant fetches
+const productCache = new Map<string, { data: any; timestamp: number }>()
+const CACHE_DURATION = 60000 // 1 minute cache
+
+// Fetch category counts for filters
+export const fetchCategoryCounts = createAsyncThunk(
+  "products/fetchCategoryCounts",
+  async (params: { search?: string; minPrice?: number; maxPrice?: number } = {}) => {
+    try {
+      const queryParams = new URLSearchParams()
+      if (params.search) queryParams.append('search', params.search)
+      if (params.minPrice !== undefined) queryParams.append('minPrice', params.minPrice.toString())
+      if (params.maxPrice !== undefined) queryParams.append('maxPrice', params.maxPrice.toString())
+      
+      const response = await fetch(`/api/products/counts?${queryParams}`)
+      if (!response.ok) {
+        throw new Error("Failed to fetch category counts")
+      }
+      const data = await response.json()
+      return data
+    } catch (error) {
+      console.error("Error fetching category counts:", error)
+      throw error
+    }
+  }
+)
+
+// Fetch only designable products for design tool
+export const fetchDesignableProducts = createAsyncThunk(
+  "products/fetchDesignableProducts",
+  async () => {
+    try {
+      const queryParams = new URLSearchParams()
+      queryParams.append('designableOnly', 'true')
+      queryParams.append('limit', '50')
+      
+      const response = await fetch(`/api/products?${queryParams}`)
+      if (!response.ok) {
+        throw new Error("Failed to fetch designable products")
+      }
+      const data = await response.json()
+      
+      console.log("Designable products fetched:", data)
+      return data
+    } catch (error) {
+      console.error("Error fetching designable products:", error)
+      throw error
+    }
+  }
+)
+
 // Async thunks for database operations
 export const fetchProducts = createAsyncThunk(
   "products/fetchProducts",
@@ -31,11 +82,33 @@ export const fetchProducts = createAsyncThunk(
       if (params.minPrice !== undefined) queryParams.append('minPrice', params.minPrice.toString())
       if (params.maxPrice !== undefined) queryParams.append('maxPrice', params.maxPrice.toString())
       
+      // Add optimized fields for list view (reduce payload size)
+      queryParams.append('fields', 'name,price,basePrice,image,categoryId,subcategoryIds,description,inStock,featured,brand,colors')
+      
+      const cacheKey = queryParams.toString()
+      const cached = productCache.get(cacheKey)
+      
+      // Return cached data if it's fresh
+      if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
+        console.log("Returning cached products")
+        return cached.data
+      }
+      
       const response = await fetch(`/api/products?${queryParams}`)
       if (!response.ok) {
         throw new Error("Failed to fetch products")
       }
       const data = await response.json()
+      
+      // Cache the response
+      productCache.set(cacheKey, { data, timestamp: Date.now() })
+      
+      // Clean up old cache entries
+      if (productCache.size > 20) {
+        const oldestKey = productCache.keys().next().value
+        productCache.delete(oldestKey)
+      }
+      
       console.log("Products fetched:", data)
       return data
     } catch (error) {
@@ -107,7 +180,15 @@ const initialState = {
     sortBy: 'featured',
     minPrice: undefined as number | undefined,
     maxPrice: undefined as number | undefined
-  }
+  },
+  categoryCounts: [] as {
+    categoryId: string
+    count: number
+    subcategories?: {
+      subcategoryId: string
+      count: number
+    }[]
+  }[]
 }
 
 const productsSlice = createSlice({
@@ -142,6 +223,36 @@ const productsSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
+      // Fetch category counts
+      .addCase(fetchCategoryCounts.fulfilled, (state, action) => {
+        state.categoryCounts = action.payload
+      })
+      .addCase(fetchCategoryCounts.rejected, (state, action) => {
+        console.error("Failed to fetch category counts:", action.error.message)
+        // Don't set error state as this is a non-critical feature
+      })
+      // Fetch designable products
+      .addCase(fetchDesignableProducts.pending, (state) => {
+        state.loading = true
+        state.error = null
+      })
+      .addCase(fetchDesignableProducts.fulfilled, (state, action) => {
+        state.loading = false
+        // Handle both paginated and non-paginated responses
+        if (action.payload.products && action.payload.pagination) {
+          state.items = action.payload.products
+          state.pagination = action.payload.pagination
+        } else {
+          // Fallback for non-paginated response
+          state.items = action.payload
+          state.pagination.total = action.payload.length
+          state.pagination.totalPages = 1
+        }
+      })
+      .addCase(fetchDesignableProducts.rejected, (state, action) => {
+        state.loading = false
+        state.error = action.error.message || "Failed to fetch designable products"
+      })
       // Fetch products
       .addCase(fetchProducts.pending, (state) => {
         state.loading = true

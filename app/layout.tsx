@@ -15,7 +15,12 @@ const inter = Inter({ subsets: ["latin"] })
 export const metadata: Metadata = {
   title: "PrintWrap Pro - Professional Printing & Car Wrapping",
   description: "High-quality custom prints and professional car wrapping services in Sweden",
-    generator: 'v0.dev'
+  generator: 'v0.dev',
+  other: {
+    // Preload critical images
+    'link rel="preload" as="image" type="image/webp"': '/logo.webp',
+    'link rel="preload" as="image" type="image/webp"': '/hero-bg.webp',
+  }
 }
 
 export default async function RootLayout({

@@ -103,19 +103,19 @@ function PaymentForm({
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       <div className="space-y-4">
-        <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800 rounded-lg">
+        <div className="flex items-center justify-between p-4 bg-black text-white rounded-none border-2 border-black">
           <div className="flex items-center space-x-3">
-            <CreditCard className="h-5 w-5 text-slate-600 dark:text-slate-400" />
+            <CreditCard className="h-5 w-5 text-white" />
             <div>
-              <p className="font-medium text-slate-900 dark:text-white">
-                Secure Payment
+              <p className="font-black uppercase tracking-wider">
+                SECURE PAYMENT
               </p>
-              <p className="text-sm text-slate-600 dark:text-slate-400">
-                Your payment is protected by Stripe
+              <p className="text-sm opacity-80">
+                256-bit SSL encryption by Stripe
               </p>
             </div>
           </div>
-          <ShieldCheck className="h-5 w-5 text-green-600" />
+          <ShieldCheck className="h-5 w-5 text-green-500" />
         </div>
 
         <PaymentElement
@@ -132,19 +132,19 @@ function PaymentForm({
       </div>
 
       {message && (
-        <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-          <p className="text-sm text-red-700 dark:text-red-400">{message}</p>
+        <div className="p-4 bg-red-500 text-white border-2 border-red-600 rounded-none">
+          <p className="font-bold">{message}</p>
         </div>
       )}
 
       <div className="space-y-4">
-        <Separator />
+        <div className="border-t-2 border-black"></div>
         <div className="flex items-center justify-between">
-          <span className="text-lg font-semibold text-slate-900 dark:text-white">
-            Total Amount:
+          <span className="text-lg font-black uppercase tracking-wider">
+            TOTAL AMOUNT:
           </span>
-          <span className="text-xl font-bold text-slate-900 dark:text-white">
-            {amount.toFixed(2)} {currency.toUpperCase()}
+          <span className="text-xl font-black">
+            {currency.toUpperCase()} {amount.toFixed(2)}
           </span>
         </div>
       </div>
@@ -152,27 +152,26 @@ function PaymentForm({
       <div className="flex space-x-3">
         <Button
           type="button"
-          variant="outline"
           onClick={onClose}
-          className="flex-1"
+          className="flex-1 bg-white text-black border-2 border-black hover:bg-gray-100 font-black uppercase tracking-wider rounded-none"
           disabled={isProcessing}
         >
-          Cancel
+          CANCEL
         </Button>
         <Button
           type="submit"
           disabled={!stripe || isProcessing}
-          className="flex-1 bg-sky-600 hover:bg-sky-700"
+          className="flex-1 bg-black text-white hover:bg-gray-900 font-black uppercase tracking-wider rounded-none border-2 border-black"
         >
           {isProcessing ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Processing...
+              PROCESSING...
             </>
           ) : (
             <>
               <ShieldCheck className="mr-2 h-4 w-4" />
-              Pay {amount.toFixed(2)} {currency.toUpperCase()}
+              PAY {currency.toUpperCase()} {amount.toFixed(2)}
             </>
           )}
         </Button>
@@ -243,11 +242,11 @@ export default function StripePaymentModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
+      <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto border-2 border-black rounded-none">
+        <DialogHeader className="border-b-2 border-black pb-4">
           <div className="flex items-center justify-between">
-            <DialogTitle className="text-xl font-semibold text-slate-900 dark:text-white">
-              Complete Payment
+            <DialogTitle className="text-2xl font-black uppercase tracking-wider">
+              COMPLETE PAYMENT
             </DialogTitle>
           </div>
         </DialogHeader>
@@ -257,9 +256,9 @@ export default function StripePaymentModal({
             {isLoading ? (
               <div className="flex items-center justify-center py-12">
                 <div className="flex items-center space-x-3">
-                  <Loader2 className="h-6 w-6 animate-spin text-sky-600" />
-                  <span className="text-slate-600 dark:text-slate-400">
-                    Setting up payment...
+                  <Loader2 className="h-6 w-6 animate-spin text-black" />
+                  <span className="font-bold uppercase">
+                    SETTING UP SECURE PAYMENT...
                   </span>
                 </div>
               </div>
@@ -269,15 +268,46 @@ export default function StripePaymentModal({
                 options={{
                   clientSecret,
                   appearance: {
-                    theme: "stripe",
+                    theme: "flat",
                     variables: {
-                      colorPrimary: "#0284c7",
+                      colorPrimary: "#000000",
                       colorBackground: "#ffffff",
-                      colorText: "#1e293b",
-                      colorDanger: "#ef4444",
+                      colorText: "#000000",
+                      colorDanger: "#dc2626",
                       fontFamily: "Inter, system-ui, sans-serif",
+                      fontWeightNormal: "500",
+                      fontWeightBold: "900",
                       spacingUnit: "4px",
-                      borderRadius: "8px",
+                      borderRadius: "0px",
+                      colorTextPlaceholder: "#666666",
+                      colorIcon: "#000000",
+                      colorIconHover: "#333333",
+                      colorTextSecondary: "#333333",
+                      colorIconCardError: "#dc2626",
+                    },
+                    rules: {
+                      ".Input": {
+                        border: "2px solid #000000",
+                        boxShadow: "none",
+                      },
+                      ".Input:focus": {
+                        border: "2px solid #000000",
+                        boxShadow: "0 0 0 1px #000000",
+                      },
+                      ".Label": {
+                        fontWeight: "700",
+                        textTransform: "uppercase",
+                        letterSpacing: "0.05em",
+                      },
+                      ".Tab": {
+                        border: "2px solid #000000",
+                        fontWeight: "700",
+                        textTransform: "uppercase",
+                      },
+                      ".Tab--selected": {
+                        backgroundColor: "#000000",
+                        color: "#ffffff",
+                      },
                     },
                   },
                 }}

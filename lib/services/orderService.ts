@@ -1,10 +1,23 @@
 import { getDatabase } from "@/lib/mongodb"
 import type { OrderDocument, Order } from "@/lib/models/Order"
 
+// Simple in-memory cache for active orders
+let activeOrdersCache: { data: Order[] | null; timestamp: number } = {
+  data: null,
+  timestamp: 0
+}
+
+const CACHE_DURATION = 10000 // 10 seconds cache
+
 export class OrderService {
   private static async getCollection() {
-    const db = await getDatabase()
-    return db.collection<OrderDocument>("orders")
+    try {
+      const db = await getDatabase()
+      return db.collection<OrderDocument>("orders")
+    } catch (error) {
+      console.error("Failed to get database connection:", error)
+      throw error
+    }
   }
 
   static async createOrder(orderData: Omit<OrderDocument, "_id" | "createdAt" | "updatedAt">): Promise<Order> {
@@ -17,6 +30,9 @@ export class OrderService {
     }
 
     const result = await collection.insertOne(newOrder)
+    
+    // Invalidate cache when new order is created
+    activeOrdersCache.data = null
 
       return {
         id: newOrder.orderId, // Use the generated orderId as the public ID
@@ -40,11 +56,65 @@ export class OrderService {
       }
   }
 
-  static async getAllOrders(): Promise<Order[]> {
-    const collection = await this.getCollection()
-    const orders = await collection.find({}).sort({ createdAt: -1 }).toArray()
+  static async getAllOrders(limit: number = 100, skip: number = 0): Promise<Order[]> {
+    try {
+      const collection = await this.getCollection()
+      // Only fetch recent orders and limit the number
+      const orders = await collection
+        .find({})
+        .sort({ createdAt: -1 })
+        .limit(limit)
+        .skip(skip)
+        .toArray()
 
-    return orders.map((order) => ({
+      return orders.map((order) => ({
+        id: order.orderId,
+        customer: order.customer,
+        date: order.date,
+        total: order.total,
+        status: order.status,
+        items: order.items,
+        shippingOption: order.shippingOption,
+        paymentMethod: order.paymentMethod,
+        paymentIntentId: order.paymentIntentId,
+        customerName: order.customerName,
+        customerEmail: order.customerEmail,
+        customerPhone: order.customerPhone,
+        customerAddress: order.customerAddress,
+        customerCity: order.customerCity,
+        customerPostalCode: order.customerPostalCode,
+        customerCountry: order.customerCountry,
+        createdAt: order.createdAt,
+        updatedAt: order.updatedAt,
+      }))
+    } catch (error) {
+      console.error("Error fetching orders:", error)
+      // Return empty array on error to prevent dashboard from breaking
+      return []
+    }
+  }
+  
+  static async getActiveOrders(): Promise<Order[]> {
+    // Check cache first
+    const now = Date.now()
+    if (activeOrdersCache.data && (now - activeOrdersCache.timestamp) < CACHE_DURATION) {
+      console.log('Returning cached active orders')
+      return activeOrdersCache.data
+    }
+    
+    const collection = await this.getCollection()
+    // Only fetch non-completed orders for operations dashboard
+    const orders = await collection
+      .find({ 
+        status: { 
+          $in: ["Queued", "Printing", "In Production", "Shipped"] 
+        } 
+      })
+      .sort({ createdAt: -1 })
+      .limit(50) // Limit to 50 active orders
+      .toArray()
+
+    const result = orders.map((order) => ({
       id: order.orderId,
       customer: order.customer,
       date: order.date,
@@ -64,6 +134,14 @@ export class OrderService {
       createdAt: order.createdAt,
       updatedAt: order.updatedAt,
     }))
+    
+    // Update cache
+    activeOrdersCache = {
+      data: result,
+      timestamp: now
+    }
+    
+    return result
   }
 
   static async getOrderById(orderId: string): Promise<Order | null> {
@@ -95,6 +173,11 @@ export class OrderService {
   }
 
   static async updateOrderStatus(orderId: string, status: OrderDocument["status"]): Promise<Order | null> {
+    console.log('OrderService.updateOrderStatus called:', { orderId, status })
+    
+    // Invalidate cache when order status is updated
+    activeOrdersCache.data = null
+    
     const collection = await this.getCollection()
 
     const result = await collection.findOneAndUpdate(
@@ -108,6 +191,7 @@ export class OrderService {
       { returnDocument: "after" },
     )
 
+    console.log('MongoDB update result:', result)
     if (!result) return null
 
     return {

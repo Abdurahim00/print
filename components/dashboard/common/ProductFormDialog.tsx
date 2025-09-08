@@ -738,7 +738,7 @@ export const ProductFormDialog: React.FC<ProductFormDialogProps> = ({
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)} className="flex-1 border-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800">
               {t.cancel}
             </Button>
-            <Button type="submit" className="flex-1 bg-gradient-to-r from-[#634c9f] to-[#7a5ec7] hover:from-[#584289] hover:to-[#6b52b3] text-white shadow-lg" disabled={isSubmitting}>
+            <Button type="submit" className="flex-1 bg-gradient-to-r from-black to-gray-800 hover:from-gray-900 hover:to-black text-white shadow-lg" disabled={isSubmitting}>
               {isSubmitting ? t.creating : isEdit ? t.updateProduct : t.createProduct}
             </Button>
           </div>

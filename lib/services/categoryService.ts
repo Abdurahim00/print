@@ -17,6 +17,8 @@ function toCategory(doc: CategoryDocument): Category {
     designableAreas: doc.designableAreas,
     designTechniques: doc.designTechniques,
     designUpchargePercent: doc.designUpchargePercent || 0,
+    designUpchargePerCm2: doc.designUpchargePerCm2 || 0,
+    useMetricPricing: doc.useMetricPricing || false,
     createdAt: doc.createdAt,
     updatedAt: doc.updatedAt,
   }

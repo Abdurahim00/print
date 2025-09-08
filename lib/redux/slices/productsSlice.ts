@@ -83,7 +83,7 @@ export const fetchProducts = createAsyncThunk(
       if (params.maxPrice !== undefined) queryParams.append('maxPrice', params.maxPrice.toString())
       
       // Add optimized fields for list view (reduce payload size)
-      queryParams.append('fields', 'name,price,basePrice,image,categoryId,subcategoryIds,description,inStock,featured,brand,colors')
+      queryParams.append('fields', 'name,price,basePrice,image,imageUrl,images,categoryId,subcategoryIds,description,inStock,featured,brand,colors,isDesignable')
       
       const cacheKey = queryParams.toString()
       const cached = productCache.get(cacheKey)

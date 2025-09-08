@@ -3,34 +3,29 @@ import { getDatabase } from "@/lib/mongodb"
 
 export async function GET() {
   try {
+    console.log("Testing database connection...")
     const db = await getDatabase()
     
-    // Test connection and get counts
-    const productsCount = await db.collection('products').countDocuments()
-    const categoriesCount = await db.collection('categories').countDocuments()
+    // Try to list collections
+    const collections = await db.listCollections().toArray()
+    console.log("Collections found:", collections.map(c => c.name))
     
-    // Get first product as sample
-    const sampleProduct = await db.collection('products').findOne()
+    // Try to count orders
+    const ordersCollection = db.collection("orders")
+    const count = await ordersCollection.countDocuments({})
     
     return NextResponse.json({
-      status: 'connected',
+      status: "connected",
       database: db.databaseName,
-      counts: {
-        products: productsCount,
-        categories: categoriesCount
-      },
-      sampleProduct: sampleProduct ? {
-        id: sampleProduct._id,
-        name: sampleProduct.name,
-        hasId: !!sampleProduct._id
-      } : null,
-      mongoUri: process.env.MONGODB_URI ? 'Set' : 'Not set'
+      collections: collections.map(c => c.name),
+      ordersCount: count
     })
   } catch (error: any) {
+    console.error("Database test failed:", error)
     return NextResponse.json({
-      status: 'error',
+      status: "error",
       message: error.message,
-      mongoUri: process.env.MONGODB_URI ? 'Set' : 'Not set'
+      code: error.code
     }, { status: 500 })
   }
 }

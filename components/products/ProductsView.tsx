@@ -10,11 +10,19 @@ import { useRouter, useSearchParams } from "next/navigation"
 import { ProductCard } from "@/components/products/product-card"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { Search, Filter, SlidersHorizontal, X, ChevronDown, ChevronRight, ChevronLeft } from "lucide-react"
+import { Search, Filter, SlidersHorizontal, X, ChevronDown, ChevronRight, ChevronLeft, Palette } from "lucide-react"
 import { setFilters, setPage } from "@/lib/redux/slices/productsSlice"
 import { Skeleton } from "@/components/ui/skeleton"
 import Link from "next/link"
 import { motion, AnimatePresence } from "framer-motion"
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb"
 
 export function ProductsView({ categorySlug, subcategorySlug }: { categorySlug?: string; subcategorySlug?: string }) {
   const dispatch = useAppDispatch()
@@ -25,9 +33,21 @@ export function ProductsView({ categorySlug, subcategorySlug }: { categorySlug?:
   const sessionUser = useAppSelector((s: any) => s.auth.user)
   const t = translations[language]
   const [loadTimeout, setLoadTimeout] = useState(false)
+  
+  // Store category counts once when they first arrive
+  useEffect(() => {
+    if (categoryCounts.length > 0 && staticCategoryCounts.length === 0) {
+      console.log('[ProductsView] Storing static category counts:', categoryCounts)
+      setStaticCategoryCounts(categoryCounts)
+    }
+  }, [categoryCounts]) // Only depend on categoryCounts to avoid initialization error
 
   const cats = useAppSelector((s: any) => s.categories.categories)
   const subs = useAppSelector((s: any) => s.categories.subcategories)
+  
+  // Track if counts have been fetched once AND store them locally
+  const [countsFetched, setCountsFetched] = useState(false)
+  const [staticCategoryCounts, setStaticCategoryCounts] = useState<any[]>([])
   
   // Initialize state from URL parameters
   const [searchTerm, setSearchTerm] = useState(searchParams.get('search') || "")
@@ -35,25 +55,48 @@ export function ProductsView({ categorySlug, subcategorySlug }: { categorySlug?:
   const [sortBy, setSortBy] = useState(searchParams.get('sortBy') || "featured")
   const [selectedCategoryFilter, setSelectedCategoryFilter] = useState<string | null>(searchParams.get('filterCategory'))
   const [selectedSubcategoryFilter, setSelectedSubcategoryFilter] = useState<string | null>(searchParams.get('filterSubcategory'))
+  const [showDesignableOnly, setShowDesignableOnly] = useState(searchParams.get('designable') === 'true')
   const [expandedCategories, setExpandedCategories] = useState<string[]>([])
   const [priceRange, setPriceRange] = useState({ 
     min: parseInt(searchParams.get('minPrice') || '0'), 
     max: parseInt(searchParams.get('maxPrice') || '10000') 
   })
-  const [currentPage, setCurrentPage] = useState(parseInt(searchParams.get('page') || '1'))
-
-  // Update URL when filters change
-  const updateURL = (params: Record<string, string | undefined>) => {
-    const url = new URL(window.location.href)
-    Object.entries(params).forEach(([key, value]) => {
-      if (value) {
-        url.searchParams.set(key, value)
-      } else {
-        url.searchParams.delete(key)
-      }
-    })
-    router.push(url.pathname + url.search)
+  const [currentPage, setCurrentPageState] = useState(parseInt(searchParams.get('page') || '1'))
+  
+  // Helper function to update page and URL together
+  const setCurrentPage = (page: number) => {
+    setCurrentPageState(page)
+    updateURL({ page: page.toString() })
+    // Scroll to top when page changes
+    window.scrollTo({ top: 0, behavior: 'smooth' })
   }
+  
+  // Sync page state with URL when searchParams change (e.g., browser back/forward)
+  useEffect(() => {
+    const pageFromUrl = parseInt(searchParams.get('page') || '1')
+    if (pageFromUrl !== currentPage) {
+      setCurrentPageState(pageFromUrl)
+    }
+  }, [searchParams.get('page')])
+
+  // Update URL when filters change (debounced)
+  const updateURL = useMemo(() => {
+    let timeoutId: NodeJS.Timeout
+    return (params: Record<string, string | undefined>) => {
+      clearTimeout(timeoutId)
+      timeoutId = setTimeout(() => {
+        const url = new URL(window.location.href)
+        Object.entries(params).forEach(([key, value]) => {
+          if (value) {
+            url.searchParams.set(key, value)
+          } else {
+            url.searchParams.delete(key)
+          }
+        })
+        router.push(url.pathname + url.search, { scroll: false })
+      }, 100)
+    }
+  }, [router])
   
   // Initial load with parallel fetching
   useEffect(() => {
@@ -62,13 +105,14 @@ export function ProductsView({ categorySlug, subcategorySlug }: { categorySlug?:
         // Load all data in parallel for better performance
         const promises = [
           dispatch(fetchCategories()),
-          dispatch(fetchSubcategories()),
-          dispatch(fetchCategoryCounts({ 
-            search: searchTerm || undefined,
-            minPrice: priceRange.min > 0 ? priceRange.min : undefined,
-            maxPrice: priceRange.max < 10000 ? priceRange.max : undefined
-          }))
+          dispatch(fetchSubcategories())
         ]
+        
+        // Only fetch category counts once
+        if (!countsFetched) {
+          promises.push(dispatch(fetchCategoryCounts({})))
+          setCountsFetched(true)
+        }
         
         // Only fetch products if we don't have categories yet
         // Otherwise wait for categories to load first
@@ -111,54 +155,58 @@ export function ProductsView({ categorySlug, subcategorySlug }: { categorySlug?:
     }, 10000)
     
     return () => clearTimeout(timer)
-  }, [dispatch, categorySlug])
+  }, [dispatch, categorySlug]) // Only re-run if categorySlug changes
+  
   
   // Handle filter changes with optimized debouncing
   useEffect(() => {
     const loadFilteredProducts = async () => {
       setLoadTimeout(false) // Reset timeout when making a new request
       
-      // Update URL parameters
-      updateURL({
-        page: currentPage > 1 ? currentPage.toString() : undefined,
+      // Fetch products only - category counts remain static
+      await dispatch(fetchProducts({
+        page: currentPage,
+        limit: 20,
+        categoryId: selectedCategoryFilter || undefined,
+        subcategoryId: selectedSubcategoryFilter || undefined,
         search: searchTerm || undefined,
-        sortBy: sortBy !== 'featured' ? sortBy : undefined,
-        filterCategory: selectedCategoryFilter || undefined,
-        filterSubcategory: selectedSubcategoryFilter || undefined,
-        minPrice: priceRange.min > 0 ? priceRange.min.toString() : undefined,
-        maxPrice: priceRange.max < 10000 ? priceRange.max.toString() : undefined
-      })
-      
-      // Fetch products and category counts
-      await Promise.all([
-        dispatch(fetchProducts({
-          page: currentPage,
-          limit: 20,
-          categoryId: selectedCategoryFilter || undefined,
-          subcategoryId: selectedSubcategoryFilter || undefined,
-          search: searchTerm || undefined,
-          sortBy: sortBy,
-          minPrice: priceRange.min > 0 ? priceRange.min : undefined,
-          maxPrice: priceRange.max < 10000 ? priceRange.max : undefined
-        })),
-        dispatch(fetchCategoryCounts({
-          search: searchTerm || undefined,
-          minPrice: priceRange.min > 0 ? priceRange.min : undefined,
-          maxPrice: priceRange.max < 10000 ? priceRange.max : undefined
-        }))
-      ])
+        sortBy: sortBy,
+        minPrice: priceRange.min > 0 ? priceRange.min : undefined,
+        maxPrice: priceRange.max < 10000 ? priceRange.max : undefined
+      }))
     }
     
-    // Only debounce search and price range, apply filters immediately
-    const shouldDebounce = searchTerm !== "" || priceRange.min > 0 || priceRange.max < 10000
-    const debounceDelay = shouldDebounce ? 300 : 0 // Reduced from 500ms
+    // Only debounce search, apply other filters immediately
+    const shouldDebounce = searchTerm !== ""
+    const debounceDelay = shouldDebounce ? 200 : 0 // Reduced debounce
     
     const debounceTimer = setTimeout(() => {
       loadFilteredProducts()
     }, debounceDelay)
     
     return () => clearTimeout(debounceTimer)
-  }, [dispatch, currentPage, selectedCategoryFilter, selectedSubcategoryFilter, searchTerm, sortBy, priceRange])
+  }, [dispatch, currentPage, selectedCategoryFilter, selectedSubcategoryFilter, searchTerm, sortBy, priceRange.min, priceRange.max])
+  
+  // Save scroll position before navigating away
+  useEffect(() => {
+    const saveScrollPosition = () => {
+      sessionStorage.setItem(`products-scroll-${window.location.search}`, window.scrollY.toString())
+    }
+    
+    window.addEventListener('beforeunload', saveScrollPosition)
+    
+    // Restore scroll position when returning to the page
+    const savedPosition = sessionStorage.getItem(`products-scroll-${window.location.search}`)
+    if (savedPosition) {
+      setTimeout(() => {
+        window.scrollTo({ top: parseInt(savedPosition), behavior: 'instant' })
+      }, 100)
+    }
+    
+    return () => {
+      window.removeEventListener('beforeunload', saveScrollPosition)
+    }
+  }, [searchParams.toString()])
 
   // Reset timeout when loading completes
   useEffect(() => {
@@ -178,8 +226,31 @@ export function ProductsView({ categorySlug, subcategorySlug }: { categorySlug?:
     return subs.find((s: any) => s.slug === subcategorySlug && s.categoryId === selectedCategory.id)
   }, [subcategorySlug, selectedCategory, subs])
 
-  // Since we're using server-side filtering now, we don't need client-side filtering
-  const filteredAndSortedProducts = products
+  // Filter for designable products if needed
+  const filteredAndSortedProducts = useMemo(() => {
+    if (!showDesignableOnly) return products
+    
+    // Filter products that are designable (check both product and category)
+    return products.filter((product: any) => {
+      // Check if product itself is marked as designable
+      if (product.isDesignable === true) {
+        return true
+      }
+      
+      // Check if category is designable
+      const category = cats.find((c: any) => c.id === product.categoryId)
+      if (category?.isDesignable === true) {
+        return true
+      }
+      
+      // Legacy check for designableAreas
+      if (category?.designableAreas && category.designableAreas.length > 0) {
+        return true
+      }
+      
+      return false
+    })
+  }, [products, showDesignableOnly, cats])
 
 
   const ProductCardSkeleton = () => (
@@ -215,6 +286,60 @@ export function ProductsView({ categorySlug, subcategorySlug }: { categorySlug?:
       </div>
 
       <div className="max-w-7xl mx-auto px-2 sm:px-4 py-4 sm:py-6 lg:py-8">
+        {/* Breadcrumbs */}
+        <Breadcrumb className="mb-4">
+          <BreadcrumbList>
+            <BreadcrumbItem>
+              <BreadcrumbLink asChild>
+                <Link href="/" className="hover:text-black dark:hover:text-white transition-colors">
+                  Home
+                </Link>
+              </BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+              {selectedCategory ? (
+                <>
+                  <BreadcrumbLink asChild>
+                    <Link href="/products" className="hover:text-black dark:hover:text-white transition-colors">
+                      Products
+                    </Link>
+                  </BreadcrumbLink>
+                </>
+              ) : (
+                <BreadcrumbPage className="font-semibold">Products</BreadcrumbPage>
+              )}
+            </BreadcrumbItem>
+            {selectedCategory && (
+              <>
+                <BreadcrumbSeparator />
+                <BreadcrumbItem>
+                  {selectedSubcategory ? (
+                    <BreadcrumbLink asChild>
+                      <Link 
+                        href={`/products/${categorySlug}`} 
+                        className="hover:text-black dark:hover:text-white transition-colors"
+                      >
+                        {selectedCategory.name}
+                      </Link>
+                    </BreadcrumbLink>
+                  ) : (
+                    <BreadcrumbPage className="font-semibold">{selectedCategory.name}</BreadcrumbPage>
+                  )}
+                </BreadcrumbItem>
+              </>
+            )}
+            {selectedSubcategory && (
+              <>
+                <BreadcrumbSeparator />
+                <BreadcrumbItem>
+                  <BreadcrumbPage className="font-semibold">{selectedSubcategory.name}</BreadcrumbPage>
+                </BreadcrumbItem>
+              </>
+            )}
+          </BreadcrumbList>
+        </Breadcrumb>
+
         {/* Search and Controls Bar */}
         <div className="bg-white dark:bg-gray-900 rounded-xl sm:rounded-2xl border-2 border-black dark:border-white p-3 sm:p-4 lg:p-6 mb-4 sm:mb-6 lg:mb-8">
           <div className="flex flex-col gap-3 sm:gap-4">
@@ -244,11 +369,28 @@ export function ProductsView({ categorySlug, subcategorySlug }: { categorySlug?:
                 <Filter className="h-4 sm:h-5 w-4 sm:w-5 mr-1 sm:mr-2" />
                 <span className="hidden sm:inline">Filters</span>
                 <span className="sm:hidden">Filter</span>
-                {(selectedCategoryFilter || selectedSubcategoryFilter) && (
+                {(selectedCategoryFilter || selectedSubcategoryFilter || showDesignableOnly) && (
                   <span className="ml-1 sm:ml-2 px-1.5 sm:px-2 py-0.5 bg-white text-black dark:bg-black dark:text-white rounded-full text-[10px] sm:text-xs">
-                    {(selectedCategoryFilter ? 1 : 0) + (selectedSubcategoryFilter ? 1 : 0)}
+                    {(selectedCategoryFilter ? 1 : 0) + (selectedSubcategoryFilter ? 1 : 0) + (showDesignableOnly ? 1 : 0)}
                   </span>
                 )}
+              </Button>
+              
+              {/* Designable Products Toggle */}
+              <Button
+                onClick={() => {
+                  setShowDesignableOnly(!showDesignableOnly)
+                  updateURL({ designable: !showDesignableOnly ? 'true' : undefined })
+                }}
+                className={`h-10 sm:h-12 px-3 sm:px-4 border-2 font-bold uppercase transition-all text-xs sm:text-sm flex items-center gap-1 sm:gap-2 ${
+                  showDesignableOnly 
+                    ? 'bg-black text-white dark:bg-white dark:text-black border-black dark:border-white' 
+                    : 'bg-transparent border-black text-black dark:border-white dark:text-white hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black'
+                }`}
+                title="Show only customizable products"
+              >
+                <Palette className="h-4 sm:h-5 w-4 sm:w-5" />
+                <span className="hidden lg:inline">Customizable</span>
               </Button>
               
               {/* Sort Dropdown */}
@@ -266,9 +408,22 @@ export function ProductsView({ categorySlug, subcategorySlug }: { categorySlug?:
           </div>
           
           {/* Active Filters */}
-          {(selectedCategory || selectedSubcategory || selectedCategoryFilter || selectedSubcategoryFilter) && (
+          {(selectedCategory || selectedSubcategory || selectedCategoryFilter || selectedSubcategoryFilter || showDesignableOnly) && (
             <div className="flex flex-wrap items-center gap-2 mt-4 pt-4 border-t-2 border-gray-200 dark:border-gray-700">
               <span className="text-sm font-bold uppercase">Active Filters:</span>
+              {showDesignableOnly && (
+                <button
+                  onClick={() => {
+                    setShowDesignableOnly(false)
+                    updateURL({ designable: undefined })
+                  }}
+                  className="inline-flex items-center gap-1 px-3 py-1 bg-black text-white dark:bg-white dark:text-black rounded-full text-sm font-bold"
+                >
+                  <Palette className="h-3 w-3" />
+                  Customizable
+                  <X className="h-3 w-3" />
+                </button>
+              )}
               {selectedCategory && !selectedCategoryFilter && !selectedSubcategoryFilter && (
                 <Link
                   href="/products"
@@ -330,7 +485,9 @@ export function ProductsView({ categorySlug, subcategorySlug }: { categorySlug?:
                       const categorySubcategories = subs.filter((s: any) => s.categoryId === category.id && s.isActive)
                       const isExpanded = expandedCategories.includes(category.id)
                       const isCategorySelected = selectedCategoryFilter === category.id
-                      const categoryCount = categoryCounts.find(cc => cc.categoryId === category.id)
+                      // Use static counts that never change
+                      const countsToUse = staticCategoryCounts.length > 0 ? staticCategoryCounts : categoryCounts
+                      const categoryCount = countsToUse.find(cc => cc.categoryId === category.id)
                       const count = categoryCount?.count || 0
                       
                       return (
@@ -364,9 +521,7 @@ export function ProductsView({ categorySlug, subcategorySlug }: { categorySlug?:
                               )}
                               {category.name}
                             </span>
-                            {count > 0 && (
-                              <span className="text-xs opacity-60">({count})</span>
-                            )}
+                            <span className="text-xs opacity-60">({count})</span>
                           </button>
                           
                           {/* Subcategories */}
@@ -456,10 +611,10 @@ export function ProductsView({ categorySlug, subcategorySlug }: { categorySlug?:
                         const categorySubcategories = subs.filter((s: any) => s.categoryId === category.id && s.isActive)
                         const isExpanded = expandedCategories.includes(category.id)
                         const isCategorySelected = selectedCategoryFilter === category.id
-                        const count = products.filter(p => {
-                          const pCatId = p.categoryId?.toString ? p.categoryId.toString() : p.categoryId
-                          return pCatId === category.id
-                        }).length
+                        // Use static counts that never change (desktop view)
+                        const countsToUse = staticCategoryCounts.length > 0 ? staticCategoryCounts : categoryCounts
+                        const categoryCount = countsToUse.find(cc => cc.categoryId === category.id)
+                        const count = categoryCount?.count || 0
                         
                         return (
                           <div key={category.id}>
@@ -517,10 +672,9 @@ export function ProductsView({ categorySlug, subcategorySlug }: { categorySlug?:
                                   </div>
                                 </button>
                                 {categorySubcategories.map((subcategory: any) => {
-                                  const subCount = products.filter(p => {
-                                    const subIds = p.subcategoryIds || []
-                                    return subIds.includes(subcategory.id)
-                                  }).length
+                                  // Use subcategory counts from Redux if available
+                                  const categoryData = categoryCounts.find(cc => cc.categoryId === category.id)
+                                  const subCount = categoryData?.subcategories?.find((sc: any) => sc.subcategoryId === subcategory.id)?.count || 0
                                   
                                   return (
                                     <button

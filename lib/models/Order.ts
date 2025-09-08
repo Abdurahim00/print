@@ -47,6 +47,10 @@ export interface Order {
     size?: string
     designPreview?: string
     designId?: string
+    selectedSizes?: any
+    designContext?: any
+    designCanvasJSON?: any
+    productId?: string
   }>
   shippingOption: "standard" | "express"
   paymentMethod: "card" | "swish" | "klarna"

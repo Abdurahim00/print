@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from "next/server"
 import { TemplateService } from "@/lib/services/templateService"
+
+// Force dynamic rendering for this route
+export const dynamic = 'force-dynamic'
 import type { CreateTemplateData } from "@/lib/models/Template"
 
 const templateService = new TemplateService()

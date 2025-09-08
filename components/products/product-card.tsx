@@ -8,9 +8,9 @@ import { Card, CardContent, CardFooter } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Palette, ShoppingCart, Eye } from "lucide-react"
 import Link from "next/link"
+import Image from "next/image"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useMemo, memo, useState, useEffect } from "react"
-// import { ProductImage } from "@/components/ui/optimized-image"
 import { composeProductAndDesign } from "@/lib/utils/imageCompose"
 import { formatSEK } from "@/lib/utils"
 import { addToCart } from "@/lib/redux/slices/cartSlice"
@@ -34,6 +34,10 @@ function ProductCardComponent({ product }: ProductCardProps) {
   const [imageError, setImageError] = useState(false)
   const { language } = useAppSelector((state) => state.app)
   const t = translations[language]
+  
+  // Debug logging
+  console.log('[ProductCard] Product:', { id: product.id, _id: (product as any)._id, name: product.name })
+  
   const appliedCategoryDesigns = useAppSelector((s: any) => s.app.appliedCategoryDesigns || {})
   const designs = useAppSelector((s: any) => s.designs.items)
   const activeCoupon = useAppSelector((s: any) => s.coupons.activeCoupon)
@@ -47,7 +51,8 @@ function ProductCardComponent({ product }: ProductCardProps) {
   }, [dispatch, allCategories.length])
 
   const handleDesignThisProduct = () => {
-    router.push(`/design-tool?productId=${product.id}`)
+    const productId = (product as any)._id || product.id
+    router.push(`/design-tool?productId=${productId}`)
   }
 
   const handleAddToCart = () => {
@@ -103,8 +108,11 @@ function ProductCardComponent({ product }: ProductCardProps) {
         hasDesignableAreas: category?.designableAreas && category.designableAreas.length > 0
       })
     }
+    // Check if product itself is designable or category is designable
+    if (product.isDesignable === true) return true
+    if (category?.isDesignable === true) return true
     return category?.designableAreas && category.designableAreas.length > 0
-  }, [allCategories, product.categoryId])
+  }, [allCategories, product.categoryId, product.isDesignable])
 
   // Resolve category-level applied design (set by "Preview on other products" from designs tab)
   const appliedDesignForCategory = useMemo(() => {
@@ -126,20 +134,18 @@ function ProductCardComponent({ product }: ProductCardProps) {
           <div className="absolute inset-0 bg-gray-200 dark:bg-gray-700 animate-pulse" />
         )}
         
-        <img
+        <Image
           src={imageError ? "/placeholder.jpg" : getProductImage(product)}
           alt={product.name}
-          className={`absolute inset-0 w-full h-full object-contain p-2 bg-gray-50 group-hover:scale-105 transition-transform duration-500 ${
+          fill
+          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+          className={`object-contain p-2 bg-gray-50 group-hover:scale-105 transition-transform duration-500 ${
             imageLoaded ? 'opacity-100' : 'opacity-0'
           }`}
           loading="lazy"
+          quality={85}
           onLoad={() => setImageLoaded(true)}
-          onError={(e) => {
-            // Try to fallback to placeholder if image fails
-            const target = e.target as HTMLImageElement
-            if (target.src !== '/placeholder.jpg') {
-              target.src = '/placeholder.jpg'
-            }
+          onError={() => {
             setImageError(true)
             setImageLoaded(true)
           }}
@@ -151,9 +157,11 @@ function ProductCardComponent({ product }: ProductCardProps) {
               const overlaySrc = appliedDesignForCategory?.designData?.canvasData || appliedDesignForCategory?.preview
               const overlayScale = appliedDesignForCategory?.designData?.overlay?.scale ?? 0.6
               return (
-                <img
+                <Image
                   src={overlaySrc || "/placeholder.svg"}
                   alt="Applied design overlay"
+                  width={300}
+                  height={300}
                   className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20 object-contain"
                   style={{
                     width: `${overlayScale * 100}%`,

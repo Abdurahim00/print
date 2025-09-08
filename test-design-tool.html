@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Design Tool Test - Manual Browser Test</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        h1 {
+            color: #333;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 10px;
+        }
+        .test-section {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-step {
+            margin: 15px 0;
+            padding: 15px;
+            border-left: 4px solid #007bff;
+            background: #f8f9fa;
+        }
+        .result-box {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .warning {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeeba;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .image-test {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            margin: 20px 0;
+        }
+        .image-container {
+            border: 2px solid #ddd;
+            padding: 10px;
+            border-radius: 8px;
+            background: white;
+            max-width: 300px;
+        }
+        .image-container img {
+            max-width: 100%;
+            height: 200px;
+            object-fit: contain;
+        }
+        pre {
+            background: #f4f4f4;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+        #console-log {
+            max-height: 300px;
+            overflow-y: auto;
+            background: #000;
+            color: #0f0;
+            padding: 10px;
+            font-family: monospace;
+            font-size: 12px;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 Design Tool Manual Test</h1>
+    
+    <div class="test-section">
+        <h2>📋 Test Instructions</h2>
+        <div class="test-step">
+            <strong>Step 1:</strong> Open this file in your browser
+        </div>
+        <div class="test-step">
+            <strong>Step 2:</strong> Click "Test API" to verify products are returned with images
+        </div>
+        <div class="test-step">
+            <strong>Step 3:</strong> Click "Test Image Loading" to verify images can be loaded
+        </div>
+        <div class="test-step">
+            <strong>Step 4:</strong> Open the Design Tool in a new tab: <a href="http://localhost:3000/design-tool" target="_blank">http://localhost:3000/design-tool</a>
+        </div>
+        <div class="test-step">
+            <strong>Step 5:</strong> In the Design Tool, click "Browse Products" and select a product
+        </div>
+        <div class="test-step">
+            <strong>Step 6:</strong> Check if the product image appears in the canvas area
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>🔬 Automated Tests</h2>
+        
+        <button onclick="testAPI()">Test API</button>
+        <button onclick="testImageLoading()">Test Image Loading</button>
+        <button onclick="clearResults()">Clear Results</button>
+        
+        <div id="test-results"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>🖼️ Image Loading Test</h2>
+        <div id="image-test" class="image-test"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>📊 Console Log</h2>
+        <div id="console-log"></div>
+    </div>
+
+    <script>
+        const resultsDiv = document.getElementById('test-results');
+        const imageTestDiv = document.getElementById('image-test');
+        const consoleDiv = document.getElementById('console-log');
+        
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const entry = document.createElement('div');
+            entry.textContent = `[${timestamp}] ${message}`;
+            if (type === 'error') entry.style.color = '#f00';
+            if (type === 'success') entry.style.color = '#0f0';
+            if (type === 'warning') entry.style.color = '#ff0';
+            consoleDiv.appendChild(entry);
+            consoleDiv.scrollTop = consoleDiv.scrollHeight;
+        }
+        
+        function addResult(message, type = 'success') {
+            const div = document.createElement('div');
+            div.className = `result-box ${type}`;
+            div.innerHTML = message;
+            resultsDiv.appendChild(div);
+        }
+        
+        function clearResults() {
+            resultsDiv.innerHTML = '';
+            imageTestDiv.innerHTML = '';
+            consoleDiv.innerHTML = '';
+            log('Console cleared', 'info');
+        }
+        
+        async function testAPI() {
+            log('Starting API test...', 'info');
+            resultsDiv.innerHTML = '<div class="result-box warning">Testing API...</div>';
+            
+            try {
+                const response = await fetch('http://localhost:3000/api/products?designableOnly=true&limit=3');
+                const data = await response.json();
+                
+                log(`API returned ${data.products?.length || 0} products`, 'success');
+                
+                if (data.products && data.products.length > 0) {
+                    addResult(`✅ API Test Passed: Found ${data.products.length} designable products`, 'success');
+                    
+                    // Display product details
+                    data.products.forEach((product, index) => {
+                        const hasImages = (product.images && product.images.length > 0) ||
+                                        (product.variants && product.variants.length > 0);
+                        
+                        let imageUrl = null;
+                        if (product.images && product.images[0]) {
+                            imageUrl = product.images[0];
+                        } else if (product.variants && product.variants[0]?.variant_image) {
+                            imageUrl = product.variants[0].variant_image;
+                        }
+                        
+                        const productInfo = `
+                            <strong>Product ${index + 1}: ${product.name}</strong><br>
+                            ID: ${product._id || product.id}<br>
+                            Price: $${product.price}<br>
+                            Images: ${product.images?.length || 0}, Variants: ${product.variants?.length || 0}<br>
+                            Has Image URL: ${imageUrl ? 'Yes ✅' : 'No ❌'}<br>
+                            ${imageUrl ? `URL: <code>${imageUrl.substring(0, 60)}...</code>` : ''}
+                        `;
+                        
+                        addResult(productInfo, hasImages ? 'success' : 'warning');
+                        log(`Product ${index + 1}: ${product.name} - Images: ${hasImages ? 'Yes' : 'No'}`, hasImages ? 'success' : 'warning');
+                    });
+                    
+                    // Store products for image test
+                    window.testProducts = data.products;
+                    addResult('<strong>Products stored. Click "Test Image Loading" to test image display.</strong>', 'success');
+                } else {
+                    addResult('❌ No products returned from API', 'error');
+                    log('No products returned from API', 'error');
+                }
+            } catch (error) {
+                addResult(`❌ API Test Failed: ${error.message}`, 'error');
+                log(`API test failed: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testImageLoading() {
+            if (!window.testProducts || window.testProducts.length === 0) {
+                addResult('⚠️ Please run "Test API" first to load products', 'warning');
+                log('No products loaded. Run API test first.', 'warning');
+                return;
+            }
+            
+            log('Starting image loading test...', 'info');
+            imageTestDiv.innerHTML = '<div class="result-box warning">Loading images...</div>';
+            
+            const imageResults = [];
+            
+            for (const product of window.testProducts) {
+                let imageUrl = null;
+                
+                // Try to get image URL from various sources
+                if (product.images && product.images[0]) {
+                    imageUrl = product.images[0];
+                } else if (product.variants && product.variants[0]) {
+                    if (product.variants[0].variant_image) {
+                        imageUrl = product.variants[0].variant_image;
+                    } else if (product.variants[0].images && product.variants[0].images[0]) {
+                        imageUrl = product.variants[0].images[0];
+                    }
+                } else if (product.image) {
+                    imageUrl = product.image;
+                } else if (product.frontImage) {
+                    imageUrl = product.frontImage;
+                }
+                
+                if (imageUrl) {
+                    const container = document.createElement('div');
+                    container.className = 'image-container';
+                    
+                    const img = new Image();
+                    const loadPromise = new Promise((resolve) => {
+                        img.onload = () => {
+                            log(`✅ Image loaded: ${product.name}`, 'success');
+                            container.innerHTML = `
+                                <h4>✅ ${product.name}</h4>
+                                <img src="${imageUrl}" alt="${product.name}">
+                                <p style="color: green; font-size: 12px;">Image loaded successfully<br>
+                                Size: ${img.naturalWidth}x${img.naturalHeight}px</p>
+                            `;
+                            imageResults.push({ product: product.name, status: 'loaded', width: img.naturalWidth, height: img.naturalHeight });
+                            resolve(true);
+                        };
+                        
+                        img.onerror = () => {
+                            log(`❌ Image failed: ${product.name} - ${imageUrl}`, 'error');
+                            container.innerHTML = `
+                                <h4>❌ ${product.name}</h4>
+                                <div style="height: 200px; background: #f0f0f0; display: flex; align-items: center; justify-content: center;">
+                                    <span style="color: red;">Failed to load image</span>
+                                </div>
+                                <p style="color: red; font-size: 12px;">URL: ${imageUrl.substring(0, 50)}...</p>
+                            `;
+                            imageResults.push({ product: product.name, status: 'failed', url: imageUrl });
+                            resolve(false);
+                        };
+                        
+                        img.src = imageUrl;
+                    });
+                    
+                    imageTestDiv.appendChild(container);
+                    await loadPromise;
+                } else {
+                    const container = document.createElement('div');
+                    container.className = 'image-container';
+                    container.innerHTML = `
+                        <h4>⚠️ ${product.name}</h4>
+                        <div style="height: 200px; background: #f0f0f0; display: flex; align-items: center; justify-content: center;">
+                            <span style="color: orange;">No image URL found</span>
+                        </div>
+                    `;
+                    imageTestDiv.appendChild(container);
+                    imageResults.push({ product: product.name, status: 'no-url' });
+                    log(`⚠️ No image URL for: ${product.name}`, 'warning');
+                }
+            }
+            
+            // Summary
+            const loaded = imageResults.filter(r => r.status === 'loaded').length;
+            const failed = imageResults.filter(r => r.status === 'failed').length;
+            const noUrl = imageResults.filter(r => r.status === 'no-url').length;
+            
+            const summary = `
+                <h3>Image Test Summary</h3>
+                ✅ Loaded: ${loaded}<br>
+                ❌ Failed: ${failed}<br>
+                ⚠️ No URL: ${noUrl}<br>
+                <br>
+                ${failed > 0 ? '<strong style="color: red;">Some images failed to load. This might be a CORS issue or invalid URLs.</strong>' : ''}
+                ${loaded === window.testProducts.length ? '<strong style="color: green;">All product images loaded successfully!</strong>' : ''}
+            `;
+            
+            addResult(summary, loaded === window.testProducts.length ? 'success' : (failed > 0 ? 'error' : 'warning'));
+            log(`Test complete: ${loaded}/${window.testProducts.length} images loaded`, loaded === window.testProducts.length ? 'success' : 'warning');
+        }
+        
+        // Auto-run API test on load
+        window.addEventListener('load', () => {
+            log('Page loaded. Ready for testing.', 'info');
+            log('Click "Test API" to begin automated tests.', 'info');
+        });
+    </script>
+</body>
+</html>

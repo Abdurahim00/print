@@ -92,10 +92,10 @@ export function CategoryCircles() {
               href="/products"
               className="shrink-0 flex flex-col items-center gap-2 group cursor-pointer"
             >
-              <div className="w-16 h-16 rounded-full bg-purple-100 dark:bg-purple-900 flex items-center justify-center text-2xl group-hover:bg-purple-200 dark:group-hover:bg-purple-800 transition-colors shadow-sm group-hover:shadow-md">
+              <div className="w-16 h-16 rounded-full bg-gray-100 dark:bg-gray-900 flex items-center justify-center text-2xl group-hover:bg-gray-200 dark:group-hover:bg-gray-800 transition-colors shadow-sm group-hover:shadow-md">
                 🛍️
               </div>
-              <span className="text-xs font-medium text-gray-700 dark:text-gray-300 group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">
+              <span className="text-xs font-medium text-gray-700 dark:text-gray-300 group-hover:text-black dark:group-hover:text-gray-400 transition-colors">
                 {language === 'en' ? 'All' : 'Alla'}
               </span>
             </Link>
@@ -107,10 +107,10 @@ export function CategoryCircles() {
                 href={`/products?category=${category.slug}`}
                 className="shrink-0 flex flex-col items-center gap-2 group cursor-pointer"
               >
-                <div className="w-16 h-16 rounded-full bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 flex items-center justify-center text-2xl group-hover:border-purple-500 dark:group-hover:border-purple-400 transition-all shadow-sm group-hover:shadow-md group-hover:scale-105">
+                <div className="w-16 h-16 rounded-full bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 flex items-center justify-center text-2xl group-hover:border-black dark:group-hover:border-gray-400 transition-all shadow-sm group-hover:shadow-md group-hover:scale-105">
                   {getCategoryIcon(category.name)}
                 </div>
-                <span className="text-xs font-medium text-gray-700 dark:text-gray-300 group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors text-center max-w-[70px]">
+                <span className="text-xs font-medium text-gray-700 dark:text-gray-300 group-hover:text-black dark:group-hover:text-gray-400 transition-colors text-center max-w-[70px]">
                   {category.name}
                 </span>
               </Link>

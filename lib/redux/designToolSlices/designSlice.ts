@@ -36,6 +36,9 @@ interface DesignState {
   // Design pricing
   hasDesignElements: boolean;
   designAreaPercentage: number; // Percentage of canvas area covered by design (0-100)
+  designAreaCm2: number; // Area covered by design in square centimeters
+  // Search
+  productSearchQuery: string;
 }
 
 const initialState: DesignState = {
@@ -56,6 +59,8 @@ const initialState: DesignState = {
   autoSaveEnabled: true,
   hasDesignElements: false,
   designAreaPercentage: 0,
+  designAreaCm2: 0,
+  productSearchQuery: "",
 }
 
 const designSlice = createSlice({
@@ -72,18 +77,36 @@ const designSlice = createSlice({
       state.selectedProduct = action.payload
       // Only set product color if a product is selected
       if (action.payload) {
-        // Set the initial color from the product's baseColor
-        state.productColor = action.payload.baseColor || ""
+        // For products with variations, set the color to the first variation's color
+        // Otherwise use baseColor
+        if (action.payload.hasVariations && action.payload.variations?.length > 0) {
+          // Try to keep current color if it exists in the new product's variations
+          const currentColorExists = action.payload.variations.some((v: any) => 
+            v.color?.hex_code === state.productColor
+          )
+          
+          if (currentColorExists) {
+            // Keep the current color if it exists in the new product
+            // This prevents unwanted variant switching
+          } else {
+            // Set to first variation's color
+            state.productColor = action.payload.variations[0].color?.hex_code || ""
+          }
+        } else {
+          // For products without variations, use baseColor
+          state.productColor = action.payload.baseColor || ""
+        }
         
         // Log the product data for debugging
         if (process.env.NODE_ENV === 'development') {
           console.log('🔄 [DesignSlice] setSelectedProduct:', {
             product: action.payload,
-            baseColor: action.payload.baseColor,
+            selectedColor: state.productColor,
             hasVariations: action.payload.hasVariations,
             variationsCount: action.payload.variations?.length,
             variations: action.payload.variations?.map((v: any) => ({
               color: v.color?.hex_code,
+              name: v.color?.name,
               imagesCount: v.images?.length
             }))
           })
@@ -132,6 +155,12 @@ const designSlice = createSlice({
     },
     setDesignAreaPercentage: (state, action) => {
       state.designAreaPercentage = action.payload
+    },
+    setDesignAreaCm2: (state, action) => {
+      state.designAreaCm2 = action.payload
+    },
+    setProductSearchQuery: (state, action) => {
+      state.productSearchQuery = action.payload
     },
     // New reducers for variation design persistence
     saveVariationDesign: (state, action) => {
@@ -242,6 +271,24 @@ const designSlice = createSlice({
       state.variationDesigns = []
       state.currentDesignId = null
       console.log('🗑️ [DesignSlice] Cleared all designs')
+    },
+    // New action to set product with specific variant (without changing color)
+    setProductWithVariant: (state, action) => {
+      const { product, variantId } = action.payload
+      state.selectedProduct = product
+      
+      // Only set the color if a specific variant is provided
+      if (variantId && product.variations) {
+        const variant = product.variations.find((v: any) => v.id === variantId)
+        if (variant && variant.color?.hex_code) {
+          state.productColor = variant.color.hex_code
+          console.log('🎨 [DesignSlice] Set product with specific variant:', {
+            product: product.name,
+            variantId,
+            color: variant.color.name
+          })
+        }
+      }
     }
   },
 })
@@ -260,6 +307,8 @@ export const {
   setLoadingProduct,
   setHasDesignElements,
   setDesignAreaPercentage,
+  setDesignAreaCm2,
+  setProductSearchQuery,
   // New actions
   saveVariationDesign,
   loadVariationDesign,
@@ -267,6 +316,7 @@ export const {
   clearVariationDesign,
   setAutoSaveEnabled,
   clearAllDesigns,
+  setProductWithVariant,
 } = designSlice.actions
 
 export default designSlice.reducer

@@ -52,6 +52,8 @@ export const CategoryFormDialog: React.FC<Props> = ({ open, onOpenChange, initia
       designableAreas: initialValues.designableAreas || [],
       designTechniques: initialValues.designTechniques || [],
       designUpchargePercent: initialValues.designUpchargePercent || 0,
+      designUpchargePerCm2: initialValues.designUpchargePerCm2 || 0,
+      useMetricPricing: initialValues.useMetricPricing || false,
     },
     enableReinitialize: true,
     validationSchema: schema,
@@ -212,24 +214,71 @@ export const CategoryFormDialog: React.FC<Props> = ({ open, onOpenChange, initia
                 </div>
                 
                 {/* Design Upcharge Pricing */}
-                <div className="space-y-2">
-                  <Label>Design Upcharge %</Label>
-                  <div className="flex items-center gap-2">
-                    <Input
-                      type="number"
-                      name="designUpchargePercent"
-                      value={formik.values.designUpchargePercent}
-                      onChange={formik.handleChange}
-                      min="0"
-                      max="100"
-                      step="1"
-                      className="w-24"
-                    />
-                    <span className="text-sm text-gray-600">%</span>
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label>Pricing Method</Label>
+                    <div className="flex items-center gap-4">
+                      <label className="flex items-center gap-2">
+                        <input
+                          type="radio"
+                          name="useMetricPricing"
+                          checked={!formik.values.useMetricPricing}
+                          onChange={() => formik.setFieldValue('useMetricPricing', false)}
+                        />
+                        <span className="text-sm">Percentage Based</span>
+                      </label>
+                      <label className="flex items-center gap-2">
+                        <input
+                          type="radio"
+                          name="useMetricPricing"
+                          checked={formik.values.useMetricPricing}
+                          onChange={() => formik.setFieldValue('useMetricPricing', true)}
+                        />
+                        <span className="text-sm">Per Square Centimeter</span>
+                      </label>
+                    </div>
                   </div>
-                  <p className="text-xs text-gray-500">
-                    Price increase when a design is added (e.g., 15 = 15% increase)
-                  </p>
+
+                  {!formik.values.useMetricPricing ? (
+                    <div className="space-y-2">
+                      <Label>Design Upcharge %</Label>
+                      <div className="flex items-center gap-2">
+                        <Input
+                          type="number"
+                          name="designUpchargePercent"
+                          value={formik.values.designUpchargePercent}
+                          onChange={formik.handleChange}
+                          min="0"
+                          max="100"
+                          step="1"
+                          className="w-24"
+                        />
+                        <span className="text-sm text-gray-600">%</span>
+                      </div>
+                      <p className="text-xs text-gray-500">
+                        Price increase when a design is added (e.g., 15 = 15% increase)
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      <Label>Design Upcharge per cm²</Label>
+                      <div className="flex items-center gap-2">
+                        <Input
+                          type="number"
+                          name="designUpchargePerCm2"
+                          value={formik.values.designUpchargePerCm2}
+                          onChange={formik.handleChange}
+                          min="0"
+                          step="0.1"
+                          className="w-24"
+                        />
+                        <span className="text-sm text-gray-600">kr/cm²</span>
+                      </div>
+                      <p className="text-xs text-gray-500">
+                        Price per square centimeter of design area (e.g., 0.5 = 0.5 kr per cm²)
+                      </p>
+                    </div>
+                  )}
                 </div>
               </>
             )}

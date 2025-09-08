@@ -267,6 +267,15 @@ export function AdminDashboardNew({ onLogout }: AdminDashboardNewProps) {
     }
   }
 
+  const handleToggleProductStock = async (productId: string, inStock: boolean) => {
+    try {
+      await dispatch(updateProduct({ id: productId, inStock }))
+      toast.success(inStock ? "Product marked as in stock" : "Product marked as out of stock")
+    } catch (error) {
+      toast.error("Failed to update product stock status")
+    }
+  }
+
   const handleAddTemplate = async (
     values: CreateTemplateData,
     { setSubmitting, resetForm }: FormikHelpers<any>
@@ -403,9 +412,9 @@ export function AdminDashboardNew({ onLogout }: AdminDashboardNewProps) {
       case "operations":
         return "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200"
       case "user":
-        return "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200"
+        return "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200"
       default:
-        return "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200"
+        return "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200"
     }
   }
 
@@ -416,7 +425,7 @@ export function AdminDashboardNew({ onLogout }: AdminDashboardNewProps) {
           <Card className="shadow-lg border-0 bg-white dark:bg-slate-900 overflow-hidden">
             <CardHeader className="border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 space-y-4">
               <CardTitle className="flex items-center gap-2 text-slate-900 dark:text-slate-100">
-                <Users className="h-5 w-5 text-purple-600" />
+                <Users className="h-5 w-5 text-black" />
                 {t.manageUsers}
               </CardTitle>
               <div className="flex flex-col sm:flex-row gap-4">
@@ -427,11 +436,11 @@ export function AdminDashboardNew({ onLogout }: AdminDashboardNewProps) {
                     placeholder={t.searchUsers}
                     value={userSearchTerm}
                     onChange={(e) => setUserSearchTerm(e.target.value)}
-                    className="pl-10 border-slate-300 focus:border-purple-500 focus:ring-purple-200"
+                    className="pl-10 border-slate-300 focus:border-black focus:ring-gray-200"
                   />
                 </div>
                 <Select value={selectedUserRole} onValueChange={setSelectedUserRole}>
-                  <SelectTrigger className="w-full sm:w-[200px] border-slate-300 focus:border-purple-500 focus:ring-purple-200">
+                  <SelectTrigger className="w-full sm:w-[200px] border-slate-300 focus:border-black focus:ring-gray-200">
                     <SelectValue placeholder={t.filterByRole} />
                   </SelectTrigger>
                   <SelectContent>
@@ -462,11 +471,11 @@ export function AdminDashboardNew({ onLogout }: AdminDashboardNewProps) {
             <CardHeader className="border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 space-y-4">
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <CardTitle className="flex items-center gap-2 text-slate-900 dark:text-slate-100">
-                  <Package className="h-5 w-5 text-purple-600" />
+                  <Package className="h-5 w-5 text-black" />
                   {t.manageProductsPrices}
                 </CardTitle>
                 <Button
-                  className="bg-gradient-to-r from-[#634c9e] to-[#7a5ec7] hover:from-[#584289] hover:to-[#6b52b3] text-white shadow-lg hover:shadow-xl transition-all duration-200"
+                  className="bg-gradient-to-r from-black to-gray-800 hover:from-gray-900 hover:to-black text-white shadow-lg hover:shadow-xl transition-all duration-200"
                   onClick={() => setIsAddProductDialogOpen(true)}
                 >
                   <Plus className="mr-2 h-4 w-4" />
@@ -481,11 +490,11 @@ export function AdminDashboardNew({ onLogout }: AdminDashboardNewProps) {
                     placeholder={t.searchProducts}
                     value={productSearchTerm}
                     onChange={(e) => setProductSearchTerm(e.target.value)}
-                    className="pl-10 border-slate-300 focus:border-purple-500 focus:ring-purple-200"
+                    className="pl-10 border-slate-300 focus:border-black focus:ring-gray-200"
                   />
                 </div>
                 <Select value={selectedProductCategory} onValueChange={setSelectedProductCategory}>
-                  <SelectTrigger className="w-full sm:w-[200px] border-slate-300 focus:border-purple-500 focus:ring-purple-200">
+                  <SelectTrigger className="w-full sm:w-[200px] border-slate-300 focus:border-black focus:ring-gray-200">
                     <SelectValue placeholder={t.filterByCategory} />
                   </SelectTrigger>
                   <SelectContent>
@@ -506,6 +515,7 @@ export function AdminDashboardNew({ onLogout }: AdminDashboardNewProps) {
                 productCategories={productCategories}
                 onEdit={openEditProductDialog}
                 onDelete={handleDeleteProduct}
+                onToggleStock={handleToggleProductStock}
               />
             </CardContent>
           </Card>
@@ -517,11 +527,11 @@ export function AdminDashboardNew({ onLogout }: AdminDashboardNewProps) {
             <CardHeader className="border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 space-y-4">
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <CardTitle className="flex items-center gap-2 text-slate-900 dark:text-slate-100">
-                  <ImageIcon className="h-5 w-5 text-purple-600" />
+                  <ImageIcon className="h-5 w-5 text-black" />
                   Manage Templates
                 </CardTitle>
                 <Button
-                  className="bg-gradient-to-r from-[#634c9e] to-[#7a5ec7] hover:from-[#584289] hover:to-[#6b52b3] text-white shadow-lg hover:shadow-xl transition-all duration-200"
+                  className="bg-gradient-to-r from-black to-gray-800 hover:from-gray-900 hover:to-black text-white shadow-lg hover:shadow-xl transition-all duration-200"
                   onClick={() => setIsAddTemplateDialogOpen(true)}
                 >
                   <Plus className="mr-2 h-4 w-4" />
@@ -536,11 +546,11 @@ export function AdminDashboardNew({ onLogout }: AdminDashboardNewProps) {
                     placeholder="Search templates..."
                     value={templateSearchTerm}
                     onChange={(e) => setTemplateSearchTerm(e.target.value)}
-                    className="pl-10 border-slate-300 focus:border-purple-500 focus:ring-purple-200"
+                    className="pl-10 border-slate-300 focus:border-black focus:ring-gray-200"
                   />
                 </div>
                 <Select value={selectedTemplateCategory} onValueChange={setSelectedTemplateCategory}>
-                  <SelectTrigger className="w-full sm:w-[200px] border-slate-300 focus:border-purple-500 focus:ring-purple-200">
+                  <SelectTrigger className="w-full sm:w-[200px] border-slate-300 focus:border-black focus:ring-gray-200">
                     <SelectValue placeholder="Filter by category" />
                   </SelectTrigger>
                   <SelectContent>
@@ -579,11 +589,11 @@ export function AdminDashboardNew({ onLogout }: AdminDashboardNewProps) {
             <CardHeader className="border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 space-y-4">
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <CardTitle className="flex items-center gap-2 text-slate-900 dark:text-slate-100">
-                  <Ticket className="h-5 w-5 text-purple-600" />
+                  <Ticket className="h-5 w-5 text-black" />
                   Manage Coupons
                 </CardTitle>
                 <Button
-                  className="bg-gradient-to-r from-[#634c9e] to-[#7a5ec7] hover:from-[#584289] hover:to-[#6b52b3] text-white shadow-lg hover:shadow-xl transition-all duration-200"
+                  className="bg-gradient-to-r from-black to-gray-800 hover:from-gray-900 hover:to-black text-white shadow-lg hover:shadow-xl transition-all duration-200"
                   onClick={() => setIsAddCouponDialogOpen(true)}
                 >
                   <Plus className="mr-2 h-4 w-4" />
@@ -598,7 +608,7 @@ export function AdminDashboardNew({ onLogout }: AdminDashboardNewProps) {
                     placeholder="Search coupons..."
                     value={couponSearchTerm}
                     onChange={(e) => setCouponSearchTerm(e.target.value)}
-                    className="pl-10 border-slate-300 focus:border-purple-500 focus:ring-purple-200"
+                    className="pl-10 border-slate-300 focus:border-black focus:ring-gray-200"
                   />
                 </div>
               </div>
@@ -621,10 +631,10 @@ export function AdminDashboardNew({ onLogout }: AdminDashboardNewProps) {
             <CardHeader className="border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 space-y-4">
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <CardTitle className="flex items-center gap-2 text-slate-900 dark:text-slate-100">
-                  <FolderTree className="h-5 w-5 text-purple-600" />
+                  <FolderTree className="h-5 w-5 text-black" />
                   Manage Categories
                 </CardTitle>
-                <Button onClick={() => { setIsAddCategoryOpen(true); setEditingCategory(null) }} className="bg-gradient-to-r from-[#634c9e] to-[#7a5ec7] text-white">
+                <Button onClick={() => { setIsAddCategoryOpen(true); setEditingCategory(null) }} className="bg-gradient-to-r from-black to-gray-800 text-white">
                   <Plus className="h-4 w-4 mr-2" /> Add Category
                 </Button>
               </div>
@@ -652,10 +662,10 @@ export function AdminDashboardNew({ onLogout }: AdminDashboardNewProps) {
             <CardHeader className="border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 space-y-4">
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <CardTitle className="flex items-center gap-2 text-slate-900 dark:text-slate-100">
-                  <FolderTree className="h-5 w-5 text-purple-600" />
+                  <FolderTree className="h-5 w-5 text-black" />
                   Manage Subcategories
                 </CardTitle>
-                <Button onClick={() => { setIsAddSubcategoryOpen(true); setEditingSubcategory(null) }} className="bg-gradient-to-r from-[#634c9e] to-[#7a5ec7] text-white">
+                <Button onClick={() => { setIsAddSubcategoryOpen(true); setEditingSubcategory(null) }} className="bg-gradient-to-r from-black to-gray-800 text-white">
                   <Plus className="h-4 w-4 mr-2" /> Add Subcategory
                 </Button>
               </div>
@@ -685,19 +695,19 @@ export function AdminDashboardNew({ onLogout }: AdminDashboardNewProps) {
           <Card className="shadow-lg border-0 bg-white dark:bg-slate-900">
             <CardHeader className="border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50">
               <CardTitle className="flex items-center gap-2 text-slate-900 dark:text-slate-100">
-                <BarChart3 className="h-5 w-5 text-purple-600" />
+                <BarChart3 className="h-5 w-5 text-black" />
                 Analytics & Reports
               </CardTitle>
             </CardHeader>
             <CardContent className="p-6">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <div className="bg-gradient-to-r from-purple-50 to-purple-100 p-6 rounded-lg">
+                <div className="bg-gradient-to-r from-gray-50 to-gray-100 p-6 rounded-lg">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium text-purple-700">Total Users</p>
-                      <p className="text-3xl font-bold text-purple-900">{users.length}</p>
+                      <p className="text-sm font-medium text-gray-700">Total Users</p>
+                      <p className="text-3xl font-bold text-gray-900">{users.length}</p>
                     </div>
-                    <Users className="h-10 w-10 text-purple-600" />
+                    <Users className="h-10 w-10 text-black" />
                   </div>
                 </div>
                 <div className="bg-gradient-to-r from-green-50 to-green-100 p-6 rounded-lg">
@@ -709,13 +719,13 @@ export function AdminDashboardNew({ onLogout }: AdminDashboardNewProps) {
                     <Package className="h-10 w-10 text-green-600" />
                   </div>
                 </div>
-                <div className="bg-gradient-to-r from-purple-50 to-purple-100 p-6 rounded-lg">
+                <div className="bg-gradient-to-r from-gray-50 to-gray-100 p-6 rounded-lg">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium text-purple-700">Total Templates</p>
-                      <p className="text-3xl font-bold text-purple-900">{templates.length}</p>
+                      <p className="text-sm font-medium text-gray-700">Total Templates</p>
+                      <p className="text-3xl font-bold text-gray-900">{templates.length}</p>
                     </div>
-                    <ImageIcon className="h-10 w-10 text-purple-600" />
+                    <ImageIcon className="h-10 w-10 text-black" />
                   </div>
                 </div>
                 <div className="bg-gradient-to-r from-orange-50 to-orange-100 p-6 rounded-lg">
@@ -745,20 +755,20 @@ export function AdminDashboardNew({ onLogout }: AdminDashboardNewProps) {
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full bg-slate-50 dark:bg-slate-900">
-        <Sidebar className="border-r border-slate-200 dark:border-slate-800 bg-gradient-to-b from-white to-purple-50 dark:from-slate-900 dark:to-slate-950">
-          <SidebarHeader className="border-b border-slate-200 dark:border-slate-800 p-4 bg-gradient-to-r from-purple-50 to-transparent dark:from-purple-950/30">
+        <Sidebar className="border-r border-slate-200 dark:border-slate-800 bg-gradient-to-b from-white to-gray-50 dark:from-slate-900 dark:to-slate-950">
+          <SidebarHeader className="border-b border-slate-200 dark:border-slate-800 p-4 bg-gradient-to-r from-gray-50 to-transparent dark:from-gray-950/30">
             <div className="flex items-center gap-2">
-              <Shield className="h-8 w-8 text-purple-600" />
+              <Shield className="h-8 w-8 text-black" />
               <div className="flex flex-col">
                 <h2 className="text-lg font-extrabold text-slate-900 dark:text-white tracking-tight">Admin Panel</h2>
-                <p className="text-xs text-purple-700 dark:text-purple-300 font-medium">Management Dashboard</p>
+                <p className="text-xs text-gray-700 dark:text-gray-300 font-medium">Management Dashboard</p>
               </div>
             </div>
           </SidebarHeader>
           
           <SidebarContent className="p-2">
             <SidebarGroup>
-              <SidebarGroupLabel className="text-sm sm:text-base font-extrabold text-purple-700 dark:text-purple-300 uppercase tracking-widest mb-3">
+              <SidebarGroupLabel className="text-sm sm:text-base font-extrabold text-gray-700 dark:text-gray-300 uppercase tracking-widest mb-3">
                 Management
               </SidebarGroupLabel>
               <SidebarGroupContent>
@@ -770,8 +780,8 @@ export function AdminDashboardNew({ onLogout }: AdminDashboardNewProps) {
                         onClick={() => setActivePage(item.id)}
                         className={`w-full justify-between rounded-md transition-colors duration-150 ${
                           activePage === item.id
-                            ? "bg-purple-900 text-white"
-                            : "hover:bg-purple-800 hover:text-white"
+                            ? "bg-gray-900 text-white"
+                            : "hover:bg-gray-800 hover:text-white"
                         }`}
                       >
                         <div className="flex items-center gap-3">
@@ -793,8 +803,8 @@ export function AdminDashboardNew({ onLogout }: AdminDashboardNewProps) {
           
           <SidebarFooter className="border-t border-slate-200 dark:border-slate-800 p-4">
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 bg-purple-100 dark:bg-purple-900 rounded-full flex items-center justify-center">
-                <User className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+              <div className="w-8 h-8 bg-gray-100 dark:bg-gray-900 rounded-full flex items-center justify-center">
+                <User className="h-4 w-4 text-black dark:text-gray-400" />
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-slate-900 dark:text-white truncate">Admin User</p>
@@ -825,7 +835,7 @@ export function AdminDashboardNew({ onLogout }: AdminDashboardNewProps) {
                 const ActiveIcon = active.icon
                 return (
                   <>
-                    <ActiveIcon className="h-5 w-5 text-purple-600" />
+                    <ActiveIcon className="h-5 w-5 text-black" />
                     <h1 className="text-xl font-semibold text-slate-900 dark:text-white">{active.label}</h1>
                   </>
                 )

@@ -59,7 +59,7 @@ export function QuantityModal({ open, onOpenChange, product }: QuantityModalProp
             />
             <div>
               <h3 className="font-semibold">{product.name}</h3>
-              <p className="text-sm text-gray-500">{product.price} per item</p>
+              <p className="text-sm text-gray-500">${typeof product.price === 'object' ? '0' : product.price} per item</p>
             </div>
           </div>
           
@@ -96,7 +96,7 @@ export function QuantityModal({ open, onOpenChange, product }: QuantityModalProp
           <div className="mt-4 p-3 bg-gray-50 rounded-lg">
             <div className="flex justify-between">
               <span>Total Price:</span>
-              <span className="font-bold">{(product.price * quantity).toFixed(2)}</span>
+              <span className="font-bold">${((typeof product.price === 'object' ? 0 : product.price) * quantity).toFixed(2)}</span>
             </div>
           </div>
         </div>

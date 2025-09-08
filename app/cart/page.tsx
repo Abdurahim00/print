@@ -1,7 +1,7 @@
 "use client"
 
 import { useAppSelector, useAppDispatch } from "@/lib/redux/hooks"
-import { useMemo } from "react"
+import { useMemo, useState, useEffect } from "react"
 import { updateQuantity, removeFromCart } from "@/lib/redux/slices/cartSlice"
 import { translations } from "@/lib/constants"
 import { Button } from "@/components/ui/button"
@@ -13,6 +13,16 @@ import { ShoppingCart, Plus, Minus, Trash2, Truck } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
+import { DesignCanvasRenderer } from "@/components/DesignCanvasRenderer"
+import { getProductImage } from "@/lib/utils/product-image"
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb"
 
 export default function CartPage() {
   const router = useRouter()
@@ -21,6 +31,11 @@ export default function CartPage() {
   const { language } = useAppSelector((state) => state.app)
   const t = translations[language]
   const activeCoupon = useAppSelector((s: any) => s.coupons.activeCoupon)
+  const [isClient, setIsClient] = useState(false)
+  
+  useEffect(() => {
+    setIsClient(true)
+  }, [])
 
   const rawSubtotal = cart.reduce((total, item) => {
     let itemPrice = 0;
@@ -69,6 +84,17 @@ export default function CartPage() {
     dispatch(removeFromCart(id))
   }
 
+  // Don't render cart content until client-side hydration is complete
+  if (!isClient) {
+    return (
+      <div className="text-center py-8 sm:py-12 flex flex-col items-center justify-center min-h-[calc(100vh-250px)] px-4">
+        <ShoppingCart className="mx-auto h-16 w-16 sm:h-20 sm:w-20 text-slate-400 dark:text-slate-500 mb-4 sm:mb-6 animate-pulse" />
+        <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3 sm:mb-4 text-slate-900 dark:text-white">{t.cart}</h1>
+        <p className="text-base sm:text-lg text-slate-600 dark:text-slate-300 mb-6 sm:mb-8">Loading...</p>
+      </div>
+    )
+  }
+
   if (cart.length === 0) {
     return (
       <div className="text-center py-8 sm:py-12 flex flex-col items-center justify-center min-h-[calc(100vh-250px)] px-4">
@@ -77,7 +103,7 @@ export default function CartPage() {
         <p className="text-base sm:text-lg text-slate-600 dark:text-slate-300 mb-6 sm:mb-8">{t.yourCartIsEmpty}</p>
         <Button 
           size="lg" 
-          className="bg-purple-600 hover:bg-purple-700 text-white shadow-lg min-h-[44px] touch-manipulation"
+          className="bg-black hover:bg-gray-800 text-white shadow-lg min-h-[44px] touch-manipulation"
           onClick={() => router.push('/products')}
         >
           <span className="flex items-center">{t.browseProducts}</span>
@@ -88,6 +114,25 @@ export default function CartPage() {
 
   return (
     <div className="space-y-4 sm:space-y-6 lg:space-y-8 px-2 sm:px-4 lg:px-0">
+      {/* Breadcrumbs */}
+      <div className="max-w-7xl mx-auto">
+        <Breadcrumb className="mb-4">
+          <BreadcrumbList>
+            <BreadcrumbItem>
+              <BreadcrumbLink asChild>
+                <Link href="/" className="hover:text-black dark:hover:text-white transition-colors">
+                  Home
+                </Link>
+              </BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+              <BreadcrumbPage className="font-semibold">Shopping Cart</BreadcrumbPage>
+            </BreadcrumbItem>
+          </BreadcrumbList>
+        </Breadcrumb>
+      </div>
+      
       <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-center text-slate-900 dark:text-white">{t.cart}</h1>
       <Card className="shadow-xl border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
         <CardContent className="p-0">
@@ -96,7 +141,8 @@ export default function CartPage() {
             {cart.map((item, index) => {
               // Helper functions for mobile view
               const getProductDisplayImage = () => {
-                if (item.designPreview) return item.designPreview
+                // For items with designs, prefer the product image (not the composite)
+                // so we can overlay the design with DesignCanvasRenderer
                 if ((item as any).designContext?.selectedVariation) {
                   const variation = (item as any).designContext.selectedVariation
                   const viewMode = (item as any).designContext.viewMode || "front"
@@ -106,7 +152,12 @@ export default function CartPage() {
                   if (frontImage) return frontImage.url
                   if (variation.colorSwatchImage) return variation.colorSwatchImage
                 }
-                return item.image || "/placeholder.svg"
+                // Use designPreview ONLY if we don't have designCanvasJSON
+                if ((item as any).designPreview && !(item as any).designCanvasJSON) {
+                  return (item as any).designPreview
+                }
+                // Use getProductImage helper to handle all image property cases
+                return getProductImage(item as any) || "/placeholder.svg"
               }
               
               const getProductDisplayName = () => {
@@ -139,16 +190,18 @@ export default function CartPage() {
                   index % 2 === 0 ? "bg-white dark:bg-slate-800" : "bg-slate-50/50 dark:bg-slate-800/20"
                 }`}>
                   <div className="flex gap-3 mb-3">
-                    <div className="relative flex-shrink-0">
+                    <div className="relative flex-shrink-0 w-20 h-20">
+                      {/* Use design preview if available, otherwise use base product image */}
                       <Image
-                        src={getProductDisplayImage()}
+                        src={(item as any).designPreview || getProductDisplayImage()}
                         alt={getProductDisplayName()}
                         width={80}
                         height={80}
                         className="rounded-md object-cover border border-slate-200 dark:border-slate-700"
                       />
-                      {item.designPreview && (
-                        <div className="absolute -top-1 -right-1 bg-blue-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                      {/* Show design indicator */}
+                      {((item as any).hasDesign || (item as any).designCanvasJSON || (item as any).designPreview) && (
+                        <div className="absolute -top-1 -right-1 bg-blue-500 text-white text-xs rounded-full w-6 h-6 flex items-center justify-center font-bold">
                           ✨
                         </div>
                       )}
@@ -156,10 +209,28 @@ export default function CartPage() {
                     <div className="flex-1 min-w-0">
                       <h3 className="font-medium text-slate-900 dark:text-white text-sm line-clamp-2">{getProductDisplayName()}</h3>
                       <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">{itemPrice.toFixed(2)} SEK</p>
+                      {(item as any).selectedVariant && (
+                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                          Color: {(item as any).selectedVariant.name}
+                        </p>
+                      )}
+                      {(item as any).selectedSize && (
+                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                          Size: {(item as any).selectedSize}
+                        </p>
+                      )}
                       {item.selectedSizes && item.selectedSizes.filter(s => s.quantity > 0).length > 0 && (
                         <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
                           Sizes: {item.selectedSizes.filter(s => s.quantity > 0).map(s => `${s.size}: ${s.quantity}`).join(', ')}
                         </p>
+                      )}
+                      {(item as any).hasDesign && (
+                        <div className="text-xs text-blue-600 dark:text-blue-400 mt-1 flex items-center gap-1">
+                          <span>✨ Custom Design</span>
+                          {(item as any).designAreaPercentage && (
+                            <span className="text-slate-500">({(item as any).designAreaPercentage.toFixed(0)}% coverage)</span>
+                          )}
+                        </div>
                       )}
                       {(item as any).designContext && (
                         <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">
@@ -231,12 +302,8 @@ export default function CartPage() {
                 {cart.map((item, index) => {
                   // Get the correct product image based on design context
                   const getProductDisplayImage = () => {
-                    // If we have a design preview from the design tool, use that
-                    if (item.designPreview) {
-                      return item.designPreview
-                    }
-                    
-                    // If we have design context with variation info, use the specific variation image
+                    // For items with designs, prefer the product image (not the composite)
+                    // so we can overlay the design with DesignCanvasRenderer
                     if ((item as any).designContext?.selectedVariation) {
                       const variation = (item as any).designContext.selectedVariation
                       const viewMode = (item as any).designContext.viewMode || "front"
@@ -263,8 +330,13 @@ export default function CartPage() {
                       }
                     }
                     
-                    // Ultimate fallback to default product image
-                    return item.image || "/placeholder.svg"
+                    // Use designPreview ONLY if we don't have designCanvasJSON
+                    if ((item as any).designPreview && !(item as any).designCanvasJSON) {
+                      return (item as any).designPreview
+                    }
+                    
+                    // Ultimate fallback to default product image using helper
+                    return getProductImage(item as any) || "/placeholder.svg"
                   }
 
                   // Get product display name with variation info
@@ -326,23 +398,36 @@ export default function CartPage() {
                       } border-slate-100 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700/70 transition-colors`}
                     >
                       <TableCell className="font-medium flex items-center gap-3 py-4">
-                        <div className="relative">
+                        <div className="relative w-20 h-20">
+                          {/* Use design preview if available, otherwise use base product image */}
                           <Image
-                            src={getProductDisplayImage()}
+                            src={(item as any).designPreview || getProductDisplayImage()}
                             alt={getProductDisplayName()}
                             width={80}
-                            height={60}
-                            className="rounded-md object-cover border border-slate-200 dark:border-slate-700"
+                            height={80}
+                            className="rounded-md object-cover border border-slate-200 dark:border-slate-700 w-full h-full"
                           />
                           {/* Show a design indicator if this is a custom design */}
-                          {item.designPreview && (
-                            <div className="absolute -top-1 -right-1 bg-blue-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                          {((item as any).hasDesign || (item as any).designCanvasJSON || (item as any).designPreview) && (
+                            <div className="absolute -top-1 -right-1 bg-blue-500 text-white text-xs rounded-full w-6 h-6 flex items-center justify-center font-bold">
                               ✨
                             </div>
                           )}
                         </div>
                         <div className="flex flex-col">
                           <span className="text-slate-900 dark:text-white">{getProductDisplayName()}</span>
+                          {/* Show selected variant (color) */}
+                          {(item as any).selectedVariant && (
+                            <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                              Color: {(item as any).selectedVariant.name}
+                            </div>
+                          )}
+                          {/* Show selected size */}
+                          {(item as any).selectedSize && (
+                            <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                              Size: {(item as any).selectedSize}
+                            </div>
+                          )}
                           {/* Show design context info */}
                           {(item as any).designContext && (
                             <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">
@@ -351,6 +436,15 @@ export default function CartPage() {
                               )}
                               {(item as any).designContext.selectedTemplate && (
                                 <span>Template: {(item as any).designContext.selectedTemplate.name}</span>
+                              )}
+                            </div>
+                          )}
+                          {/* Show custom design info */}
+                          {(item as any).hasDesign && (
+                            <div className="text-xs text-blue-600 dark:text-blue-400 mt-1 flex items-center gap-1">
+                              <span>✨ Custom Design</span>
+                              {(item as any).designAreaPercentage && (
+                                <span className="text-slate-500">({(item as any).designAreaPercentage.toFixed(0)}% coverage)</span>
                               )}
                             </div>
                           )}
@@ -469,7 +563,7 @@ export default function CartPage() {
           </div>
           <Button 
             size="lg" 
-            className="w-full sm:w-auto bg-purple-900 hover:bg-purple-800 hover:text-white text-white shadow-lg min-h-[44px] touch-manipulation"
+            className="w-full sm:w-auto bg-black hover:bg-gray-800 hover:text-white text-white shadow-lg min-h-[44px] touch-manipulation"
             onClick={() => router.push('/checkout')}
           >
             <span className="flex items-center justify-center">

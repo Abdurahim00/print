@@ -16,67 +16,67 @@
     --card-foreground: 0 0% 3.9%;
     --popover: 0 0% 100%;
     --popover-foreground: 0 0% 3.9%;
-    --primary: 263 42% 46%; /* #634c9e - purple */
-    --primary-foreground: 0 0% 100%; /* White text on purple */
+    --primary: 0 0% 0%; /* black */
+    --primary-foreground: 0 0% 100%; /* White text on black */
     --secondary: 0 0% 96.1%;
-    --secondary-foreground: 263 42% 46%; /* Purple text on light bg */
+    --secondary-foreground: 0 0% 0%; /* Black text on light bg */
     --muted: 0 0% 96.1%;
-    --muted-foreground: 263 42% 46%; /* Purple muted text */
-    --accent: 263 42% 46%; /* Purple accent */
+    --muted-foreground: 0 0% 30%; /* Black muted text */
+    --accent: 0 0% 0%; /* Black accent */
     --accent-foreground: 0 0% 100%; /* White text on accent */
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
-    --border: 263 42% 90%; /* Light purple border */
-    --input: 263 42% 90%; /* Light purple input */
-    --ring: 263 42% 46%; /* Purple ring */
-    --chart-1: 263 42% 46%; /* Main purple chart color */
-    --chart-2: 263 42% 66%; /* Lighter purple */
-    --chart-3: 263 42% 26%; /* Darker purple */
-    --chart-4: 263 30% 56%; /* Desaturated purple */
-    --chart-5: 263 50% 76%; /* Very light purple */
+    --border: 0 0% 85%; /* Light gray border */
+    --input: 0 0% 85%; /* Light gray input */
+    --ring: 0 0% 0%; /* Black ring */
+    --chart-1: 0 0% 0%; /* Main black chart color */
+    --chart-2: 0 0% 30%; /* Lighter gray */
+    --chart-3: 0 0% 10%; /* Darker black */
+    --chart-4: 0 0% 40%; /* Desaturated gray */
+    --chart-5: 0 0% 70%; /* Very light gray */
     --radius: 0.5rem;
     --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 263 42% 46%; /* Purple sidebar text */
-    --sidebar-primary: 263 42% 46%; /* Purple sidebar primary */
-    --sidebar-primary-foreground: 0 0% 100%; /* White on purple */
-    --sidebar-accent: 263 42% 95%; /* Very light purple accent */
-    --sidebar-accent-foreground: 263 42% 46%; /* Purple text */
-    --sidebar-border: 263 42% 90%; /* Light purple border */
-    --sidebar-ring: 263 42% 46%; /* Purple ring */
+    --sidebar-foreground: 0 0% 0%; /* Black sidebar text */
+    --sidebar-primary: 0 0% 0%; /* Black sidebar primary */
+    --sidebar-primary-foreground: 0 0% 100%; /* White on black */
+    --sidebar-accent: 0 0% 95%; /* Very light gray accent */
+    --sidebar-accent-foreground: 0 0% 0%; /* Black text */
+    --sidebar-border: 0 0% 85%; /* Light gray border */
+    --sidebar-ring: 0 0% 0%; /* Black ring */
   }
   .dark {
-    --background: 263 30% 10%; /* Dark purple background */
+    --background: 0 0% 10%; /* Dark gray background */
     --foreground: 0 0% 98%;
-    --card: 263 30% 12%; /* Dark purple card */
+    --card: 0 0% 12%; /* Dark gray card */
     --card-foreground: 0 0% 98%;
-    --popover: 263 30% 10%;
+    --popover: 0 0% 10%;
     --popover-foreground: 0 0% 98%;
-    --primary: 263 42% 46%; /* #634c9e - purple */
-    --primary-foreground: 0 0% 100%; /* White text on purple */
-    --secondary: 263 30% 20%; /* Darker purple secondary */
+    --primary: 0 0% 0%; /* black */
+    --primary-foreground: 0 0% 100%; /* White text on black */
+    --secondary: 0 0% 20%; /* Darker gray secondary */
     --secondary-foreground: 0 0% 98%;
-    --muted: 263 30% 20%;
-    --muted-foreground: 263 20% 70%; /* Light purple muted text */
-    --accent: 263 42% 46%; /* Purple accent */
+    --muted: 0 0% 20%;
+    --muted-foreground: 0 0% 70%; /* Light gray muted text */
+    --accent: 0 0% 0%; /* Black accent */
     --accent-foreground: 0 0% 98%;
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 0% 98%;
-    --border: 263 30% 25%; /* Dark purple border */
-    --input: 263 30% 25%; /* Dark purple input */
-    --ring: 263 42% 60%; /* Bright purple ring for dark mode */
-    --chart-1: 263 42% 60%; /* Bright purple chart */
-    --chart-2: 263 42% 80%; /* Very light purple */
-    --chart-3: 263 42% 40%; /* Medium purple */
-    --chart-4: 263 30% 70%; /* Muted light purple */
-    --chart-5: 263 50% 90%; /* Almost white purple */
-    --sidebar-background: 263 30% 15%; /* Dark purple sidebar */
+    --border: 0 0% 25%; /* Dark gray border */
+    --input: 0 0% 25%; /* Dark gray input */
+    --ring: 0 0% 50%; /* Gray ring for dark mode */
+    --chart-1: 0 0% 60%; /* Bright gray chart */
+    --chart-2: 0 0% 80%; /* Very light gray */
+    --chart-3: 0 0% 40%; /* Medium gray */
+    --chart-4: 0 0% 70%; /* Muted light gray */
+    --chart-5: 0 0% 90%; /* Almost white gray */
+    --sidebar-background: 0 0% 15%; /* Dark gray sidebar */
     --sidebar-foreground: 0 0% 95.9%;
-    --sidebar-primary: 263 42% 46%; /* #634c9e - purple */
+    --sidebar-primary: 0 0% 0%; /* black */
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 263 30% 25%; /* Dark purple sidebar accent */
+    --sidebar-accent: 0 0% 25%; /* Dark gray sidebar accent */
     --sidebar-accent-foreground: 0 0% 95.9%;
-    --sidebar-border: 263 30% 25%; /* Dark purple sidebar border */
-    --sidebar-ring: 263 42% 60%; /* Bright purple ring */
+    --sidebar-border: 0 0% 25%; /* Dark gray sidebar border */
+    --sidebar-ring: 0 0% 50%; /* Gray ring */
   }
 }
 

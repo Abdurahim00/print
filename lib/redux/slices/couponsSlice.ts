@@ -1,5 +1,6 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit"
 import type { Coupon, CreateCouponData, UpdateCouponData } from "@/types"
+import { SafeStorage } from "@/lib/utils/storage"
 
 // Local storage helpers (mirror cart slice approach)
 const ACTIVE_COUPON_STORAGE_KEY = "active_coupon"
@@ -7,7 +8,7 @@ const ACTIVE_COUPON_STORAGE_KEY = "active_coupon"
 function loadActiveCouponFromStorage(): Coupon | null {
   if (typeof window === "undefined") return null
   try {
-    const raw = localStorage.getItem(ACTIVE_COUPON_STORAGE_KEY)
+    const raw = SafeStorage.getItem(ACTIVE_COUPON_STORAGE_KEY)
     return raw ? (JSON.parse(raw) as Coupon) : null
   } catch {
     return null
@@ -16,10 +17,11 @@ function loadActiveCouponFromStorage(): Coupon | null {
 
 function saveActiveCouponToStorage(coupon: Coupon | null) {
   if (typeof window === "undefined") return
-  try {
-    if (coupon) localStorage.setItem(ACTIVE_COUPON_STORAGE_KEY, JSON.stringify(coupon))
-    else localStorage.removeItem(ACTIVE_COUPON_STORAGE_KEY)
-  } catch {}
+  if (coupon) {
+    SafeStorage.setItem(ACTIVE_COUPON_STORAGE_KEY, JSON.stringify(coupon))
+  } else {
+    SafeStorage.removeItem(ACTIVE_COUPON_STORAGE_KEY)
+  }
 }
 
 interface CouponsState {

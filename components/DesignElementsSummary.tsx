@@ -72,7 +72,7 @@ export function DesignElementsSummary({ canvasJSON }: DesignElementsSummaryProps
       case 'image':
         return 'text-green-600 dark:text-green-400'
       case 'rect':
-        return 'text-purple-600 dark:text-purple-400'
+        return 'text-black dark:text-gray-400'
       case 'circle':
         return 'text-orange-600 dark:text-orange-400'
       case 'triangle':

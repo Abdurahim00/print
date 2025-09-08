@@ -2,12 +2,12 @@
 
 import { Provider } from "react-redux"
 import { store } from "@/lib/redux/store"
-import { DesignToolContainerV2 } from "./design-tool/design-tool-container-v2"
+import { DesignToolContainer } from "./design-tool/design-tool-container"
 
 export function ProductDesignTool() {
   return (
     <Provider store={store}>
-      <DesignToolContainerV2 />
+      <DesignToolContainer />
     </Provider>
   )
 }

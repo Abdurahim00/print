@@ -104,7 +104,7 @@ export function SizeSelectionModal({ open, onOpenChange, product }: SizeSelectio
             />
             <div>
               <h3 className="font-semibold">{product.name}</h3>
-              <p className="text-sm text-gray-500">{product.price} per item</p>
+              <p className="text-sm text-gray-500">${typeof product.price === 'object' ? '0' : product.price} per item</p>
             </div>
           </div>
           

@@ -7,8 +7,9 @@ import * as fabric from "fabric"
 import { CentralCanvas } from "./cental-canvas"
 import { ProductModal } from "./modals/product-modal"
 import { TemplateModal } from "./modals/template-modal"
-import { setShowProductModal, setShowTemplateModal, setSelectedTool, setSelectedProduct } from "@/lib/redux/designToolSlices/designSlice"
+import { setShowProductModal, setShowTemplateModal, setSelectedTool, setSelectedProduct, setProductColor, setProductWithVariant } from "@/lib/redux/designToolSlices/designSlice"
 import { fetchDesignableProducts } from "@/lib/redux/slices/productsSlice"
+import { fetchCategories } from "@/lib/redux/slices/categoriesSlice"
 import { RootState } from "@/lib/redux/store"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -42,18 +43,26 @@ export function DesignToolContainerV2() {
   const [isSizeModalOpen, setIsSizeModalOpen] = useState(false)
   const [isCheckoutReady, setIsCheckoutReady] = useState(false)
 
-  // Fetch only designable products
+  // Fetch only designable products and categories
   useEffect(() => {
     dispatch(fetchDesignableProducts() as any)
+    dispatch(fetchCategories(true) as any) // Force refresh categories to get latest metric pricing
   }, [dispatch])
 
   // Load product from URL if productId is provided
   useEffect(() => {
     const productId = searchParams.get('productId')
+    const variantId = searchParams.get('variant')
+    
     if (productId && products.length > 0 && !selectedProduct) {
       const product = products.find((p: any) => p.id === productId || p._id === productId)
       if (product) {
-        dispatch(setSelectedProduct(product))
+        // Use the new action that handles variant properly
+        if (variantId) {
+          dispatch(setProductWithVariant({ product, variantId }))
+        } else {
+          dispatch(setSelectedProduct(product))
+        }
         setCurrentStep(2) // Jump directly to design step
       }
     }
@@ -79,17 +88,43 @@ export function DesignToolContainerV2() {
       const input = document.createElement('input')
       input.type = 'file'
       input.accept = 'image/*'
-      input.onchange = (e) => {
+      input.onchange = async (e) => {
         const file = (e.target as HTMLInputElement).files?.[0]
         if (file && fabricCanvas) {
           const reader = new FileReader()
-          reader.onload = (event) => {
-            fabric.Image.fromURL(event.target?.result as string, (img) => {
+          reader.onload = async (event) => {
+            const imageUrl = event.target?.result as string
+            
+            try {
+              // Use the new fabric.js v6 API with async/await
+              // Pass empty object for filters and options for properties
+              const img = await fabric.FabricImage.fromURL(imageUrl, {}, {
+                crossOrigin: 'anonymous'
+              })
               img.scaleToWidth(200)
               fabricCanvas.add(img)
               fabricCanvas.setActiveObject(img)
               fabricCanvas.renderAll()
-            })
+            } catch (error) {
+              console.error('Failed to load image:', error)
+              // Try fallback approach with data URL directly
+              try {
+                const tempImg = new Image()
+                tempImg.crossOrigin = 'anonymous'
+                tempImg.onload = () => {
+                  const fabricImg = new fabric.FabricImage(tempImg)
+                  fabricImg.scaleToWidth(200)
+                  fabricCanvas.add(fabricImg)
+                  fabricCanvas.setActiveObject(fabricImg)
+                  fabricCanvas.renderAll()
+                  console.log('Image added via fallback')
+                }
+                tempImg.src = imageUrl
+              } catch (fallbackError) {
+                console.error('Fallback also failed:', fallbackError)
+                alert('Failed to load the image. Please try a different image.')
+              }
+            }
           }
           reader.readAsDataURL(file)
         }
@@ -121,13 +156,49 @@ export function DesignToolContainerV2() {
               return (
                 <div key={step.id} className="flex items-center flex-1">
                   <button
-                    onClick={() => setCurrentStep(step.id)}
+                    onClick={() => {
+                      // Validate step navigation
+                      if (step.id === 1) {
+                        // Always allow going back to step 1
+                        setCurrentStep(step.id)
+                      } else if (step.id === 2) {
+                        // Only allow step 2 if product is selected
+                        if (selectedProduct) {
+                          setCurrentStep(step.id)
+                        } else {
+                          // Show product modal if trying to skip to design without product
+                          dispatch(setShowProductModal(true))
+                        }
+                      } else if (step.id === 3) {
+                        // Only allow step 3 if product is selected and has design
+                        if (selectedProduct && hasDesignElements) {
+                          setCurrentStep(step.id)
+                          setIsSizeModalOpen(true)
+                        } else if (selectedProduct && !hasDesignElements) {
+                          // If product selected but no design, go to step 2
+                          setCurrentStep(2)
+                        } else {
+                          // No product selected, show product modal
+                          dispatch(setShowProductModal(true))
+                        }
+                      }
+                    }}
+                    disabled={
+                      // Disable clicking on steps that can't be accessed yet
+                      (step.id === 2 && !selectedProduct) ||
+                      (step.id === 3 && (!selectedProduct || !hasDesignElements))
+                    }
                     className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all ${
                       isActive 
                         ? 'bg-black text-white scale-105' 
                         : isCompleted 
                         ? 'bg-green-100 text-green-700' 
                         : 'bg-gray-100 text-gray-500'
+                    } ${
+                      ((step.id === 2 && !selectedProduct) || 
+                       (step.id === 3 && (!selectedProduct || !hasDesignElements)))
+                        ? 'cursor-not-allowed opacity-50'
+                        : 'cursor-pointer'
                     }`}
                   >
                     <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
@@ -265,17 +336,24 @@ export function DesignToolContainerV2() {
                 
                 <Button
                   size="lg"
-                  className="w-full bg-black hover:bg-gray-800 text-white"
+                  className="w-full bg-black hover:bg-gray-800 text-white disabled:opacity-50"
                   onClick={() => {
                     if (currentStep === 1) {
                       dispatch(setShowProductModal(true))
                     } else if (currentStep === 2) {
-                      setCurrentStep(3)
-                      setIsSizeModalOpen(true)
+                      // Only proceed if design has been added
+                      if (hasDesignElements) {
+                        setCurrentStep(3)
+                        setIsSizeModalOpen(true)
+                      } else {
+                        // Could show a toast here to inform user
+                        alert("Please add a design to your product before continuing to checkout")
+                      }
                     } else {
                       setIsSizeModalOpen(true)
                     }
                   }}
+                  disabled={currentStep === 2 && !hasDesignElements}
                 >
                   {currentStep === 1 
                     ? "Choose Product" 

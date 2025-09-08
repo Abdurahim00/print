@@ -33,6 +33,7 @@ import type { CartItem } from "@/types"
 import { mergeCartsPreferRight } from "@/lib/utils/cartMerge"
 import Image from "next/image"
 import { useAppSelector as useSelector } from "@/lib/redux/hooks"
+import { SafeStorage } from "@/lib/utils/storage"
 import { validateCouponCode, setActiveCoupon, fetchCoupons } from "@/lib/redux/slices/couponsSlice"
 import { CategoryDropdown } from "./category-dropdown"
 
@@ -43,6 +44,7 @@ export function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [couponModalOpen, setCouponModalOpen] = useState(false)
   const [searchOpen, setSearchOpen] = useState(false)
+  const [searchQuery, setSearchQuery] = useState("")
   const [mounted, setMounted] = useState(false)
   const { data: session, status } = useSession() // Get session data
   const { language } = useAppSelector((state) => state.app)
@@ -63,7 +65,7 @@ export function Navbar() {
     }
     // hydrate active coupon from storage if present (slice already loads, this ensures banner reflects it immediately)
     try {
-      const raw = localStorage.getItem("active_coupon")
+      const raw = SafeStorage.getItem("active_coupon")
       if (raw && !activeCoupon) {
         const parsed = JSON.parse(raw)
         // @ts-ignore
@@ -111,7 +113,7 @@ export function Navbar() {
 
         ;(async () => {
           const dbCart = await fetchUserCart()
-          const guestCartRaw = localStorage.getItem("cart")
+          const guestCartRaw = SafeStorage.getItem("cart")
           const guestCart: CartItem[] = guestCartRaw ? JSON.parse(guestCartRaw) : []
 
           if (!alreadyMerged) {
@@ -125,7 +127,7 @@ export function Navbar() {
             // Hydrate from DB only
             dispatch(setCart(dbCart))
             // Ensure localStorage cart mirrors user cart while logged in
-            localStorage.setItem("cart", JSON.stringify(dbCart))
+            SafeStorage.setItem("cart", JSON.stringify(dbCart))
           }
         })()
       } catch (e) {
@@ -149,7 +151,7 @@ export function Navbar() {
     dispatch(setSessionUser(null)) // Clear Redux state
     // Clear local guest cart to ensure no logged-in data remains visible
     try {
-      localStorage.removeItem("cart")
+      SafeStorage.removeItem("cart")
     } catch {}
     dispatch(setCart([]))
     setMobileMenuOpen(false)
@@ -167,7 +169,7 @@ export function Navbar() {
         body: JSON.stringify({ userId, items: cartItems }),
       }).catch(() => {})
       // Keep localStorage mirroring while logged in
-      try { localStorage.setItem("cart", JSON.stringify(cartItems)) } catch {}
+      SafeStorage.setItem("cart", JSON.stringify(cartItems))
     }, 400)
     return () => clearTimeout(t)
   }, [cartItems, status, session])
@@ -214,7 +216,14 @@ export function Navbar() {
               <input
                 type="text"
                 placeholder="What are you looking for?"
-                className="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyPress={(e) => {
+                  if (e.key === 'Enter') {
+                    router.push(`/products?search=${encodeURIComponent(searchQuery)}`)
+                  }
+                }}
+                className="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent text-sm"
               />
             </div>
           </div>
@@ -253,7 +262,7 @@ export function Navbar() {
                   <ShoppingCart className="mr-2 h-4 w-4" />
                   {t.cart}
                   {cartItemCount > 0 && (
-                    <span className="ml-1 bg-white text-purple-900 rounded-full px-2.5 py-1 text-xs font-bold">{cartItemCount}</span>
+                    <span className="ml-1 bg-white text-black rounded-full px-2.5 py-1 text-xs font-bold">{cartItemCount}</span>
                   )}
                 </Link>
               </Button>
@@ -301,7 +310,7 @@ export function Navbar() {
                 <Button variant="outline" size="icon">
                   <ShoppingCart className="h-4 w-4" />
                   {cartItemCount > 0 && (
-                    <span className="absolute -top-1 -right-1 bg-purple-600 text-white rounded-full w-5 h-5 text-xs flex items-center justify-center">
+                    <span className="absolute -top-1 -right-1 bg-black text-white rounded-full w-5 h-5 text-xs flex items-center justify-center">
                       {cartItemCount}
                     </span>
                   )}
@@ -330,8 +339,8 @@ export function Navbar() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent className="bg-primary text-white border-primary">
-                      <SelectItem value="en" className="text-white data-[highlighted]:bg-purple-700 data-[highlighted]:text-white">English</SelectItem>
-                      <SelectItem value="sv" className="text-white data-[highlighted]:bg-purple-700 data-[highlighted]:text-white">Svenska</SelectItem>
+                      <SelectItem value="en" className="text-white data-[highlighted]:bg-gray-700 data-[highlighted]:text-white">English</SelectItem>
+                      <SelectItem value="sv" className="text-white data-[highlighted]:bg-gray-700 data-[highlighted]:text-white">Svenska</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -387,7 +396,7 @@ export function Navbar() {
                 {/* Auth Actions */}
                 {status === "authenticated" && session?.user ? (
                   <div className="space-y-2">
-                    <div className="text-sm text-purple-600 dark:text-purple-400 p-2">
+                    <div className="text-sm text-black dark:text-gray-400 p-2">
                       <p className="font-medium">{session.user.email}</p>
                       <p className="text-xs">{(session.user as any).customerNumber}</p>
                     </div>
@@ -411,7 +420,7 @@ export function Navbar() {
                     </Button>
                     <Button
                       asChild
-                      className="w-full justify-start bg-purple-600 hover:bg-purple-700 hover:text-white text-white"
+                      className="w-full justify-start bg-black hover:bg-gray-800 hover:text-white text-white"
                       onClick={closeMobileMenu}
                     >
                       <Link href="/signup">
@@ -492,7 +501,15 @@ export function Navbar() {
             <input
               type="text"
               placeholder="What are you looking for?"
-              className="w-full pl-10 pr-4 py-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyPress={(e) => {
+                if (e.key === 'Enter') {
+                  router.push(`/products?search=${encodeURIComponent(searchQuery)}`)
+                  setSearchOpen(false)
+                }
+              }}
+              className="w-full pl-10 pr-4 py-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent"
               autoFocus
             />
           </div>
@@ -513,7 +530,7 @@ export function Navbar() {
           </DialogHeader>
           <div className="space-y-4 text-center">
             <div className="text-lg font-semibold">Promo code: <span className="font-mono">{promoCoupon?.code ?? activeCoupon?.code ?? "No active coupon"}</span></div>
-            <Button className="bg-purple-700 hover:bg-purple-800" onClick={async () => {
+            <Button className="bg-black hover:bg-gray-800" onClick={async () => {
               const code = promoCoupon?.code ?? activeCoupon?.code
               if (!code) { setCouponModalOpen(false); return }
               const orderTotal = cartItems.reduce((sum, item) => sum + (item.quantity * item.price), 0)

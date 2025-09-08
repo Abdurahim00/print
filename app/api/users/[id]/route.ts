@@ -1,6 +1,9 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { UserService } from "@/lib/services/userService"
 
+// Force dynamic rendering for this route
+export const dynamic = 'force-dynamic'
+
 export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const userData = await request.json()

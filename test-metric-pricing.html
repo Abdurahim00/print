@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Metric Pricing Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        h1 { color: #333; }
+        .metric-display {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            margin-top: 20px;
+        }
+        .metric-box {
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 5px;
+            border: 1px solid #dee2e6;
+        }
+        .metric-title {
+            font-weight: bold;
+            color: #495057;
+            margin-bottom: 5px;
+        }
+        .metric-value {
+            font-size: 24px;
+            color: #007bff;
+        }
+        .calculation-details {
+            margin-top: 20px;
+            padding: 15px;
+            background: #e7f5ff;
+            border-radius: 5px;
+            border: 1px solid #a3d5ff;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>Metric Pricing Test Calculator</h1>
+        
+        <h3>Canvas Settings (600x600px = 30x30cm)</h3>
+        <p>1 pixel = 0.05 cm, 1 pixel² = 0.0025 cm²</p>
+        
+        <h3>Test Design Areas:</h3>
+        <div>
+            <button onclick="testSmallDesign()">Small Design (100x100px)</button>
+            <button onclick="testMediumDesign()">Medium Design (300x300px)</button>
+            <button onclick="testLargeDesign()">Large Design (500x500px)</button>
+            <button onclick="testFullCanvas()">Full Canvas (600x600px)</button>
+        </div>
+        
+        <div class="metric-display" id="metrics">
+            <div class="metric-box">
+                <div class="metric-title">Design Size (pixels)</div>
+                <div class="metric-value" id="sizePixels">-</div>
+            </div>
+            <div class="metric-box">
+                <div class="metric-title">Design Size (cm)</div>
+                <div class="metric-value" id="sizeCm">-</div>
+            </div>
+            <div class="metric-box">
+                <div class="metric-title">Area (cm²)</div>
+                <div class="metric-value" id="areaCm2">-</div>
+            </div>
+            <div class="metric-box">
+                <div class="metric-title">Area (%)</div>
+                <div class="metric-value" id="areaPercent">-</div>
+            </div>
+        </div>
+        
+        <div class="calculation-details" id="calculations">
+            <h3>Pricing Calculations:</h3>
+            <div id="pricingDetails">Select a design size to see pricing</div>
+        </div>
+    </div>
+
+    <script>
+        const PIXELS_TO_CM = 0.05;
+        const PIXELS_TO_CM2 = 0.0025;
+        const CANVAS_SIZE = 600;
+        const CANVAS_AREA = CANVAS_SIZE * CANVAS_SIZE;
+        
+        // Pricing settings
+        const PRICE_PER_CM2 = 0.5; // kr per cm²
+        const BASE_PRICE = 199; // kr
+        
+        function calculateMetrics(widthPx, heightPx) {
+            const areaPx = widthPx * heightPx;
+            const areaCm2 = areaPx * PIXELS_TO_CM2;
+            const areaPercent = (areaPx / CANVAS_AREA) * 100;
+            const widthCm = widthPx * PIXELS_TO_CM;
+            const heightCm = heightPx * PIXELS_TO_CM;
+            
+            // Update display
+            document.getElementById('sizePixels').textContent = `${widthPx} x ${heightPx}`;
+            document.getElementById('sizeCm').textContent = `${widthCm.toFixed(1)} x ${heightCm.toFixed(1)}`;
+            document.getElementById('areaCm2').textContent = areaCm2.toFixed(2);
+            document.getElementById('areaPercent').textContent = areaPercent.toFixed(1) + '%';
+            
+            // Calculate pricing
+            const designUpcharge = areaCm2 * PRICE_PER_CM2;
+            const totalPrice = BASE_PRICE + designUpcharge;
+            
+            const pricingHtml = `
+                <p><strong>Base Product Price:</strong> ${BASE_PRICE} kr</p>
+                <p><strong>Design Area:</strong> ${areaCm2.toFixed(2)} cm²</p>
+                <p><strong>Price per cm²:</strong> ${PRICE_PER_CM2} kr</p>
+                <p><strong>Design Upcharge:</strong> ${areaCm2.toFixed(2)} cm² × ${PRICE_PER_CM2} kr/cm² = <span style="color: green; font-weight: bold;">${designUpcharge.toFixed(2)} kr</span></p>
+                <hr>
+                <p><strong>Total Price:</strong> ${BASE_PRICE} kr + ${designUpcharge.toFixed(2)} kr = <span style="font-size: 1.2em; color: #007bff; font-weight: bold;">${totalPrice.toFixed(2)} kr</span></p>
+            `;
+            
+            document.getElementById('pricingDetails').innerHTML = pricingHtml;
+        }
+        
+        function testSmallDesign() {
+            calculateMetrics(100, 100);
+        }
+        
+        function testMediumDesign() {
+            calculateMetrics(300, 300);
+        }
+        
+        function testLargeDesign() {
+            calculateMetrics(500, 500);
+        }
+        
+        function testFullCanvas() {
+            calculateMetrics(600, 600);
+        }
+        
+        // Start with medium design
+        testMediumDesign();
+    </script>
+</body>
+</html>

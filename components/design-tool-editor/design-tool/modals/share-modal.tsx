@@ -101,7 +101,7 @@ export function ShareModal({ isOpen, onClose }: ShareModalProps) {
           title: "Instagram Sharing",
           description: "Link copied! Paste it in your Instagram bio or story",
           variant: "default",
-          className: "bg-purple-50 border-purple-200 text-purple-800"
+          className: "bg-gray-50 border-gray-200 text-gray-800"
         })
         return
     }

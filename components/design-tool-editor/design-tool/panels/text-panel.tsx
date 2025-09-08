@@ -202,7 +202,7 @@ export function TextPanel() {
         {/* Instructions when text tool is selected but no text is selected */}
         {selectedTool === "text" &&
           (!selectedObject || (selectedObject.type !== "text" && selectedObject.type !== "i-text")) && (
-            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200/60 rounded-2xl p-5 mb-6 shadow-sm">
+            <div className="bg-gradient-to-br from-blue-50 to-gray-50 border border-blue-200/60 rounded-2xl p-5 mb-6 shadow-sm">
               <div className="flex items-center space-x-3 text-blue-800 mb-3">
                 <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
                   <Type className="w-4 h-4" />

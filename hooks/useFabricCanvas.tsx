@@ -4,7 +4,7 @@ import { useEffect, useRef, useCallback } from "react"
 import * as fabric from "fabric"
 import { useDispatch, useSelector } from "react-redux"
 import { addToHistory, undo, redo } from "../lib/redux/designToolSlices/canvasSlice"
-import { setSelectedTool, setHasDesignElements, setDesignAreaPercentage } from "../lib/redux/designToolSlices/designSlice"
+import { setSelectedTool, setHasDesignElements, setDesignAreaPercentage, setDesignAreaCm2 } from "../lib/redux/designToolSlices/designSlice"
 import { RootState } from "../lib/redux/store"
 
 export const useFabricCanvas = (canvasId: string) => {
@@ -428,8 +428,19 @@ export const useFabricCanvas = (canvasId: string) => {
     canvas.on("selection:created", (e) => {
       if (e.selected && e.selected[0]) {
         const selectedObj = e.selected[0];
-        // Dispatch action directly
-        dispatch({ type: 'canvas/setSelectedObject', payload: selectedObj });
+        // Store only serializable properties
+        const serializedObj = {
+          type: selectedObj.type,
+          text: (selectedObj as any).text,
+          fontSize: (selectedObj as any).fontSize,
+          fontFamily: (selectedObj as any).fontFamily,
+          fill: (selectedObj as any).fill,
+          fontWeight: (selectedObj as any).fontWeight,
+          fontStyle: (selectedObj as any).fontStyle,
+          underline: (selectedObj as any).underline,
+          textAlign: (selectedObj as any).textAlign,
+        };
+        dispatch({ type: 'canvas/setSelectedObject', payload: serializedObj });
         updateToolBasedOnObjectType(selectedObj);
         
         // Apply text resizing behavior to selected text objects
@@ -443,8 +454,19 @@ export const useFabricCanvas = (canvasId: string) => {
     canvas.on("selection:updated", (e) => {
       if (e.selected && e.selected[0]) {
         const selectedObj = e.selected[0];
-        // Dispatch action directly
-        dispatch({ type: 'canvas/setSelectedObject', payload: selectedObj });
+        // Store only serializable properties
+        const serializedObj = {
+          type: selectedObj.type,
+          text: (selectedObj as any).text,
+          fontSize: (selectedObj as any).fontSize,
+          fontFamily: (selectedObj as any).fontFamily,
+          fill: (selectedObj as any).fill,
+          fontWeight: (selectedObj as any).fontWeight,
+          fontStyle: (selectedObj as any).fontStyle,
+          underline: (selectedObj as any).underline,
+          textAlign: (selectedObj as any).textAlign,
+        };
+        dispatch({ type: 'canvas/setSelectedObject', payload: serializedObj });
         updateToolBasedOnObjectType(selectedObj);
         
         // Apply text resizing behavior to selected text objects
@@ -473,36 +495,52 @@ export const useFabricCanvas = (canvasId: string) => {
         const canvasHeight = canvas.getHeight()
         const canvasArea = canvasWidth * canvasHeight
         
+        // Canvas is 600x600 pixels. Standard print area is typically 30x30 cm for a t-shirt
+        // So 1 pixel = 0.05 cm (30cm / 600px)
+        // Area of 1 pixel² = 0.0025 cm² (0.05 * 0.05)
+        const PIXELS_TO_CM2 = 0.0025
+        
         let totalDesignArea = 0
+        let totalDesignAreaCm2 = 0
         
         objects.forEach((obj) => {
           // Get the bounding rect of the object (includes transformations)
           const boundingRect = obj.getBoundingRect(true, true)
           const objectArea = boundingRect.width * boundingRect.height
+          const objectAreaCm2 = objectArea * PIXELS_TO_CM2
+          
           totalDesignArea += objectArea
+          totalDesignAreaCm2 += objectAreaCm2
           
           console.log('📦 Object area:', {
             type: obj.type,
-            width: boundingRect.width,
-            height: boundingRect.height,
-            area: objectArea
+            widthPx: boundingRect.width,
+            heightPx: boundingRect.height,
+            areaPx: objectArea,
+            areaCm2: objectAreaCm2.toFixed(2),
+            widthCm: (boundingRect.width * 0.05).toFixed(2),
+            heightCm: (boundingRect.height * 0.05).toFixed(2)
           })
         })
         
         // Calculate percentage (capped at 100% for overlapping objects)
         const areaPercentage = Math.min(100, (totalDesignArea / canvasArea) * 100)
         dispatch(setDesignAreaPercentage(areaPercentage))
+        dispatch(setDesignAreaCm2(totalDesignAreaCm2))
         
         console.log('📐 Design area calculation:', {
-          canvasWidth,
-          canvasHeight,
-          canvasArea,
-          totalDesignArea,
+          canvasWidthPx: canvasWidth,
+          canvasHeightPx: canvasHeight,
+          canvasAreaPx: canvasArea,
+          canvasAreaCm2: (canvasArea * PIXELS_TO_CM2).toFixed(2),
+          totalDesignAreaPx: totalDesignArea,
+          totalDesignAreaCm2: totalDesignAreaCm2.toFixed(2),
           percentage: areaPercentage.toFixed(2) + '%',
           objectCount: objects.length
         })
       } else {
         dispatch(setDesignAreaPercentage(0))
+        dispatch(setDesignAreaCm2(0))
         console.log('📐 No design elements, area = 0%')
       }
     }
@@ -635,8 +673,19 @@ export const useFabricCanvas = (canvasId: string) => {
       canvasInstance.setActiveObject(textObj)
       canvasInstance.requestRenderAll()
 
-      // Update Redux state directly
-      dispatch({ type: 'canvas/setSelectedObject', payload: textObj });
+      // Update Redux state with serializable properties
+      const serializedTextObj = {
+        type: textObj.type,
+        text: textObj.text,
+        fontSize: textObj.fontSize,
+        fontFamily: textObj.fontFamily,
+        fill: textObj.fill,
+        fontWeight: textObj.fontWeight,
+        fontStyle: textObj.fontStyle,
+        underline: textObj.underline,
+        textAlign: textObj.textAlign,
+      };
+      dispatch({ type: 'canvas/setSelectedObject', payload: serializedTextObj });
       dispatch(setSelectedTool("text"))
 
       setTimeout(() => {

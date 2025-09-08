@@ -1,5 +1,7 @@
 import jsPDF from 'jspdf'
 import 'jspdf-autotable'
+import { saveAs } from 'file-saver'
+import JSZip from 'jszip'
 import { CartItemSize, DesignContext, FabricCanvasJSON, VariationImage } from '@/types'
 
 interface OrderItem {
@@ -46,7 +48,7 @@ export function generateOrderPDF(order: Order): jsPDF {
   })
 
   // Company Header
-  doc.setFillColor(99, 76, 158) // Purple brand color
+  doc.setFillColor(0, 0, 0) // Black brand color
   doc.rect(0, 0, 210, 30, 'F')
   
   doc.setTextColor(255, 255, 255)
@@ -238,12 +240,37 @@ export function generateOrderPDF(order: Order): jsPDF {
       yPos += 5
       doc.setFontSize(12)
       doc.setFont('helvetica', 'bold')
-      doc.text('Design Preview Available', 20, yPos)
+      doc.text('Design Preview', 20, yPos)
       yPos += 8
-      doc.setFontSize(10)
-      doc.setFont('helvetica', 'normal')
-      doc.text('Final design image is included in the system', 25, yPos)
-      yPos += 6
+      
+      // Try to add the design image to the PDF
+      try {
+        // Check if we need a new page for the image
+        if (yPos > 200) {
+          doc.addPage()
+          yPos = 20
+        }
+        
+        // Add the design preview image
+        // Scale image to fit within page width (max 170mm wide, preserving aspect ratio)
+        const maxWidth = 170 // mm
+        const maxHeight = 100 // mm
+        
+        doc.addImage(item.designPreview, 'PNG', 20, yPos, maxWidth, maxHeight, undefined, 'FAST')
+        yPos += maxHeight + 10
+        
+        doc.setFontSize(10)
+        doc.setFont('helvetica', 'italic')
+        doc.text('Design preview image embedded above', 20, yPos)
+        yPos += 6
+      } catch (error) {
+        // If image fails to load, show fallback text
+        doc.setFontSize(10)
+        doc.setFont('helvetica', 'normal')
+        doc.text('Design preview available in system (image loading failed)', 25, yPos)
+        yPos += 6
+        console.error('Failed to embed design image in PDF:', error)
+      }
     }
     
     // Design Canvas Data
@@ -295,5 +322,106 @@ export function downloadOrderPDF(order: Order, filename?: string): void {
   } catch (error) {
     console.error('Error generating PDF:', error)
     throw new Error('Failed to generate PDF')
+  }
+}
+
+// Export complete print package as ZIP with all design files
+export async function downloadPrintPackage(order: Order): Promise<void> {
+  try {
+    const zip = new JSZip()
+    const orderId = order.id
+    const date = new Date().toISOString().split('T')[0]
+    
+    // Add the PDF report
+    try {
+      const doc = generateOrderPDF(order)
+      const pdfBlob = doc.output('blob')
+      zip.file(`order-${orderId}-report.pdf`, pdfBlob)
+    } catch (pdfError) {
+      console.error('Failed to add PDF to package:', pdfError)
+      // Continue without PDF if it fails
+    }
+    
+    // Create a designs folder
+    const designsFolder = zip.folder('designs')
+    
+    // Add order summary as text file
+    const orderSummary = `Order ID: ${order.id}
+Customer: ${order.customerName || order.customer}
+Date: ${order.date}
+Total: ${order.total} SEK
+Status: ${order.status}
+Items: ${order.items.length}
+
+Items Detail:
+${order.items.map((item, i) => `
+${i + 1}. ${item.name}
+   Quantity: ${item.quantity}
+   Price: ${item.price} SEK
+   ${item.selectedSizes ? `Sizes: ${item.selectedSizes.map(s => `${s.size}x${s.quantity}`).join(', ')}` : ''}
+   ${item.designContext ? `Design View: ${item.designContext.viewMode}` : 'No design'}
+`).join('\n')}
+`
+    zip.file('order-summary.txt', orderSummary)
+    
+    // Process each item with designs
+    for (let i = 0; i < order.items.length; i++) {
+      const item = order.items[i]
+      const itemName = item.name.replace(/[^a-z0-9]/gi, '_').toLowerCase()
+      
+      // Add design preview if available
+      if (item.designPreview) {
+        try {
+          // Handle base64 data URLs
+          if (item.designPreview.startsWith('data:')) {
+            const base64Data = item.designPreview.split(',')[1]
+            if (base64Data) {
+              designsFolder?.file(
+                `${i + 1}_${itemName}_preview.png`, 
+                base64Data, 
+                { base64: true }
+              )
+            }
+          } else if (item.designPreview.startsWith('http')) {
+            // For HTTP URLs, we'll skip them as they might fail CORS
+            console.log(`Skipping external URL for item ${i + 1}`)
+          }
+        } catch (error) {
+          console.error(`Failed to add design preview for item ${i + 1}:`, error)
+        }
+      }
+      
+      // Add design specifications as JSON
+      if (item.designCanvasJSON || item.designContext) {
+        const designSpec = {
+          productName: item.name,
+          productId: item.productId,
+          quantity: item.quantity,
+          price: item.price,
+          selectedSizes: item.selectedSizes,
+          designContext: item.designContext,
+          canvasData: item.designCanvasJSON,
+          hasDesignPreview: !!item.designPreview
+        }
+        
+        designsFolder?.file(
+          `${i + 1}_${itemName}_specs.json`, 
+          JSON.stringify(designSpec, null, 2)
+        )
+      }
+    }
+    
+    // Generate and download the ZIP file
+    const content = await zip.generateAsync({ 
+      type: 'blob',
+      compression: 'DEFLATE',
+      compressionOptions: { level: 6 }
+    })
+    
+    saveAs(content, `print-package-${orderId}-${date}.zip`)
+    
+  } catch (error) {
+    console.error('Error generating print package:', error)
+    throw new Error(`Failed to generate print package: ${error instanceof Error ? error.message : String(error)}`)
   }
 }

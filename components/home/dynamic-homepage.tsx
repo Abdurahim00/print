@@ -4,7 +4,10 @@ import { useEffect, useState } from "react"
 import { useAppSelector, useAppDispatch } from "@/lib/redux/hooks"
 import { fetchCategories } from "@/lib/redux/slices/categoriesSlice"
 import { fetchProducts } from "@/lib/redux/slices/productsSlice"
+import { addToCart } from "@/lib/redux/slices/cartSlice"
 import { getProductImage } from "@/lib/utils/product-image"
+import { getOptimizedImageUrl, generateImageSizes, blurDataURL } from "@/lib/utils/image-optimizer"
+import { toast } from "sonner"
 import { CategoryShowcase } from "@/components/home/category-showcase"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -28,7 +31,8 @@ import {
   ChevronRight,
   Rocket,
   Layers,
-  LucideIcon
+  LucideIcon,
+  ShoppingCart
 } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
@@ -144,6 +148,7 @@ interface SiteConfiguration {
 // Product Carousel Component
 const ProductCarousel = ({ featuredProducts }: { featuredProducts: any[] }) => {
   const [currentIndex, setCurrentIndex] = useState(0)
+  const dispatch = useAppDispatch()
   const { items: reduxProducts = [] } = useAppSelector((state) => state.products)
   
   // Use featured products if available, otherwise use redux products or mock data
@@ -152,7 +157,6 @@ const ProductCarousel = ({ featuredProducts }: { featuredProducts: any[] }) => {
       id: 1,
       _id: "1",
       name: "Premium T-Shirt Collection",
-      description: "High-quality cotton shirts with custom designs",
       price: 24.99,
       basePrice: 24.99,
       image: "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=800&q=80",
@@ -162,7 +166,6 @@ const ProductCarousel = ({ featuredProducts }: { featuredProducts: any[] }) => {
       id: 2,
       _id: "2",
       name: "Business Card Package",
-      description: "Professional business cards with premium finish",
       price: 39.99,
       basePrice: 39.99,
       image: "https://images.unsplash.com/photo-1589829545856-d10d557cf95f?w=800&q=80",
@@ -172,7 +175,6 @@ const ProductCarousel = ({ featuredProducts }: { featuredProducts: any[] }) => {
       id: 3,
       _id: "3",
       name: "Custom Hoodies",
-      description: "Comfortable hoodies with your unique design",
       price: 45.99,
       basePrice: 45.99,
       image: "https://images.unsplash.com/photo-1556821840-3a63f95609a7?w=800&q=80",
@@ -182,7 +184,6 @@ const ProductCarousel = ({ featuredProducts }: { featuredProducts: any[] }) => {
       id: 4,
       _id: "4",
       name: "Sticker Pack",
-      description: "Waterproof vinyl stickers in various sizes",
       price: 12.99,
       basePrice: 12.99,
       image: "https://images.unsplash.com/photo-1558655146-d09347e92766?w=800&q=80",
@@ -192,7 +193,6 @@ const ProductCarousel = ({ featuredProducts }: { featuredProducts: any[] }) => {
       id: 5,
       _id: "5",
       name: "Custom Mugs",
-      description: "Ceramic mugs with vibrant color printing",
       price: 15.99,
       basePrice: 15.99,
       image: "https://images.unsplash.com/photo-1514228742587-6b1558fcca3d?w=800&q=80",
@@ -259,12 +259,17 @@ const ProductCarousel = ({ featuredProducts }: { featuredProducts: any[] }) => {
               exit={{ opacity: 0, x: -100 }}
               transition={{ duration: 0.5, ease: "easeInOut" }}
             >
-              <Link href={`/product/${currentProduct._id || currentProduct.id}`} className="block relative h-64 sm:h-80 lg:h-96 mb-4 sm:mb-6 overflow-hidden bg-black dark:bg-white cursor-pointer group">
+              <Link href={`/product/${currentProduct.id}`} className="block relative h-64 sm:h-80 lg:h-96 mb-4 sm:mb-6 overflow-hidden bg-black dark:bg-white cursor-pointer group">
                 <Image
-                  src={getProductImage(currentProduct)}
+                  src={getOptimizedImageUrl(getProductImage(currentProduct))}
                   alt={currentProduct.name}
                   fill
+                  sizes={generateImageSizes('hero')}
                   className="object-contain p-4 opacity-90 group-hover:opacity-100 transition-opacity bg-white"
+                  priority
+                  quality={90}
+                  placeholder="blur"
+                  blurDataURL={blurDataURL}
                 />
                 
                 <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-black/80 to-transparent" />
@@ -272,7 +277,7 @@ const ProductCarousel = ({ featuredProducts }: { featuredProducts: any[] }) => {
                 <div className="absolute bottom-4 left-4 sm:bottom-6 sm:left-6">
                   <div className="bg-white text-black px-3 py-1.5 sm:px-4 sm:py-2">
                     <span className="text-xl sm:text-2xl lg:text-3xl font-black">
-                      ${typeof currentProduct.price === 'number' ? currentProduct.price.toFixed(2) : (currentProduct.basePrice || 0).toFixed(2)}
+                      {typeof currentProduct.price === 'number' ? currentProduct.price.toFixed(2) : (currentProduct.basePrice || 0).toFixed(2)} SEK
                     </span>
                   </div>
                   <div className="h-1 bg-black" />
@@ -290,14 +295,11 @@ const ProductCarousel = ({ featuredProducts }: { featuredProducts: any[] }) => {
               </Link>
               
               <div className="text-center">
-                <Link href={`/product/${currentProduct._id || currentProduct.id}`} className="hover:underline">
-                  <h4 className="text-xl sm:text-2xl font-semibold text-gray-900 dark:text-white mb-2 sm:mb-3 cursor-pointer">
+                <Link href={`/product/${currentProduct.id}`} className="hover:underline">
+                  <h4 className="text-xl sm:text-2xl font-semibold text-gray-900 dark:text-white mb-4 sm:mb-6 cursor-pointer">
                     {currentProduct.name}
                   </h4>
                 </Link>
-                <p className="text-sm sm:text-base lg:text-lg text-gray-600 dark:text-gray-300 mb-4 sm:mb-6 px-2 sm:px-0">
-                  {currentProduct.description}
-                </p>
                 
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
@@ -310,7 +312,7 @@ const ProductCarousel = ({ featuredProducts }: { featuredProducts: any[] }) => {
                     className="flex-1 bg-black hover:bg-gray-900 text-white dark:bg-white dark:text-black dark:hover:bg-gray-100 min-h-[44px] touch-manipulation text-sm sm:text-base"
                     asChild
                   >
-                    <Link href={`/product/${currentProduct._id || currentProduct.id}`} className="flex items-center justify-center">
+                    <Link href={`/product/${currentProduct.id}`} className="flex items-center justify-center">
                       <span className="font-black uppercase">View Details</span>
                       <ArrowRight className="ml-2 h-4 w-4" />
                     </Link>
@@ -318,12 +320,13 @@ const ProductCarousel = ({ featuredProducts }: { featuredProducts: any[] }) => {
                   <Button 
                     size="lg" 
                     className="flex-1 border-2 border-black dark:border-white bg-transparent text-black dark:text-white hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black transition-colors"
-                    asChild
+                    onClick={() => {
+                      dispatch(addToCart(currentProduct))
+                      toast.success('Added to cart!')
+                    }}
                   >
-                    <Link href={`/design-tool?productId=${currentProduct._id || currentProduct.id}`} className="flex items-center justify-center">
-                      <Palette className="mr-2 h-5 w-5" />
-                      <span className="font-black uppercase">Customize</span>
-                    </Link>
+                    <ShoppingCart className="mr-2 h-5 w-5" />
+                    <span className="font-black uppercase">Add to Cart</span>
                   </Button>
                 </motion.div>
               </div>
@@ -818,14 +821,17 @@ export default function DynamicHomepage() {
                   style={{ scrollbarWidth: 'none' as any, msOverflowStyle: 'none' }}
                 >
                   {displayBestSellers.map((product: any) => (
-                    <Link key={product._id || product.id} href={`/product/${product._id || product.id}`} className="flex-shrink-0 w-48 sm:w-64 lg:w-80">
+                    <Link key={product.id} href={`/product/${product.id}`} className="flex-shrink-0 w-48 sm:w-64 lg:w-80">
                       <Card className="border-2 border-black h-full hover:shadow-xl transition-shadow cursor-pointer">
                         <div className="relative h-40 sm:h-52 lg:h-64 bg-white">
                           <Image 
-                            src={getProductImage(product)} 
+                            src={getOptimizedImageUrl(getProductImage(product))} 
                             alt={product.name} 
                             fill 
+                            sizes={generateImageSizes('card')}
                             className="object-contain p-3" 
+                            loading="lazy"
+                            quality={75}
                           />
                           {product.featured && (
                             <div className="absolute top-4 left-4 bg-black text-white px-3 py-1 text-xs font-bold uppercase">
@@ -834,14 +840,17 @@ export default function DynamicHomepage() {
                           )}
                           {product.colors && product.colors.length > 0 && (
                             <div className="absolute bottom-2 left-2 sm:bottom-4 sm:left-4 flex gap-1">
-                              {product.colors.slice(0, 3).map((color: string, idx: number) => (
-                                <div 
-                                  key={idx}
-                                  className="w-4 h-4 sm:w-6 sm:h-6 rounded-full border-2 border-white shadow-md"
-                                  style={{ backgroundColor: color.toLowerCase() }}
-                                  title={color}
-                                />
-                              ))}
+                              {product.colors.slice(0, 3).map((colorObj: any, idx: number) => {
+                                const colorValue = typeof colorObj === 'string' ? colorObj : (colorObj.color || colorObj.name || 'gray');
+                                return (
+                                  <div 
+                                    key={idx}
+                                    className="w-4 h-4 sm:w-6 sm:h-6 rounded-full border-2 border-white shadow-md"
+                                    style={{ backgroundColor: colorValue.toLowerCase() }}
+                                    title={typeof colorObj === 'string' ? colorObj : colorObj.name}
+                                  />
+                                );
+                              })}
                               {product.colors.length > 3 && (
                                 <div className="w-4 h-4 sm:w-6 sm:h-6 rounded-full bg-gray-200 border-2 border-white shadow-md flex items-center justify-center text-[8px] sm:text-xs font-bold">
                                   +{product.colors.length - 3}
@@ -856,17 +865,19 @@ export default function DynamicHomepage() {
                           </h3>
                           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                             <span className="text-lg sm:text-xl lg:text-2xl font-black text-black">
-                              ${product.basePrice || product.price || '0.00'}
+                              {product.basePrice || product.price || '0.00'} SEK
                             </span>
                             <Button 
                               className="bg-black hover:bg-gray-800 text-white font-bold uppercase text-xs sm:text-sm w-full sm:w-auto" 
                               size="sm" 
                               onClick={(e) => {
                                 e.preventDefault()
-                                window.location.href = `/design-tool?productId=${product._id || product.id}`
+                                // Add to cart logic
+                                dispatch(addToCart(product))
+                                toast.success('Added to cart!')
                               }}
                             >
-                              Customize
+                              Add to Cart
                             </Button>
                           </div>
                         </div>
@@ -944,14 +955,17 @@ export default function DynamicHomepage() {
                 >
                   {section.products && section.products.length > 0 ? (
                     section.products.map((product: any) => (
-                      <Link key={product._id || product.id} href={`/product/${product._id || product.id}`} className="flex-shrink-0 w-48 sm:w-64 lg:w-80">
+                      <Link key={product.id} href={`/product/${product.id}`} className="flex-shrink-0 w-48 sm:w-64 lg:w-80">
                         <Card className="border-2 border-black h-full hover:shadow-xl transition-shadow cursor-pointer">
                           <div className="relative h-40 sm:h-52 lg:h-64 bg-gray-50">
                             <Image 
-                              src={product.image || '/placeholder.jpg'} 
+                              src={getOptimizedImageUrl(product.image || '/placeholder.jpg')} 
                               alt={product.name} 
                               fill 
+                              sizes={generateImageSizes('card')}
                               className="object-contain p-3" 
+                              loading="lazy"
+                              quality={75}
                             />
                             {product.featured && (
                               <div className="absolute top-4 left-4 bg-black text-white px-3 py-1 text-xs font-bold uppercase">
@@ -960,14 +974,17 @@ export default function DynamicHomepage() {
                             )}
                             {product.colors && product.colors.length > 0 && (
                               <div className="absolute bottom-2 left-2 sm:bottom-4 sm:left-4 flex gap-1">
-                                {product.colors.slice(0, 3).map((color: string, idx: number) => (
-                                  <div 
-                                    key={idx}
-                                    className="w-4 h-4 sm:w-6 sm:h-6 rounded-full border-2 border-white shadow-md"
-                                    style={{ backgroundColor: color.toLowerCase() }}
-                                    title={color}
-                                  />
-                                ))}
+                                {product.colors.slice(0, 3).map((colorObj: any, idx: number) => {
+                                  const colorValue = typeof colorObj === 'string' ? colorObj : (colorObj.color || colorObj.name || 'gray');
+                                  return (
+                                    <div 
+                                      key={idx}
+                                      className="w-4 h-4 sm:w-6 sm:h-6 rounded-full border-2 border-white shadow-md"
+                                      style={{ backgroundColor: colorValue.toLowerCase() }}
+                                      title={typeof colorObj === 'string' ? colorObj : colorObj.name}
+                                    />
+                                  );
+                                })}
                                 {product.colors.length > 3 && (
                                   <div className="w-4 h-4 sm:w-6 sm:h-6 rounded-full bg-gray-200 border-2 border-white shadow-md flex items-center justify-center text-[8px] sm:text-xs font-bold">
                                     +{product.colors.length - 3}
@@ -982,14 +999,14 @@ export default function DynamicHomepage() {
                             </h3>
                             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                               <span className="text-lg sm:text-xl lg:text-2xl font-black text-black">
-                                ${product.basePrice || product.price || '0.00'}
+                                {product.basePrice || product.price || '0.00'} SEK
                               </span>
                               <Button 
                                 className="bg-black hover:bg-gray-800 text-white font-bold uppercase text-xs sm:text-sm w-full sm:w-auto" 
                                 size="sm" 
                                 onClick={(e) => {
                                   e.preventDefault()
-                                  window.location.href = `/design-tool?productId=${product._id || product.id}`
+                                  window.location.href = `/design-tool?productId=${product.id}`
                                 }}
                               >
                                 Customize

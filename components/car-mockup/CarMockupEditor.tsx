@@ -595,7 +595,7 @@ export function CarMockupEditor() {
                     <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
                       Print Resolution: 300 DPI
                     </Badge>
-                    <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200">
+                    <Badge variant="outline" className="bg-gray-50 text-gray-700 border-gray-200">
                       Vehicle: {selectedVehicle.make} {selectedVehicle.model}
                     </Badge>
                   </div>

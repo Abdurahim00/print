@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Edit3, Trash2 } from "lucide-react"
 import { Skeleton } from "@/components/ui/skeleton"
+import { Switch } from "@/components/ui/switch"
 import Image from "next/image"
 import type { Product } from "@/types"
 import { formatSEK } from "@/lib/utils"
@@ -15,9 +16,10 @@ interface ProductTableProps {
   productCategories: any[]
   onEdit: (product: Product) => void
   onDelete: (id: string, name: string) => void
+  onToggleStock?: (id: string, inStock: boolean) => void
 }
 
-export const ProductTable: React.FC<ProductTableProps> = ({ products, loading, t, productCategories, onEdit, onDelete }) => {
+export const ProductTable: React.FC<ProductTableProps> = ({ products, loading, t, productCategories, onEdit, onDelete, onToggleStock }) => {
   const ProductSkeleton = () => (
     <div className="p-6 space-y-4">
       {[...Array(5)].map((_, i) => (
@@ -47,6 +49,7 @@ export const ProductTable: React.FC<ProductTableProps> = ({ products, loading, t
             <TableHead className="min-w-[200px]">{t.productName}</TableHead>
             <TableHead className="min-w-[120px]">{t.category}</TableHead>
             <TableHead className="min-w-[100px]">{t.price}</TableHead>
+            <TableHead className="min-w-[80px]">{t.stock || "Stock"}</TableHead>
             <TableHead className="min-w-[120px]">{t.variations || "Variations"}</TableHead>
             <TableHead className="min-w-[150px]">{t.actions}</TableHead>
           </TableRow>
@@ -66,6 +69,18 @@ export const ProductTable: React.FC<ProductTableProps> = ({ products, loading, t
                 </Badge>
               </TableCell>
               <TableCell className="font-semibold text-slate-900 dark:text-slate-100">{formatSEK(product.price)}</TableCell>
+              <TableCell>
+                {onToggleStock ? (
+                  <Switch
+                    checked={product.inStock}
+                    onCheckedChange={(checked) => onToggleStock(product.id, checked)}
+                  />
+                ) : (
+                  <Badge variant={product.inStock ? "default" : "secondary"}>
+                    {product.inStock ? "In Stock" : "Out of Stock"}
+                  </Badge>
+                )}
+              </TableCell>
               <TableCell>
                 {product.hasVariations && product.variations && product.variations.length > 0 ? (
                   <div className="flex flex-col gap-1">

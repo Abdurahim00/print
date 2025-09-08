@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server"
 import { DesignService } from "@/lib/services/designService"
 
+// Force dynamic rendering for this route
+export const dynamic = 'force-dynamic'
+
 export async function GET(request: NextRequest) {
   try {
     // Get userId from query parameter

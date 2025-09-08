@@ -1,7 +1,13 @@
 import { NextRequest, NextResponse } from "next/server"
 import { ProductService } from "@/lib/services/productService"
 
+// Use edge runtime for better performance
+export const runtime = 'nodejs'
+// Cache for 60 seconds on CDN, revalidate in background
+export const revalidate = 60
+
 export async function GET(request: NextRequest) {
+  console.log('[API /products] GET request received')
   try {
     const { searchParams } = new URL(request.url)
     
@@ -36,6 +42,7 @@ export async function GET(request: NextRequest) {
     const fields = fieldsParam ? fieldsParam.split(',') : []
     
     // Get paginated products with total count
+    console.log('[API /products] Calling ProductService.getPaginatedProducts with:', { filter, skip, limit, sortBy, fields })
     const result = await ProductService.getPaginatedProducts({
       filter,
       skip,
@@ -44,7 +51,12 @@ export async function GET(request: NextRequest) {
       fields
     })
     
-    return NextResponse.json({
+    console.log('[API /products] Result from ProductService:', { 
+      productCount: result.products.length, 
+      total: result.total 
+    })
+    
+    const response = {
       products: result.products,
       pagination: {
         page,
@@ -52,7 +64,10 @@ export async function GET(request: NextRequest) {
         total: result.total,
         totalPages: Math.ceil(result.total / limit)
       }
-    })
+    }
+    
+    console.log('[API /products] Sending response with', response.products.length, 'products')
+    return NextResponse.json(response)
   } catch (error) {
     console.error("Error fetching products:", error)
     return NextResponse.json(
@@ -65,8 +80,11 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
+    console.log('[API /products POST] Creating product:', body.name)
     // Accept hasVariations and variations in the body
     const product = await ProductService.createProduct(body)
+    console.log('[API /products POST] Product created with ID:', product.id)
+    console.log('[API /products POST] Full product response:', { id: product.id, name: product.name })
     return NextResponse.json(product, { status: 201 })
   } catch (error) {
     console.error("Error creating product:", error)

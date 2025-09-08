@@ -1,9 +1,14 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { ProductService } from "@/lib/services/productService"
 
+// Force dynamic rendering for this route
+export const dynamic = 'force-dynamic'
+
 export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   try {
-    console.log("Fetching product with ID:", params.id, "Length:", params.id.length)
+    console.log("[API /products/[id]] GET request for product ID:", params.id)
+    console.log("[API /products/[id]] ID length:", params.id.length)
+    console.log("[API /products/[id]] ID type:", typeof params.id)
     
     const product = await ProductService.getProductById(params.id)
     if (!product) {

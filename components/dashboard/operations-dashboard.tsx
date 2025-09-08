@@ -10,14 +10,34 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Skeleton } from "@/components/ui/skeleton"
-import { FileArchive, Package, Clock, Printer, Truck, CheckCircle, User, ImageIcon, AlertTriangle } from "lucide-react"
+import { FileArchive, Package, Clock, Printer, Truck, CheckCircle, User, ImageIcon, AlertTriangle, Settings } from "lucide-react"
 import { toast } from "sonner"
 import type { Order } from "@/types"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import Image from "next/image"
-import { downloadOrderPDF } from "@/lib/utils/pdfExport"
+import { downloadOrderPDF, downloadPrintPackage } from "@/lib/utils/pdfExport"
 import { DesignCanvasRenderer } from "@/components/DesignCanvasRenderer"
 import { DesignElementsSummary } from "@/components/DesignElementsSummary"
+import { exportDesignOnly, exportComposite, createPrintReadyPackage } from "@/lib/utils/designExport"
+import { exportDesignSimple } from "@/lib/utils/simpleDesignExport"
+import { ExportOptionsDialog } from "./ExportOptionsDialog"
+import { Download, FileImage, FileText, Package2, Layers } from "lucide-react"
+
+// Helper functions to extract design data from different structures
+function getDesignContext(item: any) {
+  return item.designContext || item.designData?.designContext || null
+}
+
+function getCanvasJSON(item: any) {
+  return item.designCanvasJSON || 
+         item.designData?.designCanvasJSON || 
+         item.designData?.canvasJSON || 
+         null
+}
+
+function hasDesignData(item: any) {
+  return !!(getDesignContext(item) || getCanvasJSON(item) || item.designData)
+}
 
 export function OperationsDashboard() {
   const dispatch = useAppDispatch()
@@ -33,6 +53,10 @@ export function OperationsDashboard() {
   // Order details modal state
   const [detailsOpen, setDetailsOpen] = useState(false)
   const [detailsOrder, setDetailsOrder] = useState<Order | null>(null)
+  
+  // Export modal state
+  const [exportModalOpen, setExportModalOpen] = useState(false)
+  const [exportingItemIndex, setExportingItemIndex] = useState<number | null>(null)
   
   // Initialize visibility state safely on client side
   useEffect(() => {
@@ -72,9 +96,12 @@ export function OperationsDashboard() {
 
   const handleStatusUpdate = async (orderId: string, newStatus: Order["status"]) => {
     try {
-      await dispatch(updateOrderStatus({ id: orderId, status: newStatus })).unwrap()
+      console.log('Updating order status:', { orderId, newStatus })
+      const result = await dispatch(updateOrderStatus({ id: orderId, status: newStatus })).unwrap()
+      console.log('Order status updated successfully:', result)
       toast.success(t.orderStatusChanged.replace("{orderId}", orderId).replace("{newStatus}", newStatus))
     } catch (error) {
+      console.error('Failed to update order status:', error)
       toast.error(t.failedToUpdateOrder)
     }
   }
@@ -96,6 +123,26 @@ export function OperationsDashboard() {
     } catch (error) {
       console.error('Error generating PDF:', error)
       toast.error('Failed to generate PDF. Please try again.')
+    }
+  }
+
+  const handleDownloadPrintPackage = async (orderId: string) => {
+    try {
+      const order = orders.find(o => o.id === orderId)
+      if (!order) {
+        toast.error('Order not found')
+        return
+      }
+      
+      toast.success(`Generating print package for order ${orderId}...`)
+      
+      // Generate and download complete print package as ZIP
+      await downloadPrintPackage(order)
+      
+      toast.success(`Print package generated successfully for order ${orderId}`)
+    } catch (error) {
+      console.error('Error generating print package:', error)
+      toast.error('Failed to generate print package. Please try again.')
     }
   }
 
@@ -125,7 +172,7 @@ export function OperationsDashboard() {
       case "In Production":
         return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200"
       case "Shipped":
-        return "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200"
+        return "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200"
       case "Completed":
         return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
       default:
@@ -135,6 +182,9 @@ export function OperationsDashboard() {
 
   const statusOptions: Order["status"][] = ["Queued", "Printing", "In Production", "Shipped", "Completed"]
 
+  // Filter for active orders only (non-completed)
+  const activeOrders = orders.filter((o) => o.status !== "Completed" && o.status !== "Cancelled")
+  
   // Calculate stats
   const totalOrders = orders.length
   const queuedOrders = orders.filter((o) => o.status === "Queued").length
@@ -231,14 +281,14 @@ export function OperationsDashboard() {
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-r from-purple-50 to-violet-50 dark:from-purple-900/20 dark:to-violet-900/20 border-purple-200 dark:border-purple-800">
+          <Card className="bg-gradient-to-r from-gray-50 to-gray-50 dark:from-gray-900/20 dark:to-gray-900/20 border-gray-200 dark:border-gray-800">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-purple-600 dark:text-purple-400">{t.inProduction}</p>
-                  <p className="text-2xl font-bold text-purple-900 dark:text-purple-100">{inProductionOrders}</p>
+                  <p className="text-sm font-medium text-black dark:text-gray-400">{t.inProduction}</p>
+                  <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{inProductionOrders}</p>
                 </div>
-                <Printer className="h-8 w-8 text-purple-600 dark:text-purple-400" />
+                <Printer className="h-8 w-8 text-black dark:text-gray-400" />
               </div>
             </CardContent>
           </Card>
@@ -270,7 +320,7 @@ export function OperationsDashboard() {
             <div className="p-6">
               <OrdersSkeleton />
             </div>
-          ) : orders.length > 0 ? (
+          ) : activeOrders.length > 0 ? (
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
@@ -299,7 +349,7 @@ export function OperationsDashboard() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {orders.map((order, index) => (
+                  {activeOrders.map((order, index) => (
                     <TableRow
                       key={order.id}
                       className={`border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50 ${
@@ -320,7 +370,7 @@ export function OperationsDashboard() {
                           value={order.status}
                           onValueChange={(value) => handleStatusUpdate(order.id, value as Order["status"])}
                         >
-                          <SelectTrigger className="w-full min-w-[140px] border-slate-300 focus:border-[#634c9e] focus:ring-[#634c9e20]">
+                          <SelectTrigger className="w-full min-w-[140px] border-slate-300 focus:border-black focus:ring-gray-200">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
@@ -340,7 +390,7 @@ export function OperationsDashboard() {
                           variant="outline"
                           size="sm"
                           onClick={() => handleExportPrintFile(order.id)}
-                          className="w-full min-w-[140px] bg-transparent hover:bg-[#634c9e15] hover:text-[#634c9e] hover:border-[#634c9e40] dark:hover:bg-[#634c9e30]"
+                          className="w-full min-w-[140px] bg-transparent hover:bg-gray-100 hover:text-black hover:border-gray-400 dark:hover:bg-gray-800"
                         >
                           <FileArchive className="mr-2 h-4 w-4" />
                           {t.exportPrintFile}
@@ -396,21 +446,21 @@ export function OperationsDashboard() {
                   <div>
                     <p className="font-medium text-amber-800 dark:text-amber-200">With Design Context</p>
                     <p className="text-lg font-bold text-amber-900 dark:text-amber-100">
-                      {detailsOrder.items.filter((item: any) => item.designContext).length}
+                      {detailsOrder.items.filter((item: any) => getDesignContext(item)).length}
                     </p>
                   </div>
                   <div>
                     <p className="font-medium text-amber-800 dark:text-amber-200">With Design Canvas</p>
                     <p className="text-lg font-bold text-amber-900 dark:text-amber-100">
-                      {detailsOrder.items.filter((item: any) => item.designCanvasJSON).length}
+                      {detailsOrder.items.filter((item: any) => getCanvasJSON(item)).length}
                     </p>
                   </div>
                 </div>
 
                 {/* Missing Data Warnings */}
                 {(() => {
-                  const itemsWithoutDesign = detailsOrder.items.filter((item: any) => !item.designContext);
-                  const itemsWithoutCanvas = detailsOrder.items.filter((item: any) => !item.designCanvasJSON);
+                  const itemsWithoutDesign = detailsOrder.items.filter((item: any) => !getDesignContext(item));
+                  const itemsWithoutCanvas = detailsOrder.items.filter((item: any) => !getCanvasJSON(item));
                   
                   if (itemsWithoutDesign.length > 0 || itemsWithoutCanvas.length > 0) {
                     return (
@@ -438,7 +488,7 @@ export function OperationsDashboard() {
               </div>
 
               {/* Customer Information Section */}
-              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-lg p-6 border border-blue-200 dark:border-blue-800">
+              <div className="bg-gradient-to-r from-blue-50 to-gray-50 dark:from-blue-900/20 dark:to-gray-900/20 rounded-lg p-6 border border-blue-200 dark:border-blue-800">
                 <h3 className="text-lg font-semibold text-blue-900 dark:text-blue-100 mb-4 flex items-center gap-2">
                   <User className="h-5 w-5" />
                   Customer Information
@@ -500,11 +550,15 @@ export function OperationsDashboard() {
                   </div>
                   <div>
                     <p className="text-sm font-medium text-green-700 dark:text-green-300">Total Amount</p>
-                    <p className="text-2xl font-bold text-green-900 dark:text-green-100">{detailsOrder.total.toFixed(2)} SEK</p>
+                    <p className="text-2xl font-bold text-green-900 dark:text-green-100">
+                      {detailsOrder.total ? detailsOrder.total.toFixed(2) : '0.00'} SEK
+                    </p>
                   </div>
                   <div>
                     <p className="text-sm font-medium text-green-700 dark:text-green-300">Payment Method</p>
-                    <p className="text-lg font-semibold text-green-900 dark:text-green-100 capitalize">{detailsOrder.paymentMethod}</p>
+                    <p className="text-lg font-semibold text-green-900 dark:text-green-100 capitalize">
+                      {detailsOrder.paymentMethod || 'Not specified'}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -537,15 +591,29 @@ export function OperationsDashboard() {
                         </div>
                           <div>
                             <h4 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
-                              {item.name}
+                              {typeof item.name === 'string' ? item.name : typeof item.name === 'object' && item.name?.name ? String(item.name.name) : 'Product'}
                               {(item as any).designContext?.selectedVariation && (
                                 <span className="ml-2 text-sm font-normal text-slate-600 dark:text-slate-400">
-                                  ({(item as any).designContext.selectedVariation.colorName})
+                                  ({(() => {
+                                    const variation = (item as any).designContext.selectedVariation;
+                                    if (typeof variation.colorName === 'string') return variation.colorName;
+                                    if (typeof variation.color?.name === 'string') return variation.color.name;
+                                    if (typeof variation.color === 'string') return variation.color;
+                                    return 'Unknown';
+                                  })()})
                               </span>
                               )}
                             </h4>
                             <div className="text-sm text-slate-600 dark:text-slate-400">
-                              Quantity: {item.quantity} • Price: {typeof item.price === 'number' ? item.price.toFixed(2) : item.price} SEK
+                              Quantity: {item.quantity} • Price: {(() => {
+                                if (typeof item.price === 'number') return item.price.toFixed(2);
+                                if (typeof item.price === 'string') return item.price;
+                                if (typeof item.price === 'object' && item.price !== null) {
+                                  // Handle case where price might be a variation object
+                                  return 'N/A';
+                                }
+                                return 'N/A';
+                              })()} SEK
                             </div>
                           {(item as any).selectedSizes && (item as any).selectedSizes.length > 0 && (
                               <div className="text-sm text-slate-600 dark:text-slate-400 mt-1">
@@ -556,7 +624,13 @@ export function OperationsDashboard() {
                         </div>
                         <div className="text-right">
                           <div className="text-lg font-bold text-slate-900 dark:text-slate-100">
-                            {typeof item.price === 'number' ? (item.price * item.quantity).toFixed(2) : 'N/A'} SEK
+                            {(() => {
+                              if (typeof item.price === 'number') return (item.price * item.quantity).toFixed(2);
+                              if (typeof item.price === 'string' && !isNaN(parseFloat(item.price))) {
+                                return (parseFloat(item.price) * item.quantity).toFixed(2);
+                              }
+                              return 'N/A';
+                            })()} SEK
                           </div>
                           <div className="text-sm text-slate-500 dark:text-slate-400">Total</div>
                         </div>
@@ -564,7 +638,7 @@ export function OperationsDashboard() {
                     </div>
 
                     {/* Design Details */}
-                          {(item as any).designContext && (
+                          {hasDesignData(item) && (
                       <div className="p-4 space-y-4">
                         <h5 className="font-semibold text-slate-800 dark:text-slate-200 flex items-center gap-2">
                           <ImageIcon className="h-4 w-4" />
@@ -576,7 +650,7 @@ export function OperationsDashboard() {
                           <div className="bg-slate-50 dark:bg-slate-700/30 rounded-lg p-3">
                             <p className="text-sm font-medium text-slate-700 dark:text-slate-300">View Mode</p>
                             <p className="text-lg font-semibold text-slate-900 dark:text-slate-100 capitalize">
-                              {(item as any).designContext.viewMode}
+                              {getDesignContext(item)?.viewMode || 'default'}
                             </p>
                                 </div>
                           <div className="bg-slate-50 dark:bg-slate-700/30 rounded-lg p-3">
@@ -584,37 +658,44 @@ export function OperationsDashboard() {
                                   <div className="flex items-center gap-2">
                                     <div 
                                 className="w-6 h-6 rounded-full border border-slate-300"
-                                style={{ backgroundColor: (item as any).designContext.productColor }}
+                                style={{ backgroundColor: getDesignContext(item)?.productColor || '#ffffff' }}
                                     />
                               <span className="text-lg font-semibold text-slate-900 dark:text-slate-100">
-                                {(item as any).designContext.productColor}
+                                {getDesignContext(item)?.productColor || 'default'}
                                     </span>
                                   </div>
                                 </div>
                         </div>
 
                         {/* Template Information */}
-                                {(item as any).designContext.selectedTemplate && (
-                          <div className="bg-gradient-to-r from-purple-50 to-violet-50 dark:from-purple-900/20 dark:to-violet-900/20 rounded-lg p-4 border border-purple-200 dark:border-purple-800">
-                            <h6 className="font-semibold text-purple-900 dark:text-purple-100 mb-2">Applied Template</h6>
+                                {getDesignContext(item)?.selectedTemplate && (
+                          <div className="bg-gradient-to-r from-gray-50 to-gray-50 dark:from-gray-900/20 dark:to-gray-900/20 rounded-lg p-4 border border-gray-200 dark:border-gray-800">
+                            <h6 className="font-semibold text-gray-900 dark:text-gray-100 mb-2">Applied Template</h6>
                             <div className="flex items-center gap-3">
                               <div className="relative w-16 h-16">
                                 <Image 
                                   src={(item as any).designContext.selectedTemplate.image} 
                                   alt={(item as any).designContext.selectedTemplate.name} 
                                   fill 
-                                  className="object-cover rounded border border-purple-200 dark:border-purple-800" 
+                                  className="object-cover rounded border border-gray-200 dark:border-gray-800" 
                                 />
                               </div>
                               <div>
-                                <p className="font-medium text-purple-900 dark:text-purple-100">
-                                      {(item as any).designContext.selectedTemplate.name}
+                                <p className="font-medium text-gray-900 dark:text-gray-100">
+                                      {String((item as any).designContext.selectedTemplate.name || 'Template')}
                                 </p>
-                                <p className="text-sm text-purple-700 dark:text-purple-300">
-                                  Category: {(item as any).designContext.selectedTemplate.category}
+                                <p className="text-sm text-gray-700 dark:text-gray-300">
+                                  Category: {String((item as any).designContext.selectedTemplate.category || 'Unknown')}
                                 </p>
-                                <p className="text-sm text-purple-700 dark:text-purple-300">
-                                  Price: {(item as any).designContext.selectedTemplate.price === 'free' ? 'Free' : (item as any).designContext.selectedTemplate.price}
+                                <p className="text-sm text-gray-700 dark:text-gray-300">
+                                  Price: {(() => {
+                                    const price = (item as any).designContext.selectedTemplate.price;
+                                    if (price === 'free') return 'Free';
+                                    if (typeof price === 'number') return `${price} SEK`;
+                                    if (typeof price === 'string') return price;
+                                    if (typeof price === 'object' && price !== null) return 'N/A';
+                                    return 'N/A';
+                                  })()}
                                 </p>
                               </div>
                             </div>
@@ -629,7 +710,13 @@ export function OperationsDashboard() {
                               <div>
                                 <p className="text-sm font-medium text-orange-700 dark:text-orange-300">Color Name</p>
                                 <p className="text-lg font-semibold text-orange-900 dark:text-orange-100">
-                                  {(item as any).designContext.selectedVariation.colorName}
+                                  {(() => {
+                                    const variation = (item as any).designContext.selectedVariation;
+                                    if (typeof variation.colorName === 'string') return variation.colorName;
+                                    if (typeof variation.color?.name === 'string') return variation.color.name;
+                                    if (typeof variation.color === 'string') return variation.color;
+                                    return 'Unknown Color';
+                                  })()}
                                 </p>
                               </div>
                               <div>
@@ -637,10 +724,17 @@ export function OperationsDashboard() {
                                   <div className="flex items-center gap-2">
                                   <div 
                                     className="w-6 h-6 rounded-full border border-orange-300"
-                                    style={{ backgroundColor: (item as any).designContext.selectedVariation.colorHexCode }}
+                                    style={{ backgroundColor: (item as any).designContext.selectedVariation.colorHexCode || 
+                                             (item as any).designContext.selectedVariation.color?.hex_code || 
+                                             '#000000' }}
                                   />
                                   <span className="text-lg font-semibold text-orange-900 dark:text-orange-100">
-                                    {(item as any).designContext.selectedVariation.colorHexCode}
+                                    {(() => {
+                                      const variation = (item as any).designContext.selectedVariation;
+                                      if (typeof variation.colorHexCode === 'string') return variation.colorHexCode;
+                                      if (typeof variation.color?.hex_code === 'string') return variation.color.hex_code;
+                                      return '#000000';
+                                    })()}
                                     </span>
                                   </div>
                               </div>
@@ -662,19 +756,19 @@ export function OperationsDashboard() {
                                       const hasCanvasData = !!designedAngle.canvasJSON
                                       
                                       return (
-                                        <div key={angleIdx} className="bg-white dark:bg-slate-700/30 rounded-lg border-2 overflow-hidden ${
+                                        <div key={angleIdx} className={`bg-white dark:bg-slate-700/30 rounded-lg border-2 overflow-hidden ${
                                           isCurrentView 
                                             ? 'border-orange-500 bg-orange-50/30 ring-2 ring-orange-200' 
                                             : hasDesign
                                             ? 'border-green-500 bg-green-50/30'
                                             : 'border-orange-200 bg-white'
-                                        }">
+                                        }`}>
                                           {/* Angle Header */}
                                           <div className="bg-gradient-to-r from-orange-50 to-amber-50 dark:from-orange-900/20 dark:to-amber-900/20 p-3 border-b border-orange-200 dark:border-orange-700">
                                             <div className="flex items-center justify-between">
                                               <div className="flex items-center gap-3">
                                                 <h6 className="font-semibold text-orange-900 dark:text-orange-100 capitalize text-lg">
-                                                  {designedAngle.angle} View
+                                                  {String(designedAngle.angle || 'Unknown')} View
                                                 </h6>
                                                 {isCurrentView && (
                                                   <Badge variant="secondary" className="text-xs bg-orange-100 text-orange-800 border-orange-300">
@@ -914,7 +1008,7 @@ export function OperationsDashboard() {
                     )}
 
                     {/* No Design Context Warning */}
-                    {!(item as any).designContext && (
+                    {!hasDesignData(item) && (
                       <div className="p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
                         <div className="flex items-center gap-2 text-yellow-800 dark:text-yellow-200">
                           <AlertTriangle className="h-4 w-4" />
@@ -929,6 +1023,172 @@ export function OperationsDashboard() {
                 ))}
               </div>
 
+              {/* Export Actions Section */}
+              <div className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-lg p-6 border border-green-200 dark:border-green-800">
+                <h3 className="text-lg font-semibold text-green-900 dark:text-green-100 mb-4 flex items-center gap-2">
+                  <Download className="h-5 w-5" />
+                  Export Options
+                </h3>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {/* Export PDF Report */}
+                  <Button 
+                    onClick={() => handleExportPrintFile(detailsOrder.id)}
+                    variant="outline"
+                    className="justify-start"
+                  >
+                    <FileText className="mr-2 h-4 w-4" />
+                    Order Report (PDF)
+                  </Button>
+                  
+                  {/* Export Complete Package */}
+                  <Button 
+                    onClick={() => handleDownloadPrintPackage(detailsOrder.id)}
+                    variant="outline"
+                    className="justify-start"
+                  >
+                    <Package2 className="mr-2 h-4 w-4" />
+                    Complete Print Package
+                  </Button>
+                  
+                  {/* Export All Designs */}
+                  <Button 
+                    onClick={async () => {
+                      toast.info('Exporting all designs...')
+                      for (const [index, item] of detailsOrder.items.entries()) {
+                        const canvasJSON = (item as any).designCanvasJSON || (item as any).designData?.designCanvasJSON || (item as any).designData?.canvasJSON;
+                        if (canvasJSON) {
+                          try {
+                            const designData = await exportDesignSimple(canvasJSON)
+                            // Convert to blob and download
+                            const link = document.createElement('a')
+                            link.href = designData as string
+                            link.download = `design-${detailsOrder.id}-item-${index + 1}.png`
+                            link.click()
+                          } catch (error) {
+                            console.error(`Failed to export design for item ${index}:`, error)
+                          }
+                        }
+                      }
+                      toast.success('Designs exported successfully!')
+                    }}
+                    variant="outline"
+                    className="justify-start"
+                  >
+                    <FileImage className="mr-2 h-4 w-4" />
+                    All Designs (PNG)
+                  </Button>
+                  
+                  {/* Export Individual Elements */}
+                  <Button 
+                    onClick={() => {
+                      setExportModalOpen(true)
+                    }}
+                    variant="outline"
+                    className="justify-start"
+                  >
+                    <Layers className="mr-2 h-4 w-4" />
+                    Custom Export Options
+                  </Button>
+                </div>
+                
+                {/* Per-Item Export Options */}
+                <div className="mt-4">
+                  <h4 className="text-sm font-medium text-green-800 dark:text-green-200 mb-2">Individual Item Exports:</h4>
+                  <div className="space-y-2">
+                    {detailsOrder.items.map((item, index) => {
+                      if (!(item as any).designCanvasJSON) return null
+                      
+                      return (
+                        <div key={index} className="flex items-center justify-between bg-white dark:bg-slate-800 rounded-lg p-3 border border-green-200 dark:border-green-700">
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                              Item #{index + 1}: {typeof item.name === 'string' ? item.name : typeof item.name === 'object' && item.name?.name ? String(item.name.name) : 'Product'}
+                            </span>
+                            {(item as any).designContext?.viewMode && (
+                              <Badge variant="outline" className="text-xs">
+                                {(item as any).designContext.viewMode} view
+                              </Badge>
+                            )}
+                          </div>
+                          
+                          <div className="flex gap-2">
+                            {/* Export Design Only */}
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={async () => {
+                                try {
+                                  const designData = await exportDesignSimple(
+                                    (item as any).designCanvasJSON
+                                  )
+                                  const link = document.createElement('a')
+                                  link.href = designData as string
+                                  link.download = `design-only-${detailsOrder.id}-item-${index + 1}.png`
+                                  link.click()
+                                  toast.success(`Design exported for item ${index + 1}`)
+                                } catch (error) {
+                                  toast.error('Failed to export design')
+                                }
+                              }}
+                              title="Export design only (transparent background)"
+                            >
+                              <FileImage className="h-4 w-4" />
+                            </Button>
+                            
+                            {/* Export Composite */}
+                            {(item as any).designContext?.selectedVariation?.variationImages?.[0]?.url && (
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={async () => {
+                                  try {
+                                    const productImage = (item as any).designContext.selectedVariation.variationImages.find(
+                                      (img: any) => img.angle === (item as any).designContext.viewMode
+                                    )?.url
+                                    
+                                    if (productImage) {
+                                      const compositeData = await exportComposite(
+                                        (item as any).designCanvasJSON,
+                                        productImage,
+                                        { format: 'png', dpi: 300, includeBleed: false }
+                                      )
+                                      const link = document.createElement('a')
+                                      link.href = compositeData
+                                      link.download = `composite-${detailsOrder.id}-item-${index + 1}.png`
+                                      link.click()
+                                      toast.success(`Composite exported for item ${index + 1}`)
+                                    }
+                                  } catch (error) {
+                                    toast.error('Failed to export composite')
+                                  }
+                                }}
+                                title="Export with product (composite view)"
+                              >
+                                <Package2 className="h-4 w-4" />
+                              </Button>
+                            )}
+                            
+                            {/* Advanced Options */}
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => {
+                                setExportingItemIndex(index)
+                                setExportModalOpen(true)
+                              }}
+                              title="Advanced export options"
+                            >
+                              <Settings className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              </div>
+
               {/* Action Buttons */}
               <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t border-slate-200 dark:border-slate-700">
                 <Button 
@@ -938,18 +1198,24 @@ export function OperationsDashboard() {
                 >
                   Close
                 </Button>
-                <Button 
-                  onClick={() => handleExportPrintFile(detailsOrder.id)}
-                  className="flex-1 bg-green-600 hover:bg-green-700 text-white"
-                >
-                  <FileArchive className="mr-2 h-4 w-4" />
-                  Export Print File (PDF)
-                </Button>
             </div>
             </div>
           )}
         </DialogContent>
       </Dialog>
+      
+      {/* Export Options Dialog */}
+      {exportModalOpen && detailsOrder && (
+        <ExportOptionsDialog
+          isOpen={exportModalOpen}
+          onClose={() => {
+            setExportModalOpen(false)
+            setExportingItemIndex(null)
+          }}
+          order={detailsOrder}
+          itemIndex={exportingItemIndex}
+        />
+      )}
     </div>
   )
 }

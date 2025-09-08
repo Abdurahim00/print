@@ -7,103 +7,103 @@ import Link from "next/link"
 import { ChevronDown, ChevronRight } from "lucide-react"
 import * as NavigationMenu from "@radix-ui/react-navigation-menu"
 
-// Minimalistic icon mapping using iconify CDN (similar to flaticon style)
+// Minimalistic icon mapping using reliable CDN (fallback for iconify)
 const getCategoryIcon = (categoryName: string, index: number) => {
   const iconMap: { [key: string]: string } = {
     // Apparel
-    'apparel': "https://api.iconify.design/tabler:shirt.svg",
-    'clothing': "https://api.iconify.design/tabler:hanger.svg",
-    't-shirt': "https://api.iconify.design/tabler:shirt.svg",
-    'tshirt': "https://api.iconify.design/tabler:shirt.svg",
-    'hoodie': "https://api.iconify.design/mdi:hoodie-outline.svg",
+    'apparel': "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/shirt.svg",
+    'clothing': "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/shirt.svg",
+    't-shirt': "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/shirt.svg",
+    'tshirt': "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/shirt.svg",
+    'hoodie': "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/shirt.svg",
     
     // Print & Stationery
-    'print': "https://api.iconify.design/tabler:printer.svg",
-    'printing': "https://api.iconify.design/tabler:printer.svg",
-    'sticker': "https://api.iconify.design/tabler:sticker.svg",
-    'poster': "https://api.iconify.design/carbon:image.svg",
-    'business': "https://api.iconify.design/tabler:briefcase.svg",
-    'card': "https://api.iconify.design/tabler:id.svg",
-    'document': "https://api.iconify.design/tabler:file-text.svg",
-    'paper': "https://api.iconify.design/tabler:file.svg",
-    
+    'print': "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/printer.svg",
+    'printing': "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/printer.svg",
+    'sticker': "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/sticker.svg",
+    'poster': "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/image.svg",
+    'business': "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/briefcase.svg",
+    'card': "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/id-card.svg",
+    'document': "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/file-text.svg",
+    'paper': "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/file.svg",
+
     // Promotional
-    'promotional': "https://api.iconify.design/tabler:speakerphone.svg",
-    'gift': "https://api.iconify.design/tabler:gift.svg",
-    'trophy': "https://api.iconify.design/tabler:trophy.svg",
-    'award': "https://api.iconify.design/tabler:award.svg",
-    
+    'promotional': "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/megaphone.svg",
+    'gift': "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/gift.svg",
+    'trophy': "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/trophy.svg",
+    'award': "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/award.svg",
+
     // Packaging
-    'package': "https://api.iconify.design/tabler:package.svg",
-    'packaging': "https://api.iconify.design/tabler:box.svg",
-    'box': "https://api.iconify.design/carbon:box.svg",
-    
+    'package': "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/package.svg",
+    'packaging': "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/box.svg",
+    'box': "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/box.svg",
+
     // Shopping
-    'shop': "https://api.iconify.design/tabler:shopping-cart.svg",
-    'retail': "https://api.iconify.design/tabler:building-store.svg",
-    
+    'shop': "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/shopping-cart.svg",
+    'retail': "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/store.svg",
+
     // Home & Living
-    'home': "https://api.iconify.design/tabler:home.svg",
-    'decor': "https://api.iconify.design/tabler:lamp.svg",
-    'kitchen': "https://api.iconify.design/tabler:tools-kitchen-2.svg",
-    
+    'home': "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/home.svg",
+    'decor': "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/lamp.svg",
+    'kitchen': "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/chef-hat.svg",
+
     // Accessories
-    'bag': "https://api.iconify.design/tabler:shopping-bag.svg",
-    'wallet': "https://api.iconify.design/tabler:wallet.svg",
-    'watch': "https://api.iconify.design/mdi:watch.svg",
-    
+    'bag': "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/shopping-bag.svg",
+    'wallet': "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/wallet.svg",
+    'watch': "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/watch.svg",
+
     // Events
-    'event': "https://api.iconify.design/tabler:calendar-event.svg",
-    'calendar': "https://api.iconify.design/tabler:calendar.svg",
-    'party': "https://api.iconify.design/tabler:confetti.svg",
-    'wedding': "https://api.iconify.design/tabler:heart.svg",
-    'heart': "https://api.iconify.design/tabler:heart.svg",
-    'love': "https://api.iconify.design/tabler:heart.svg",
-    
+    'event': "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/calendar.svg",
+    'calendar': "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/calendar.svg",
+    'party': "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/party-popper.svg",
+    'wedding': "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/heart.svg",
+    'heart': "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/heart.svg",
+    'love': "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/heart.svg",
+
     // Tech
-    'tech': "https://api.iconify.design/tabler:cpu.svg",
-    'electronic': "https://api.iconify.design/tabler:devices.svg",
-    'phone': "https://api.iconify.design/tabler:device-mobile.svg",
-    
+    'tech': "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/cpu.svg",
+    'electronic': "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/monitor.svg",
+    'phone': "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/smartphone.svg",
+
     // Food & Drink
-    'food': "https://api.iconify.design/tabler:meat.svg",
-    'beverage': "https://api.iconify.design/tabler:glass-full.svg",
-    'coffee': "https://api.iconify.design/tabler:coffee.svg",
-    'mug': "https://api.iconify.design/tabler:mug.svg",
-    
+    'food': "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/utensils.svg",
+    'beverage': "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/glass-water.svg",
+    'coffee': "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/coffee.svg",
+    'mug': "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/coffee.svg",
+
     // Sports & Outdoor
-    'sport': "https://api.iconify.design/tabler:ball-football.svg",
-    'outdoor': "https://api.iconify.design/tabler:tent.svg",
-    'mountain': "https://api.iconify.design/tabler:mountain.svg",
-    'travel': "https://api.iconify.design/tabler:plane.svg",
-    
+    'sport': "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/football.svg",
+    'outdoor': "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/tent.svg",
+    'mountain': "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/mountain.svg",
+    'travel': "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/plane.svg",
+
     // Creative
-    'design': "https://api.iconify.design/tabler:palette.svg",
-    'art': "https://api.iconify.design/tabler:brush.svg",
-    'photo': "https://api.iconify.design/tabler:camera.svg",
-    'photography': "https://api.iconify.design/tabler:capture.svg",
-    'music': "https://api.iconify.design/tabler:music.svg",
-    'audio': "https://api.iconify.design/tabler:headphones.svg",
-    
+    'design': "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/palette.svg",
+    'art': "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/brush.svg",
+    'photo': "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/camera.svg",
+    'photography': "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/camera.svg",
+    'music': "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/music.svg",
+    'audio': "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/headphones.svg",
+
     // Gaming
-    'game': "https://api.iconify.design/tabler:device-gamepad.svg",
-    'gaming': "https://api.iconify.design/mdi:controller.svg",
-    
+    'game': "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/gamepad.svg",
+    'gaming': "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/gamepad.svg",
+
     // Vehicles
-    'car': "https://api.iconify.design/tabler:car.svg",
-    'vehicle': "https://api.iconify.design/mdi:car-side.svg",
-    
+    'car': "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/car.svg",
+    'vehicle': "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/car.svg",
+
     // Other
-    'star': "https://api.iconify.design/tabler:star.svg",
-    'premium': "https://api.iconify.design/tabler:crown.svg",
-    'flag': "https://api.iconify.design/tabler:flag.svg",
-    'banner': "https://api.iconify.design/tabler:flag.svg",
-    'book': "https://api.iconify.design/tabler:book.svg",
-    'publication': "https://api.iconify.design/tabler:news.svg",
-    'special': "https://api.iconify.design/tabler:sparkles.svg",
-    'eco': "https://api.iconify.design/tabler:recycle.svg",
-    'luxury': "https://api.iconify.design/tabler:crown.svg",
-    'custom': "https://api.iconify.design/tabler:wand.svg"
+    'star': "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/star.svg",
+    'premium': "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/crown.svg",
+    'flag': "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/flag.svg",
+    'banner': "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/flag.svg",
+    'book': "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/book.svg",
+    'publication': "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/newspaper.svg",
+    'special': "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/sparkles.svg",
+    'eco': "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/recycle.svg",
+    'luxury': "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/crown.svg",
+    'custom': "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/wand.svg"
   }
   
   // Try to match category name with icon map
@@ -116,12 +116,12 @@ const getCategoryIcon = (categoryName: string, index: number) => {
   
   // Fallback icons - minimalistic generic icons
   const fallbackIcons = [
-    "https://api.iconify.design/tabler:box.svg",
-    "https://api.iconify.design/tabler:tag.svg",
-    "https://api.iconify.design/tabler:shopping-cart.svg",
-    "https://api.iconify.design/tabler:archive.svg",
-    "https://api.iconify.design/tabler:cube.svg",
-    "https://api.iconify.design/tabler:grid-dots.svg"
+    "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/box.svg",
+    "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/tag.svg",
+    "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/shopping-cart.svg",
+    "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/archive.svg",
+    "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/cube.svg",
+    "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/grid.svg"
   ]
   
   return fallbackIcons[index % fallbackIcons.length]

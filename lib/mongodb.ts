@@ -2,7 +2,10 @@ import { MongoClient, type Db } from "mongodb"
 
 const uri = process.env.MONGODB_URI || "mongodb://localhost:27017"
 
-const options = {}
+const options = {
+  serverSelectionTimeoutMS: 5000, // Timeout after 5 seconds
+  connectTimeoutMS: 10000,
+}
 
 let client: MongoClient
 let clientPromise: Promise<MongoClient>

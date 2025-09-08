@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server"
 import { updateSubcategory, deleteSubcategory, getSubcategoryById } from "@/lib/services/categoryService"
 
+// Force dynamic rendering for this route
+export const dynamic = 'force-dynamic'
+
 export async function GET(_req: NextRequest, { params }: { params: { id: string } }) {
   try {
     const subcategory = await getSubcategoryById(params.id)

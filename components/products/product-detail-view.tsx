@@ -13,6 +13,14 @@ import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Separator } from "@/components/ui/separator"
 import { useToast } from "@/hooks/use-toast"
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb"
 import { 
   ShoppingCart, 
   Palette, 
@@ -101,20 +109,16 @@ export function ProductDetailView({
     // Get all images from the product using our utility
     const allImages = getAllProductImages(product)
     
-    // First, add main image if exists
-    const mainImage = getProductImage(product)
-    if (mainImage && mainImage !== '/placeholder.jpg') {
-      addImage(mainImage, 'Main')
-    }
-    
     // If selected variant has specific images, prioritize those
     if (selectedVariant) {
+      // Add the selected variant's main image first
       if (selectedVariant.variant_image) {
-        addImage(selectedVariant.variant_image, 'Variant')
+        addImage(selectedVariant.variant_image, 'Main')
+      } else if (selectedVariant.image) {
+        addImage(selectedVariant.image, 'Main')
       }
-      if (selectedVariant.image) {
-        addImage(selectedVariant.image, 'View')
-      }
+      
+      // Add other variant images
       if (selectedVariant.frontImage) {
         addImage(selectedVariant.frontImage, 'Front')
       }
@@ -127,68 +131,56 @@ export function ProductDetailView({
           addImage(url, `View ${idx + 1}`)
         })
       }
+    } else {
+      // No variant selected, use main product image
+      const mainImage = getProductImage(product)
+      if (mainImage && mainImage !== '/placeholder.jpg') {
+        addImage(mainImage, 'Main')
+      }
     }
     
-    // Add product-level images
-    if (product.frontImage) {
-      addImage(product.frontImage, 'Front')
-    }
-    if (product.backImage) {
-      addImage(product.backImage, 'Back')
-    }
-    if (product.leftImage) {
-      addImage(product.leftImage, 'Left')
-    }
-    if (product.rightImage) {
-      addImage(product.rightImage, 'Right')
-    }
-    if (product.materialImage) {
-      addImage(product.materialImage, 'Material')
-    }
-    
-    // Add from images array
-    if (product.images && Array.isArray(product.images)) {
-      product.images.forEach((img: any, idx: number) => {
-        const url = typeof img === 'object' && img.url ? img.url : img
-        addImage(url, `Image ${idx + 1}`)
-      })
-    }
-    
-    // Always add variant images for multi-angle view
-    if (product.variants && Array.isArray(product.variants)) {
-      // If we already have angle images, only add unique variant angles
-      // Otherwise add all variant images
-      const needAllVariantImages = imagesWithLabels.length === 0
+    // Add additional product-level images if not already added
+    if (!selectedVariant || imagesWithLabels.length < 2) {
+      if (product.frontImage) {
+        addImage(product.frontImage, 'Front')
+      }
+      if (product.backImage) {
+        addImage(product.backImage, 'Back')
+      }
+      if (product.leftImage) {
+        addImage(product.leftImage, 'Left')
+      }
+      if (product.rightImage) {
+        addImage(product.rightImage, 'Right')
+      }
+      if (product.materialImage) {
+        addImage(product.materialImage, 'Material')
+      }
       
+      // Add from images array
+      if (product.images && Array.isArray(product.images)) {
+        product.images.forEach((img: any, idx: number) => {
+          const url = typeof img === 'object' && img.url ? img.url : img
+          addImage(url, `Image ${idx + 1}`)
+        })
+      }
+    }
+    
+    // Add other variant images for comparison (but not as primary images)
+    if (product.variants && Array.isArray(product.variants) && imagesWithLabels.length < 8) {
       product.variants.forEach((variant: any, vIdx: number) => {
+        // Skip the currently selected variant as we already added its images
+        if (selectedVariant && (variant.id === selectedVariant.id || variant.variant_name === selectedVariant.variant_name)) {
+          return
+        }
+        
         const variantName = variant.variant_name || variant.color?.name || `Style ${vIdx + 1}`
         
+        // Only add main variant image for other colors
         if (variant.variant_image) {
           addImage(variant.variant_image, variantName)
-        }
-        if (variant.image && variant.image !== variant.variant_image) {
-          addImage(variant.image, `${variantName} - Alt`)
-        }
-        
-        // Add front/back/side images from variants if they exist
-        if (variant.frontImage) {
-          addImage(variant.frontImage, `${variantName} - Front`)
-        }
-        if (variant.backImage) {
-          addImage(variant.backImage, `${variantName} - Back`)
-        }
-        if (variant.leftImage) {
-          addImage(variant.leftImage, `${variantName} - Left`)
-        }
-        if (variant.rightImage) {
-          addImage(variant.rightImage, `${variantName} - Right`)
-        }
-        
-        if (variant.images && Array.isArray(variant.images)) {
-          variant.images.forEach((img: any, idx: number) => {
-            const url = typeof img === 'object' && img.url ? img.url : img
-            addImage(url, `${variantName} - View ${idx + 1}`)
-          })
+        } else if (variant.image) {
+          addImage(variant.image, variantName)
         }
       })
     }
@@ -372,7 +364,7 @@ export function ProductDetailView({
   
   // Handle design button
   const handleDesignProduct = () => {
-    const productId = product._id || product.id
+    const productId = (product as any)._id || product.id
     const variantParam = selectedVariant ? `&variant=${selectedVariant.id}` : ''
     router.push(`/design-tool?productId=${productId}${variantParam}`)
   }
@@ -381,31 +373,47 @@ export function ProductDetailView({
     <div className="min-h-screen bg-white dark:bg-gray-900">
       {/* Breadcrumb */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-        <nav className="flex items-center gap-2 text-sm">
-          <Link href="/" className="text-gray-500 hover:text-black dark:hover:text-white">
-            Home
-          </Link>
-          <ChevronRight className="h-4 w-4 text-gray-400" />
-          <Link 
-            href={`/products${fromParams ? `?${fromParams}` : ''}`}
-            className="text-gray-500 hover:text-black dark:hover:text-white"
-          >
-            Products
-          </Link>
-          {category && (
-            <>
-              <ChevronRight className="h-4 w-4 text-gray-400" />
-              <Link 
-                href={`/products/${category.slug}${fromParams ? `?${fromParams}` : ''}`}
-                className="text-gray-500 hover:text-black dark:hover:text-white"
-              >
-                {category.name}
-              </Link>
-            </>
-          )}
-          <ChevronRight className="h-4 w-4 text-gray-400" />
-          <span className="text-black dark:text-white font-semibold">{product.name}</span>
-        </nav>
+        <Breadcrumb>
+          <BreadcrumbList>
+            <BreadcrumbItem>
+              <BreadcrumbLink asChild>
+                <Link href="/" className="hover:text-black dark:hover:text-white transition-colors">
+                  Home
+                </Link>
+              </BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+              <BreadcrumbLink asChild>
+                <Link 
+                  href="/products"
+                  className="hover:text-black dark:hover:text-white transition-colors"
+                >
+                  Products
+                </Link>
+              </BreadcrumbLink>
+            </BreadcrumbItem>
+            {category && (
+              <>
+                <BreadcrumbSeparator />
+                <BreadcrumbItem>
+                  <BreadcrumbLink asChild>
+                    <Link 
+                      href={`/products/${category.slug}`}
+                      className="hover:text-black dark:hover:text-white transition-colors"
+                    >
+                      {category.name}
+                    </Link>
+                  </BreadcrumbLink>
+                </BreadcrumbItem>
+              </>
+            )}
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+              <BreadcrumbPage className="font-semibold">{product.name}</BreadcrumbPage>
+            </BreadcrumbItem>
+          </BreadcrumbList>
+        </Breadcrumb>
       </div>
       
       {/* Main Content */}
@@ -869,7 +877,7 @@ export function ProductDetailView({
                   <div>
                     <p className="font-bold">Standard Shipping</p>
                     <p className="text-sm text-gray-600 dark:text-gray-400">
-                      5-7 business days - Free on orders over $50
+                      5-7 business days - Free on orders over 500 SEK
                     </p>
                   </div>
                 </div>
@@ -878,7 +886,7 @@ export function ProductDetailView({
                   <div>
                     <p className="font-bold">Express Shipping</p>
                     <p className="text-sm text-gray-600 dark:text-gray-400">
-                      2-3 business days - $15
+                      2-3 business days - 150 SEK
                     </p>
                   </div>
                 </div>

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, Fragment } from "react"
 import { useRouter } from "next/navigation"
 import { useAppSelector, useAppDispatch } from "@/lib/redux/hooks"
 import { createOrder } from "@/lib/redux/slices/ordersSlice"
@@ -18,6 +18,10 @@ import { ShieldCheck, CreditCard, Smartphone, ClubIcon as KlarnaIcon } from "luc
 import { useSession } from "next-auth/react"
 import { useToast } from "@/hooks/use-toast"
 import StripePaymentModal from "@/components/payment/stripe-payment-modal"
+import SwishPaymentModal from "@/components/payment/swish-payment-modal"
+import KlarnaPaymentModal from "@/components/payment/klarna-payment-modal"
+import Image from "next/image"
+import { DesignCanvasRenderer } from "@/components/DesignCanvasRenderer"
 
 export default function CheckoutPage() {
   const dispatch = useAppDispatch()
@@ -27,6 +31,7 @@ export default function CheckoutPage() {
   const { language } = useAppSelector((state) => state.app)
   const t = translations[language]
   const { toast } = useToast()
+  const [isClient, setIsClient] = useState(false)
 
   const [paymentMethod, setPaymentMethod] = useState("card")
   const [shippingOption, setShippingOption] = useState("standard")
@@ -95,6 +100,7 @@ export default function CheckoutPage() {
 
 // Add this effect:
 useEffect(() => {
+  setIsClient(true)
   if (session?.user) {
     const user = session.user as any;
     if (!fullName && user.fullName) setFullName(user.fullName);
@@ -217,7 +223,9 @@ useEffect(() => {
             price: itemPrice,
             designId: item.designId,
             designPreview: item.designPreview,
+            selectedSize: (item as any).selectedSize,
             selectedSizes: item.selectedSizes,
+            selectedVariant: (item as any).selectedVariant,
             designContext: (item as any).designContext,
             designCanvasJSON: (item as any).designCanvasJSON,
             productId: (item as any).productId || item.id,
@@ -294,14 +302,27 @@ useEffect(() => {
   // }
 
   return (
-    <div className="space-y-8">
-      <h1 className="text-4xl font-bold text-center text-slate-900 dark:text-white">{t.checkout}</h1>
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-black">
+      {/* Hero Section */}
+      <div className="relative bg-black text-white py-8 sm:py-12 px-4 mb-8">
+        <div className="absolute inset-0 bg-gradient-to-r from-green-500 via-yellow-500 via-orange-500 to-red-500 opacity-20" />
+        <div className="relative max-w-7xl mx-auto text-center">
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-black uppercase tracking-wider mb-2">
+            SECURE CHECKOUT
+          </h1>
+          <p className="text-sm sm:text-base opacity-90">
+            Complete your order securely
+          </p>
+        </div>
+      </div>
+      
+      <div className="max-w-7xl mx-auto px-4 pb-8 space-y-8">
       <div className="grid lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-6">
-          <Card className="shadow-lg border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
-            <CardHeader className="border-b border-slate-100 dark:border-slate-700 pb-4">
-              <CardTitle className="text-2xl font-semibold text-slate-900 dark:text-white">
-                {t.billingShippingInfo}
+          <Card className="border-2 border-black dark:border-white bg-white dark:bg-gray-900 rounded-xl overflow-hidden">
+            <CardHeader className="border-b-2 border-black dark:border-white bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 pb-4">
+              <CardTitle className="text-2xl font-black uppercase text-black dark:text-white">
+                BILLING & SHIPPING INFORMATION
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-6 p-6">
@@ -376,32 +397,32 @@ useEffect(() => {
             </CardContent>
           </Card>
 
-          <Card className="shadow-lg border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
-            <CardHeader className="border-b border-slate-100 dark:border-slate-700 pb-4">
-              <CardTitle className="text-2xl font-semibold text-slate-900 dark:text-white">
-                {t.shippingOptions}
+          <Card className="border-2 border-black dark:border-white bg-white dark:bg-gray-900 rounded-xl overflow-hidden">
+            <CardHeader className="border-b-2 border-black dark:border-white bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 pb-4">
+              <CardTitle className="text-2xl font-black uppercase text-black dark:text-white">
+                SHIPPING METHOD
               </CardTitle>
             </CardHeader>
             <CardContent className="p-6">
               <RadioGroup value={shippingOption} onValueChange={setShippingOption} className="space-y-3">
                 <Label
                   htmlFor="std-shipping"
-                  className="flex items-center gap-3 p-4 border border-slate-200 dark:border-slate-700 rounded-lg has-[:checked]:border-sky-500 has-[:checked]:bg-sky-50 dark:has-[:checked]:bg-sky-900/30 cursor-pointer transition-all duration-200"
+                  className="flex items-center gap-3 p-4 border-2 border-gray-300 dark:border-gray-700 rounded-lg has-[:checked]:border-black has-[:checked]:bg-yellow-50 dark:has-[:checked]:border-white dark:has-[:checked]:bg-gray-800 cursor-pointer transition-all duration-200 hover:border-gray-400"
                 >
-                  <RadioGroupItem value="standard" id="std-shipping" />
+                  <RadioGroupItem value="standard" id="std-shipping" className="border-2" />
                   <div className="flex flex-col">
-                    <span className="font-medium text-slate-900 dark:text-white">{t.standardShipping}</span>
-                    <span className="text-slate-600 dark:text-slate-400 text-sm">79 SEK</span>
+                    <span className="font-bold text-black dark:text-white">STANDARD DELIVERY</span>
+                    <span className="text-gray-600 dark:text-gray-400 text-sm">3-5 business days • 79 SEK</span>
                   </div>
                 </Label>
                 <Label
                   htmlFor="exp-shipping"
-                  className="flex items-center gap-3 p-4 border border-slate-200 dark:border-slate-700 rounded-lg has-[:checked]:border-sky-500 has-[:checked]:bg-sky-50 dark:has-[:checked]:bg-sky-900/30 cursor-pointer transition-all duration-200"
+                  className="flex items-center gap-3 p-4 border-2 border-gray-300 dark:border-gray-700 rounded-lg has-[:checked]:border-black has-[:checked]:bg-yellow-50 dark:has-[:checked]:border-white dark:has-[:checked]:bg-gray-800 cursor-pointer transition-all duration-200 hover:border-gray-400"
                 >
-                  <RadioGroupItem value="express" id="exp-shipping" />
+                  <RadioGroupItem value="express" id="exp-shipping" className="border-2" />
                   <div className="flex flex-col">
-                    <span className="font-medium text-slate-900 dark:text-white">{t.expressShipping}</span>
-                    <span className="text-slate-600 dark:text-slate-400 text-sm">149 SEK</span>
+                    <span className="font-bold text-black dark:text-white">EXPRESS DELIVERY</span>
+                    <span className="text-gray-600 dark:text-gray-400 text-sm">1-2 business days • 149 SEK</span>
                   </div>
                 </Label>
               </RadioGroup>
@@ -410,39 +431,72 @@ useEffect(() => {
         </div>
 
         <div className="lg:col-span-1 space-y-6">
-          <Card className="shadow-lg border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
-            <CardHeader className="border-b border-slate-100 dark:border-slate-700 pb-4">
-              <CardTitle className="text-2xl font-semibold text-slate-900 dark:text-white">{t.orderSummary}</CardTitle>
+          <Card className="border-2 border-black dark:border-white bg-white dark:bg-gray-900 rounded-xl overflow-hidden">
+            <CardHeader className="border-b-2 border-black dark:border-white bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 pb-4">
+              <CardTitle className="text-2xl font-black uppercase text-black dark:text-white">ORDER SUMMARY</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3 p-6 text-base">
               {cart.map((item) => (
-                <div key={item.id} className="flex justify-between text-slate-700 dark:text-slate-300">
-                  <span>
-                    {item.name} x {item.quantity}
-                  </span>
-                  <span>
-                    {(() => {
-                      let totalPrice;
-                      if (item.selectedSizes && item.selectedSizes.length > 0) {
-                        // Calculate from selected sizes
-                        totalPrice = item.selectedSizes.reduce((sum, size) => sum + (size.price * size.quantity), 0);
-                      } else if (typeof item.price === 'number') {
-                        totalPrice = item.price * item.quantity;
-                      } else if (typeof item.price === 'string') {
-                        const cleanPrice = item.price.replace(/[^\d.-]/g, '');
-                        totalPrice = (parseFloat(cleanPrice) || 0) * item.quantity;
-                      } else {
-                        totalPrice = 0;
-                      }
-                      return `${totalPrice.toFixed(2)} SEK`;
-                    })()}
-                  </span>
+                <div key={item.id} className="pb-3 border-b border-slate-100 dark:border-slate-700 last:border-0 last:pb-0">
+                  <div className="flex items-start gap-3">
+                    {/* Product Image with Design */}
+                    <div className="relative w-16 h-16 flex-shrink-0">
+                      <Image
+                        src={(item as any).designPreview || item.image || item.imageUrl || item.images?.[0]?.url || "/placeholder.svg"}
+                        alt={item.name}
+                        width={64}
+                        height={64}
+                        className="rounded-md object-cover border border-slate-200 dark:border-slate-700"
+                      />
+                      {((item as any).designCanvasJSON || (item as any).designPreview || (item as any).hasDesign) && (
+                        <div className="absolute -top-1 -right-1 bg-blue-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                          ✨
+                        </div>
+                      )}
+                    </div>
+                    
+                    {/* Product Details */}
+                    <div className="flex-1">
+                      <div className="flex justify-between">
+                        <div>
+                          <p className="font-medium text-slate-900 dark:text-white">
+                            {item.name}
+                          </p>
+                          {(item as any).designContext?.selectedVariation && (
+                            <p className="text-xs text-slate-500 dark:text-slate-400">
+                              {(item as any).designContext.selectedVariation.colorName}
+                            </p>
+                          )}
+                          <p className="text-sm text-slate-600 dark:text-slate-400">
+                            Qty: {item.quantity}
+                          </p>
+                        </div>
+                        <span className="font-medium text-slate-900 dark:text-white">
+                          {(() => {
+                            let totalPrice;
+                            if (item.selectedSizes && item.selectedSizes.length > 0) {
+                              // Calculate from selected sizes
+                              totalPrice = item.selectedSizes.reduce((sum, size) => sum + (size.price * size.quantity), 0);
+                            } else if (typeof item.price === 'number') {
+                              totalPrice = item.price * item.quantity;
+                            } else if (typeof item.price === 'string') {
+                              const cleanPrice = item.price.replace(/[^\d.-]/g, '');
+                              totalPrice = (parseFloat(cleanPrice) || 0) * item.quantity;
+                            } else {
+                              totalPrice = 0;
+                            }
+                            return `${totalPrice.toFixed(2)} SEK`;
+                          })()}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               ))}
-              <Separator className="bg-slate-200 dark:bg-slate-700" />
-              <div className="flex justify-between text-slate-700 dark:text-slate-300">
-                <span>Subtotal:</span>
-                <span>{subtotal.toFixed(2)} SEK</span>
+              <Separator className="bg-gray-300 dark:bg-gray-700" />
+              <div className="flex justify-between text-gray-700 dark:text-gray-300">
+                <span className="font-semibold">Subtotal:</span>
+                <span className="font-semibold">{subtotal.toFixed(2)} SEK</span>
               </div>
               {appliedCoupon && (
                 <div className="flex justify-between text-green-600 dark:text-green-400">
@@ -450,26 +504,26 @@ useEffect(() => {
                   <span>-{discountAmount.toFixed(2)} SEK</span>
                 </div>
               )}
-              <div className="flex justify-between text-slate-700 dark:text-slate-300">
-                <span>{t.vat}:</span>
-                <span>{vatAmount.toFixed(2)} SEK</span>
+              <div className="flex justify-between text-gray-700 dark:text-gray-300">
+                <span className="font-semibold">VAT (25%):</span>
+                <span className="font-semibold">{vatAmount.toFixed(2)} SEK</span>
               </div>
-              <div className="flex justify-between text-slate-700 dark:text-slate-300">
-                <span>{t.shipping}:</span>
-                <span>{shippingCost.toFixed(2)} SEK</span>
+              <div className="flex justify-between text-gray-700 dark:text-gray-300">
+                <span className="font-semibold">Shipping:</span>
+                <span className="font-semibold">{shippingCost.toFixed(2)} SEK</span>
               </div>
-              <Separator className="bg-slate-200 dark:bg-slate-700" />
-              <div className="flex justify-between font-bold text-xl text-slate-900 dark:text-white">
-                <span>{t.total}:</span>
+              <Separator className="bg-gray-300 dark:bg-gray-700" />
+              <div className="flex justify-between font-black text-2xl text-black dark:text-white">
+                <span>TOTAL:</span>
                 <span>{grandTotal.toFixed(2)} SEK</span>
               </div>
             </CardContent>
           </Card>
 
           {/* Coupon Code Section */}
-          <Card className="shadow-lg border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
-            <CardHeader className="border-b border-slate-100 dark:border-slate-700 pb-4">
-              <CardTitle className="text-2xl font-semibold text-slate-900 dark:text-white">Coupon Code</CardTitle>
+          <Card className="border-2 border-black dark:border-white bg-white dark:bg-gray-900 rounded-xl overflow-hidden">
+            <CardHeader className="border-b-2 border-black dark:border-white bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 pb-4">
+              <CardTitle className="text-2xl font-black uppercase text-black dark:text-white">PROMO CODE</CardTitle>
             </CardHeader>
             <CardContent className="p-6">
               {appliedCoupon ? (
@@ -521,7 +575,7 @@ useEffect(() => {
                     <Button
                       onClick={handleApplyCoupon}
                       disabled={couponLoading || !couponCode.trim()}
-                      className="bg-slate-600 hover:bg-slate-700 text-white"
+                      className="bg-black hover:bg-gray-800 text-white dark:bg-white dark:hover:bg-gray-200 dark:text-black font-bold border-2 border-black dark:border-white"
                     >
                       {couponLoading ? "Applying..." : "Apply"}
                     </Button>
@@ -537,80 +591,178 @@ useEffect(() => {
             </CardContent>
           </Card>
 
-          <Card className="shadow-lg border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
-            <CardHeader className="border-b border-slate-100 dark:border-slate-700 pb-4">
-              <CardTitle className="text-2xl font-semibold text-slate-900 dark:text-white">{t.paymentMethod}</CardTitle>
+          <Card className="border-2 border-black dark:border-white bg-white dark:bg-gray-900 rounded-xl overflow-hidden">
+            <CardHeader className="border-b-2 border-black dark:border-white bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 pb-4">
+              <CardTitle className="text-2xl font-black uppercase text-black dark:text-white">PAYMENT METHOD</CardTitle>
             </CardHeader>
             <CardContent className="p-6">
               <Tabs value={paymentMethod} onValueChange={setPaymentMethod} className="w-full">
-                <TabsList className="grid w-full grid-cols-3 bg-slate-100 dark:bg-slate-700">
+                <TabsList className="grid w-full grid-cols-3 bg-gray-100 dark:bg-gray-800 p-1">
                   <TabsTrigger
                     value="card"
-                    className="data-[state=active]:bg-white dark:data-[state=active]:bg-slate-800 data-[state=active]:shadow-sm"
+                    className="font-bold uppercase data-[state=active]:bg-black data-[state=active]:text-white dark:data-[state=active]:bg-white dark:data-[state=active]:text-black data-[state=active]:shadow-sm"
                   >
                     <CreditCard className="h-4 w-4 mr-1 sm:mr-2" />
-                    {t.payWithCard}
+                    CARD
                   </TabsTrigger>
                   <TabsTrigger
                     value="swish"
-                    className="data-[state=active]:bg-white dark:data-[state=active]:bg-slate-800 data-[state=active]:shadow-sm"
+                    className="font-bold uppercase data-[state=active]:bg-black data-[state=active]:text-white dark:data-[state=active]:bg-white dark:data-[state=active]:text-black data-[state=active]:shadow-sm"
                   >
                     <Smartphone className="h-4 w-4 mr-1 sm:mr-2" />
-                    {t.payWithSwish}
+                    SWISH
                   </TabsTrigger>
                   <TabsTrigger
                     value="klarna"
-                    className="data-[state=active]:bg-white dark:data-[state=active]:bg-slate-800 data-[state=active]:shadow-sm"
+                    className="font-bold uppercase data-[state=active]:bg-black data-[state=active]:text-white dark:data-[state=active]:bg-white dark:data-[state=active]:text-black data-[state=active]:shadow-sm"
                   >
                     <KlarnaIcon className="h-4 w-4 mr-1 sm:mr-2" />
-                    {t.payWithKlarna}
+                    KLARNA
                   </TabsTrigger>
                 </TabsList>
                 <TabsContent
                   value="card"
-                  className="mt-4 text-sm text-slate-700 dark:text-slate-300 p-2 border border-slate-200 dark:border-slate-700 rounded-md bg-slate-50 dark:bg-slate-800/50"
+                  className="mt-4 space-y-4"
                 >
-                  {t.mockCardPayment}
+                  <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
+                    <div className="flex items-center gap-2 mb-3">
+                      <ShieldCheck className="h-5 w-5 text-green-600" />
+                      <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">SECURE PAYMENT</span>
+                    </div>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      Your payment information is encrypted and processed securely through Stripe.
+                    </p>
+                    <div className="flex gap-2 mt-3">
+                      <Badge variant="outline" className="text-xs">256-bit SSL</Badge>
+                      <Badge variant="outline" className="text-xs">PCI Compliant</Badge>
+                    </div>
+                  </div>
                 </TabsContent>
                 <TabsContent
                   value="swish"
-                  className="mt-4 text-sm text-slate-700 dark:text-slate-300 p-2 border border-slate-200 dark:border-slate-700 rounded-md bg-slate-50 dark:bg-slate-800/50"
+                  className="mt-4 space-y-4"
                 >
-                  {t.mockSwishInstructions}
+                  <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
+                    <div className="flex items-center gap-2 mb-3">
+                      <Smartphone className="h-5 w-5 text-blue-600" />
+                      <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">SWISH PAYMENT</span>
+                    </div>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      Pay instantly with Swish. You'll receive a payment request to your registered mobile number.
+                    </p>
+                    <div className="mt-3">
+                      <Label htmlFor="swish-phone" className="text-sm font-semibold">Mobile Number</Label>
+                      <Input
+                        id="swish-phone"
+                        type="tel"
+                        placeholder="07X XXX XX XX"
+                        className="mt-1 border-2"
+                      />
+                    </div>
+                  </div>
                 </TabsContent>
                 <TabsContent
                   value="klarna"
-                  className="mt-4 text-sm text-slate-700 dark:text-slate-300 p-2 border border-slate-200 dark:border-slate-700 rounded-md bg-slate-50 dark:bg-slate-800/50"
+                  className="mt-4 space-y-4"
                 >
-                  {t.mockKlarnaOptions}
+                  <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
+                    <div className="flex items-center gap-2 mb-3">
+                      <KlarnaIcon className="h-5 w-5 text-pink-600" />
+                      <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">KLARNA CHECKOUT</span>
+                    </div>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+                      Shop now, pay later with Klarna. Choose your preferred payment option at checkout.
+                    </p>
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                        <span className="text-xs text-gray-600 dark:text-gray-400">Pay in 30 days</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                        <span className="text-xs text-gray-600 dark:text-gray-400">3 interest-free installments</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                        <span className="text-xs text-gray-600 dark:text-gray-400">Financing up to 24 months</span>
+                      </div>
+                    </div>
+                  </div>
                 </TabsContent>
               </Tabs>
             </CardContent>
             <CardFooter className="p-6 pt-0">
               <Button
                 size="lg"
-                className="w-full bg-sky-600 hover:bg-sky-700 text-white shadow-lg"
+                className="w-full bg-black hover:bg-gray-800 text-white dark:bg-white dark:hover:bg-gray-200 dark:text-black font-black uppercase text-lg py-6 border-2 border-black dark:border-white transition-all duration-200 hover:scale-[1.02]"
                 onClick={handlePayment}
                 disabled={loading}
               >
                 <ShieldCheck className="mr-2 h-5 w-5" />
-                {loading ? t.processing : `${t.payNow} (${grandTotal.toFixed(2)} SEK)`}
+                {loading ? "PROCESSING..." : `COMPLETE ORDER • ${grandTotal.toFixed(2)} SEK`}
               </Button>
             </CardFooter>
           </Card>
         </div>
       </div>
+      
+      {/* Security Badges */}
+      <div className="max-w-7xl mx-auto px-4 pb-12">
+        <div className="flex flex-wrap justify-center items-center gap-6 p-6 bg-gray-50 dark:bg-gray-900 rounded-xl border-2 border-gray-200 dark:border-gray-800">
+          <div className="flex items-center gap-2">
+            <ShieldCheck className="h-5 w-5 text-green-600" />
+            <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">SSL SECURED</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <CreditCard className="h-5 w-5 text-blue-600" />
+            <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">PCI COMPLIANT</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Badge className="bg-black text-white dark:bg-white dark:text-black">STRIPE VERIFIED</Badge>
+          </div>
+          <div className="flex items-center gap-2">
+            <Badge className="bg-black text-white dark:bg-white dark:text-black">SECURE CHECKOUT</Badge>
+          </div>
+        </div>
+      </div>
 
-      {/* Stripe Payment Modal */}
-      <StripePaymentModal
-        isOpen={showPaymentModal}
-        onClose={() => setShowPaymentModal(false)}
-        amount={grandTotal}
-        currency="sek"
-        onPaymentSuccess={handlePaymentSuccess}
-        onPaymentError={handlePaymentError}
-        orderData={orderData}
-      />
+      {/* Payment Modals */}
+      {paymentMethod === "card" && (
+        <StripePaymentModal
+          isOpen={showPaymentModal}
+          onClose={() => setShowPaymentModal(false)}
+          amount={grandTotal}
+          currency="sek"
+          onPaymentSuccess={handlePaymentSuccess}
+          onPaymentError={handlePaymentError}
+          orderData={orderData}
+        />
+      )}
+      
+      {paymentMethod === "swish" && (
+        <SwishPaymentModal
+          isOpen={showPaymentModal}
+          onClose={() => setShowPaymentModal(false)}
+          amount={grandTotal}
+          currency="sek"
+          onPaymentSuccess={handlePaymentSuccess}
+          onPaymentError={handlePaymentError}
+          orderData={orderData}
+        />
+      )}
+      
+      {paymentMethod === "klarna" && (
+        <KlarnaPaymentModal
+          isOpen={showPaymentModal}
+          onClose={() => setShowPaymentModal(false)}
+          amount={grandTotal}
+          currency="sek"
+          onPaymentSuccess={handlePaymentSuccess}
+          onPaymentError={handlePaymentError}
+          orderData={orderData}
+        />
+      )}
+      </div>
     </div>
   )
 }

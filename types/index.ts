@@ -71,6 +71,8 @@ export interface Product {
   variations?: Variation[];
   /** If true, product participates in global coupon discounts */
   eligibleForCoupons?: boolean;
+  /** If true, product can be customized in the design tool */
+  isDesignable?: boolean;
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -278,7 +280,9 @@ export interface Category {
   designableAreas?: string[]
   designTechniques?: string[]
   // Design pricing
-  designUpchargePercent?: number
+  designUpchargePercent?: number // Legacy: percentage-based upcharge
+  designUpchargePerCm2?: number // New: price per square centimeter  
+  useMetricPricing?: boolean // If true, use per cm² pricing
 }
 
 export interface Subcategory {

@@ -128,6 +128,7 @@ export class ProductService {
     sortBy?: string
     fields?: string[]
   }): Promise<{ products: Product[], total: number }> {
+    console.log('[ProductService.getPaginatedProducts] Starting with options:', options)
     const collection = await this.getCollection()
     
     const { filter = {}, skip = 0, limit = 20, sortBy = 'featured', fields } = options
@@ -138,30 +139,17 @@ export class ProductService {
     // Build MongoDB query
     const query: any = {}
     
-    // Category filter - convert to ObjectId if valid
+    // Category filter - products now have categoryId stored as strings
     if (filter.categoryId) {
-      // Check if it's a valid ObjectId string and convert it
-      if (ObjectId.isValid(filter.categoryId)) {
-        query.categoryId = new ObjectId(filter.categoryId)
-      } else {
-        query.categoryId = filter.categoryId
-      }
+      query.categoryId = filter.categoryId
     }
     
-    // Subcategory filter - convert to ObjectId if valid
+    // Subcategory filter - use string matching
     if (filter.subcategoryId) {
-      if (ObjectId.isValid(filter.subcategoryId)) {
-        const oid = new ObjectId(filter.subcategoryId)
-        query.$or = [
-          { subcategoryId: oid },
-          { subcategoryIds: oid }
-        ]
-      } else {
-        query.$or = [
-          { subcategoryId: filter.subcategoryId },
-          { subcategoryIds: filter.subcategoryId }
-        ]
-      }
+      query.$or = [
+        { subcategoryId: filter.subcategoryId },
+        { subcategoryIds: filter.subcategoryId }
+      ]
     }
     
     // Price range filter
@@ -169,27 +157,29 @@ export class ProductService {
       query.price = filter.price
     }
     
-    // Text search
+    // Text search - use regex instead since we dropped text index
     if (filter.search) {
-      query.$text = { $search: filter.search }
+      query.$or = [
+        { name: { $regex: filter.search, $options: 'i' } },
+        { description: { $regex: filter.search, $options: 'i' } }
+      ]
     }
     
     // Filter for designable products only
     if (filter.designableOnly) {
       const designableCategoryIds = await getDesignableCategoryIds()
       if (designableCategoryIds.length > 0) {
-        // Convert string IDs to ObjectIds
-        const designableObjectIds = designableCategoryIds.map(id => new ObjectId(id))
+        // Use string IDs directly
         
         // Add category filter to existing query
         if (query.categoryId) {
           // If there's already a category filter, combine with AND
           query.$and = [
             { categoryId: query.categoryId },
-            { categoryId: { $in: designableObjectIds } }
+            { categoryId: { $in: designableCategoryIds } }
           ]
         } else {
-          query.categoryId = { $in: designableObjectIds }
+          query.categoryId = { $in: designableCategoryIds }
         }
       } else {
         // No designable categories found, return empty result
@@ -228,28 +218,20 @@ export class ProductService {
       projection._id = 1
     }
     
-    // Execute queries in parallel for better performance
+    // Execute query with all filters including category
     const [products, total] = await Promise.all([
       collection
-        .find(query, { projection: projection.length === 0 ? undefined : projection })
+        .find(query, { projection: Object.keys(projection).length === 0 ? undefined : projection })
         .sort(sort)
         .skip(skip)
         .limit(limit)
-        .allowDiskUse(true) // Allow disk use for large sorts
+        .allowDiskUse(true)
         .toArray(),
       collection.countDocuments(query)
     ])
     
     console.log(`[ProductService] Query results: ${products.length} products found, ${total} total`)
-    
-    // Debug: Check data types in DB
-    if (filter.categoryId && products.length === 0) {
-      const sampleProduct = await collection.findOne({})
-      if (sampleProduct) {
-        console.log('[ProductService] Sample product categoryId:', sampleProduct.categoryId, 'Type:', typeof sampleProduct.categoryId)
-        console.log('[ProductService] Filter categoryId:', filter.categoryId, 'Type:', typeof filter.categoryId)
-      }
-    }
+    console.log('[ProductService] First product:', products[0] ? { name: products[0].name, id: products[0]._id } : 'No products')
     
     return {
       products: products.map((product) => this.mapProductToResponse(product)),
@@ -265,6 +247,7 @@ export class ProductService {
       price: product.price || product.basePrice,
       basePrice: product.basePrice || product.price,
       image: product.image,
+      imageUrl: product.imageUrl || (product.images && product.images[0]) || product.image,
       images: product.images,
       categoryId: product.categoryId ? product.categoryId.toString() : product.categoryId,
       subcategoryIds: product.subcategoryIds,
@@ -288,6 +271,7 @@ export class ProductService {
       featured: product.featured,
       isActive: product.isActive,
       tags: product.tags,
+      isDesignable: product.isDesignable,
       specifications: product.specifications,
       source: product.source,
       originalData: product.originalData,
@@ -313,6 +297,7 @@ export class ProductService {
   }
 
   static async getProductById(id: string): Promise<Product | null> {
+    console.log('[ProductService.getProductById] Looking for product with ID:', id)
     const collection = await this.getCollection()
     
     // Try to find by MongoDB ObjectId first if it's a valid ObjectId format
@@ -320,8 +305,12 @@ export class ProductService {
     
     // Check if the ID is exactly 24 hex characters (valid MongoDB ObjectId)
     if (/^[0-9a-fA-F]{24}$/.test(id)) {
+      console.log('[ProductService.getProductById] ID looks like ObjectId, trying ObjectId query')
       try {
         product = await collection.findOne({ _id: new ObjectId(id) })
+        if (product) {
+          console.log('[ProductService.getProductById] Found product by ObjectId:', product.name)
+        }
       } catch (error) {
         console.log('Invalid ObjectId format:', id)
       }
@@ -406,6 +395,7 @@ export class ProductService {
       featured: product.featured,
       isActive: product.isActive,
       tags: product.tags,
+      isDesignable: product.isDesignable,
       specifications: product.specifications,
       source: product.source,
       originalData: product.originalData,
@@ -448,41 +438,34 @@ export class ProductService {
     // Build the base match condition
     const baseMatch: any = {}
     if (baseFilter.search) {
-      baseMatch.$text = { $search: baseFilter.search }
+      baseMatch.$or = [
+        { name: { $regex: baseFilter.search, $options: 'i' } },
+        { description: { $regex: baseFilter.search, $options: 'i' } }
+      ]
     }
     if (baseFilter.price) {
       baseMatch.price = baseFilter.price
     }
     
-    // Get category counts
-    const categoryCounts = await collection.aggregate([
+    // Use MongoDB aggregation for efficient counting
+    const pipeline = [
       { $match: baseMatch },
-      { $group: { _id: "$categoryId", count: { $sum: 1 } } },
-      { $match: { _id: { $ne: null } } }
-    ]).toArray()
+      {
+        $group: {
+          _id: "$categoryId",
+          count: { $sum: 1 }
+        }
+      },
+      {
+        $project: {
+          categoryId: "$_id",
+          count: 1,
+          _id: 0
+        }
+      }
+    ]
     
-    // Get subcategory counts for each category
-    const result = []
-    for (const catCount of categoryCounts) {
-      if (!catCount._id) continue
-      
-      const subcategoryCounts = await collection.aggregate([
-        { $match: { ...baseMatch, categoryId: catCount._id } },
-        { $unwind: "$subcategoryIds" },
-        { $group: { _id: "$subcategoryIds", count: { $sum: 1 } } },
-        { $match: { _id: { $ne: null } } }
-      ]).toArray()
-      
-      result.push({
-        categoryId: catCount._id,
-        count: catCount.count,
-        subcategories: subcategoryCounts.map(sub => ({
-          subcategoryId: sub._id,
-          count: sub.count
-        }))
-      })
-    }
-    
+    const result = await collection.aggregate(pipeline).toArray()
     return result
   }
 }

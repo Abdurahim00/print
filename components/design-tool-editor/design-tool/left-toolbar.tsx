@@ -1,6 +1,7 @@
 "use client"
 
 import { useSelector, useDispatch } from "react-redux"
+import * as fabric from "fabric"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
@@ -12,7 +13,6 @@ import {
   FileText, 
   Upload,
   Settings,
-  Layers,
   Undo2,
   Redo2
 } from "lucide-react"
@@ -31,7 +31,6 @@ export function LeftToolbar() {
     { id: "text", icon: Type, label: "Text", description: "Add and edit text elements" },
     { id: "template", icon: FileText, label: "Templates", description: "Browse and apply design templates" },
     { id: "upload", icon: Upload, label: "Upload", description: "Upload custom images and graphics" },
-    { id: "design-management", icon: Layers, label: "Designs", description: "Manage variation designs" },
   ]
 
   const handleToolSelect = (toolId: string) => {
@@ -58,6 +57,87 @@ export function LeftToolbar() {
       } else {
         console.warn("Fabric canvas not yet initialized. Please wait a moment or try again.")
       }
+    } else if (toolId === "upload") {
+      console.log('🛠️ [LeftToolbar] Opening file explorer for upload')
+      // Immediately open file explorer
+      const input = document.createElement('input')
+      input.type = 'file'
+      input.accept = 'image/*'
+      input.multiple = false
+      
+      input.onchange = async (e) => {
+        const file = (e.target as HTMLInputElement).files?.[0]
+        if (file && fabricCanvas) {
+          const reader = new FileReader()
+          reader.onload = async (event) => {
+            const imageUrl = event.target?.result as string
+            
+            try {
+              // Use the new fabric.js v6 API with async/await
+              // Pass empty object for filters and options for properties
+              const img = await fabric.FabricImage.fromURL(imageUrl, {}, {
+                crossOrigin: 'anonymous'
+              })
+              
+              // Scale image to fit canvas if too large
+              const canvasWidth = fabricCanvas.width || 500
+              const canvasHeight = fabricCanvas.height || 500
+              const scale = Math.min(
+                canvasWidth / (img.width || 1) * 0.5,
+                canvasHeight / (img.height || 1) * 0.5,
+                1
+              )
+              
+              img.scaleToWidth(img.width! * scale)
+              img.set({
+                left: canvasWidth / 2 - (img.width! * scale) / 2,
+                top: canvasHeight / 2 - (img.height! * scale) / 2,
+              })
+              
+              fabricCanvas.add(img)
+              fabricCanvas.setActiveObject(img)
+              fabricCanvas.renderAll()
+              console.log('🛠️ [LeftToolbar] Image added to canvas')
+            } catch (error) {
+              console.error('Failed to load image:', error)
+              // Try fallback approach with data URL directly
+              try {
+                const tempImg = new Image()
+                tempImg.crossOrigin = 'anonymous'
+                tempImg.onload = () => {
+                  const fabricImg = new fabric.FabricImage(tempImg)
+                  const canvasWidth = fabricCanvas.width || 500
+                  const canvasHeight = fabricCanvas.height || 500
+                  const scale = Math.min(
+                    canvasWidth / fabricImg.width! * 0.5,
+                    canvasHeight / fabricImg.height! * 0.5,
+                    1
+                  )
+                  fabricImg.scaleToWidth(fabricImg.width! * scale)
+                  fabricImg.set({
+                    left: canvasWidth / 2 - (fabricImg.width! * scale) / 2,
+                    top: canvasHeight / 2 - (fabricImg.height! * scale) / 2,
+                  })
+                  fabricCanvas.add(fabricImg)
+                  fabricCanvas.setActiveObject(fabricImg)
+                  fabricCanvas.renderAll()
+                  console.log('🛠️ [LeftToolbar] Image added via fallback')
+                }
+                tempImg.src = imageUrl
+              } catch (fallbackError) {
+                console.error('Fallback also failed:', fallbackError)
+                alert('Failed to load the image. Please try a different image.')
+              }
+            }
+          }
+          reader.readAsDataURL(file)
+        } else if (!fabricCanvas) {
+          console.warn("Fabric canvas not yet initialized. Please select a product first.")
+        }
+      }
+      
+      // Trigger the file input
+      input.click()
     }
   }
 

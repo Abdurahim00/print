@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from "next/server"
 import { SiteConfigurationService } from "@/lib/services/siteConfigurationService"
 import { SiteConfigurationFileService } from "@/lib/services/siteConfigurationFileService"
 
+// Force dynamic rendering for this route
+export const dynamic = 'force-dynamic'
+
 // Check if MongoDB is available
 async function isMongoAvailable(): Promise<boolean> {
   try {

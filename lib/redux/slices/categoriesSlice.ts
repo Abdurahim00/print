@@ -21,10 +21,10 @@ const initialState: CategoriesState = {
 
 export const fetchCategories = createAsyncThunk(
   "categories/fetchCategories",
-  async (_, { getState }) => {
+  async (forceRefresh: boolean = false, { getState }) => {
     const state = getState() as any
-    // Skip fetch if already loaded
-    if (state.categories.categoriesLoaded) {
+    // Skip fetch if already loaded (unless force refresh is requested)
+    if (!forceRefresh && state.categories.categoriesLoaded) {
       return state.categories.categories
     }
     const res = await fetch("/api/categories")

@@ -13,7 +13,9 @@ export interface CategoryDocument {
   designableAreas?: string[] // ['front', 'back', 'sleeve', 'chest', 'wrap']
   designTechniques?: string[] // ['print', 'embroidery', 'sublimation', 'engraving']
   // Design pricing
-  designUpchargePercent?: number // Percentage to add when design is added (e.g., 15 for 15%)
+  designUpchargePercent?: number // Legacy: Percentage to add when design is added (e.g., 15 for 15%)
+  designUpchargePerCm2?: number // New: Price per square centimeter of design area (e.g., 0.5 kr per cm²)
+  useMetricPricing?: boolean // If true, use per cm² pricing instead of percentage
 }
 
 export interface SubcategoryDocument {

@@ -1,5 +1,8 @@
 import { NextResponse } from "next/server"
 
+// Force dynamic rendering for this route
+export const dynamic = 'force-dynamic'
+
 // Mock products for testing - same as in parent route
 const mockProducts = [
   {

@@ -1,5 +1,6 @@
 import { createSlice, type PayloadAction } from "@reduxjs/toolkit"
 import type { CartItem, Product, CartItemSize } from "@/types"
+import { SafeStorage } from "@/lib/utils/storage"
 
 interface CartState {
   items: CartItem[]
@@ -12,7 +13,7 @@ const loadCartFromStorage = (): CartItem[] => {
   }
   
   try {
-    const savedCart = localStorage.getItem('cart')
+    const savedCart = SafeStorage.getItem('cart')
     return savedCart ? JSON.parse(savedCart) : []
   } catch (error) {
     console.error('Failed to load cart from localStorage:', error)
@@ -26,10 +27,9 @@ const saveCartToStorage = (items: CartItem[]) => {
     return
   }
   
-  try {
-    localStorage.setItem('cart', JSON.stringify(items))
-  } catch (error) {
-    console.error('Failed to save cart to localStorage:', error)
+  const success = SafeStorage.setItem('cart', JSON.stringify(items))
+  if (!success) {
+    console.warn('Cart data could not be fully saved due to storage limitations')
   }
 }
 

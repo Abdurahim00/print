@@ -742,7 +742,7 @@ export function SiteConfigPanel() {
                                 <h4 className="font-semibold text-lg">{selectedProduct.name}</h4>
                                 <p className="text-sm text-gray-500">Position {index + 1}</p>
                                 {selectedProduct.price && (
-                                  <p className="text-sm font-medium text-purple-600">${selectedProduct.price}</p>
+                                  <p className="text-sm font-medium text-black">${selectedProduct.price}</p>
                                 )}
                                 {fp.badge && (
                                   <span className={`inline-block mt-1 px-2 py-1 text-xs rounded ${fp.badgeColor || 'bg-black text-white'}`}>
@@ -845,7 +845,7 @@ export function SiteConfigPanel() {
                                 <SelectItem value="bg-red-500 text-white">Red (Sale)</SelectItem>
                                 <SelectItem value="bg-green-500 text-white">Green (New)</SelectItem>
                                 <SelectItem value="bg-blue-500 text-white">Blue (Popular)</SelectItem>
-                                <SelectItem value="bg-purple-500 text-white">Purple (Premium)</SelectItem>
+                                <SelectItem value="bg-black text-white">Black (Premium)</SelectItem>
                                 <SelectItem value="bg-yellow-400 text-black">Yellow (Hot)</SelectItem>
                                 <SelectItem value="bg-gray-500 text-white">Gray (Limited)</SelectItem>
                               </SelectContent>
@@ -861,7 +861,7 @@ export function SiteConfigPanel() {
               <Button 
                 onClick={addFeaturedProduct} 
                 variant="outline" 
-                className="w-full border-dashed border-2 hover:border-purple-500 hover:bg-purple-50"
+                className="w-full border-dashed border-2 hover:border-black hover:bg-gray-50"
               >
                 <Plus className="h-4 w-4 mr-2" />
                 Add Featured Product

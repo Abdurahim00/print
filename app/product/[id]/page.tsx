@@ -14,16 +14,26 @@ interface ProductPageProps {
 // Fetch product data
 async function getProduct(id: string) {
   try {
+    console.log('[getProduct] Fetching product with ID:', id)
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'
-    const res = await fetch(`${baseUrl}/api/products/${id}`, {
+    const url = `${baseUrl}/api/products/${id}`
+    console.log('[getProduct] Fetching from URL:', url)
+    
+    const res = await fetch(url, {
       cache: 'no-store'
     })
     
+    console.log('[getProduct] Response status:', res.status)
+    
     if (!res.ok) {
+      const errorText = await res.text()
+      console.error('[getProduct] Error response:', errorText)
       return null
     }
     
-    return res.json()
+    const product = await res.json()
+    console.log('[getProduct] Product fetched:', product?.name)
+    return product
   } catch (error) {
     console.error('Error fetching product:', error)
     return null

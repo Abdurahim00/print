@@ -22,11 +22,42 @@ export function getProductImage(product: any): string {
     })
   }
   
-  // PRENDO DATA: Check image_urls array first (from Prendo JSON)
+  // Check imageUrl field first (this is what the API returns)
+  if (isValidImage(product.imageUrl)) {
+    return product.imageUrl
+  }
+  
+  // Then check images array (from database)
+  if (product.images && Array.isArray(product.images) && product.images.length > 0) {
+    for (const url of product.images) {
+      if (isValidImage(url)) {
+        return url
+      }
+    }
+  }
+  
+  // Check the single image field
+  if (isValidImage(product.image)) {
+    return product.image
+  }
+  
+  // PRENDO DATA: Check image_urls array (from Prendo JSON)
   if (product.image_urls && Array.isArray(product.image_urls) && product.image_urls.length > 0) {
     for (const url of product.image_urls) {
       if (isValidImage(url)) {
         return url
+      }
+    }
+  }
+  
+  // Check colors array for images (products often have color variants with images)
+  if (product.colors && Array.isArray(product.colors) && product.colors.length > 0) {
+    for (const color of product.colors) {
+      if (color.images && Array.isArray(color.images) && color.images.length > 0) {
+        const img = color.images[0]
+        if (isValidImage(img)) {
+          return img
+        }
       }
     }
   }

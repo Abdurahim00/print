@@ -1,266 +1,179 @@
 const { MongoClient, ObjectId } = require('mongodb');
 require('dotenv').config();
 
-const MONGODB_URI = process.env.MONGODB_URI;
+async function assignCategoriesToProducts() {
+  const uri = process.env.MONGODB_URI || 'mongodb://localhost:27017/printwrap';
+  const client = new MongoClient(uri);
 
-// Category mapping based on URL patterns and product names
-const CATEGORY_MAPPINGS = {
-  // URL-based mappings
-  'arbetsklader': 'Work Clothes',
-  'varumarken': 'Brands', 
-  'profilklader': 'Profile Clothing',
-  'giveaways': 'Giveaways',
-  'profilprodukter': 'Profile Products',
-  'kontorsmaterial': 'Office & Supplies',
-  'personligt-skydd': 'Personal Protection',
-  'massmatrial': 'Exhibition Materials',
-  'tryckt-material': 'Printed Materials',
-  'miljovaror': 'Eco-friendly Products',
-  
-  // Product type mappings
-  'trojor': 'Apparel',
-  'skjortor': 'Apparel',
-  'pikeer': 'Apparel',
-  'jackor': 'Apparel',
-  'byxor': 'Apparel',
-  'overaller': 'Work Clothes',
-  'shorts': 'Apparel',
-  'underklader': 'Apparel',
-  'skor': 'Accessories',
-  'kepsar': 'Accessories',
-  'mossor': 'Accessories',
-  'handskar': 'Accessories',
-  'vantar': 'Accessories',
-  'halsdukar': 'Accessories',
-  'nyckelringar': 'Promotional Items',
-  'pennor': 'Office & Supplies',
-  'muggar': 'Drinkware',
-  'flaskor': 'Drinkware',
-  'kassar': 'Bags',
-  'ryggsackar': 'Bags',
-  'vaxor': 'Bags',
-  
-  // Brand mappings
-  'projob': 'Work Clothes',
-  'mascot': 'Work Clothes',
-  'blaklader': 'Work Clothes',
-  'lbrador': 'Work Clothes',
-  'snickers': 'Work Clothes',
-  'helly-hansen': 'Work Clothes',
-  'clique': 'Profile Clothing',
-  'printer': 'Profile Clothing',
-  'harvest': 'Profile Clothing',
-  'tee-jays': 'Apparel',
-  'russell': 'Apparel',
-  'result': 'Apparel'
-};
-
-async function determineCategoryForProduct(product, categoryMap) {
-  let categoryName = 'Other'; // Default category
-  let confidence = 0;
-  
-  // Check URL for category hints
-  if (product.originalUrl) {
-    const urlLower = product.originalUrl.toLowerCase();
-    const urlParts = urlLower.split('/');
-    
-    // Check each URL part against mappings
-    for (const part of urlParts) {
-      if (CATEGORY_MAPPINGS[part]) {
-        categoryName = CATEGORY_MAPPINGS[part];
-        confidence = 90;
-        break;
-      }
-      
-      // Check partial matches
-      for (const [key, value] of Object.entries(CATEGORY_MAPPINGS)) {
-        if (part.includes(key)) {
-          categoryName = value;
-          confidence = 80;
-          break;
-        }
-      }
-    }
-  }
-  
-  // If no URL match, check product name
-  if (confidence < 80 && product.name) {
-    const nameLower = product.name.toLowerCase();
-    
-    for (const [key, value] of Object.entries(CATEGORY_MAPPINGS)) {
-      if (nameLower.includes(key)) {
-        categoryName = value;
-        confidence = 70;
-        break;
-      }
-    }
-    
-    // Special handling for specific product types
-    if (nameLower.includes('tröja') || nameLower.includes('t-shirt') || 
-        nameLower.includes('shirt') || nameLower.includes('hoodie')) {
-      categoryName = 'Apparel';
-      confidence = Math.max(confidence, 75);
-    } else if (nameLower.includes('jacka') || nameLower.includes('jacket')) {
-      categoryName = 'Apparel';
-      confidence = Math.max(confidence, 75);
-    } else if (nameLower.includes('byxa') || nameLower.includes('byxor')) {
-      categoryName = 'Apparel';
-      confidence = Math.max(confidence, 75);
-    } else if (nameLower.includes('overall')) {
-      categoryName = 'Work Clothes';
-      confidence = Math.max(confidence, 85);
-    } else if (nameLower.includes('sweatshirt')) {
-      categoryName = 'Apparel';
-      confidence = Math.max(confidence, 75);
-    }
-  }
-  
-  // Check brand info for work clothes brands
-  if (product.brand) {
-    const brandLower = product.brand.toLowerCase();
-    if (['projob', 'mascot', 'blåkläder', 'blaklader', 'snickers', 'helly hansen'].some(b => brandLower.includes(b))) {
-      categoryName = 'Work Clothes';
-      confidence = Math.max(confidence, 85);
-    }
-  }
-  
-  // Get category ID
-  const category = categoryMap[categoryName];
-  return category ? category._id : categoryMap['Other']?._id;
-}
-
-async function assignCategories() {
-  if (!MONGODB_URI) {
-    console.error('❌ MONGODB_URI not found!');
-    process.exit(1);
-  }
-  
-  const client = new MongoClient(MONGODB_URI);
-  
   try {
     await client.connect();
-    console.log('✅ Connected to MongoDB');
+    console.log('Connected to MongoDB\n');
     
     const db = client.db();
-    const productsCollection = db.collection('products');
-    const categoriesCollection = db.collection('categories');
-    
-    // Get all categories and create a map
-    const categories = await categoriesCollection.find({}).toArray();
+    const products = db.collection('products');
+    const categories = db.collection('categories');
+
+    // Get all categories
+    const allCategories = await categories.find({}).toArray();
     const categoryMap = {};
-    categories.forEach(cat => {
-      categoryMap[cat.name] = cat;
+    allCategories.forEach(cat => {
+      categoryMap[cat.name] = cat._id.toString();
     });
-    
-    console.log(`\n📊 Found ${categories.length} categories`);
-    
-    // Get all products
-    const products = await productsCollection.find({}).toArray();
-    console.log(`📦 Found ${products.length} products to categorize`);
-    
-    // Track category assignments
-    const categoryAssignments = {};
-    let updatedCount = 0;
-    
+
+    console.log('Available categories:', Object.keys(categoryMap).join(', '));
+
+    // Category assignment rules based on product names
+    const categoryRules = {
+      'Apparel': [
+        't-shirt', 'tshirt', 'shirt', 'hoodie', 'tröja', 'jacka', 'jacket',
+        'byxa', 'pants', 'shorts', 'kjol', 'skirt', 'klänning', 'dress',
+        'kläder', 'clothes', 'overall', 'rock', 'blazer', 'kostym', 'suit',
+        'polo', 'piké', 'pike', 'sweatshirt', 'fleece', 'softshell'
+      ],
+      'Bags': [
+        'väska', 'bag', 'ryggsäck', 'backpack', 'portfölj', 'portfolio',
+        'resväska', 'luggage', 'suitcase', 'duffel', 'tote', 'shopper',
+        'axelväska', 'messenger', 'kasse', 'pouch'
+      ],
+      'Drinkware': [
+        'mugg', 'mug', 'kopp', 'cup', 'glas', 'glass', 'flaska', 'bottle',
+        'termos', 'thermos', 'tumbler', 'vattenflaska', 'water bottle'
+      ],
+      'Accessories': [
+        'keps', 'cap', 'hatt', 'hat', 'mössa', 'beanie', 'halsduk', 'scarf',
+        'vantar', 'gloves', 'bälte', 'belt', 'solglasögon', 'sunglasses',
+        'klocka', 'watch', 'armband', 'bracelet', 'smycke', 'jewelry'
+      ],
+      'Tech Accessories': [
+        'case', 'fodral', 'skal', 'cover', 'hörlurar', 'headphone', 'powerbank',
+        'laddare', 'charger', 'kabel', 'cable', 'usb', 'adapter', 'mus', 'mouse',
+        'tangentbord', 'keyboard', 'musmatta', 'mousepad'
+      ],
+      'Office & Supplies': [
+        'penna', 'pen', 'blyerts', 'pencil', 'anteckningsbok', 'notebook',
+        'block', 'notepad', 'kalendar', 'calendar', 'dagbok', 'diary',
+        'mapp', 'folder', 'häftapparat', 'stapler', 'gem', 'paperclip',
+        'kontor', 'office', 'skrivbord', 'desk'
+      ],
+      'Promotional Items': [
+        'nyckelring', 'keyring', 'keychain', 'lanyard', 'badge', 'pin',
+        'klistermärke', 'sticker', 'magnet', 'reflex', 'reflector',
+        'parasoll', 'umbrella', 'paraply', 'fläkt', 'fan'
+      ],
+      'Textiles': [
+        'handduk', 'towel', 'filt', 'blanket', 'kudde', 'pillow',
+        'lakan', 'sheet', 'pläd', 'throw', 'textil', 'textile'
+      ],
+      'Toys & Games': [
+        'leksak', 'toy', 'spel', 'game', 'pussel', 'puzzle', 'boll', 'ball',
+        'nallebjörn', 'teddy', 'docka', 'doll'
+      ],
+      'Safety': [
+        'hjälm', 'helmet', 'skydd', 'protection', 'varsel', 'hi-vis',
+        'safety', 'säkerhet', 'mask', 'gloves', 'goggles'
+      ]
+    };
+
     // Process products in batches
-    const batchSize = 100;
-    for (let i = 0; i < products.length; i += batchSize) {
-      const batch = products.slice(i, Math.min(i + batchSize, products.length));
-      const bulkOps = [];
-      
+    const batchSize = 1000;
+    // Check for products with null, "uncategorized", or invalid categoryId
+    const query = { 
+      $or: [
+        { categoryId: null },
+        { categoryId: "uncategorized" },
+        { categoryId: { $exists: false } },
+        { categoryId: { $type: "string", $eq: "uncategorized" } }
+      ]
+    };
+    const totalProducts = await products.countDocuments(query);
+    console.log(`\nFound ${totalProducts} products without valid categories\n`);
+
+    let processed = 0;
+    const categoryCounts = {};
+
+    while (processed < totalProducts) {
+      const batch = await products.find(query)
+        .skip(processed)
+        .limit(batchSize)
+        .toArray();
+
+      if (batch.length === 0) break;
+
+      const updates = [];
+
       for (const product of batch) {
-        const categoryId = await determineCategoryForProduct(product, categoryMap);
-        
+        if (!product.name) {
+          console.log(`Warning: Product ${product._id} has no name, skipping...`);
+          continue;
+        }
+        const nameLower = product.name.toLowerCase();
+        let assignedCategory = null;
+
+        // Try to match product name with category rules
+        for (const [categoryName, keywords] of Object.entries(categoryRules)) {
+          if (keywords.some(keyword => nameLower.includes(keyword))) {
+            assignedCategory = categoryName;
+            break;
+          }
+        }
+
+        // Default to "Other" if no match
+        if (!assignedCategory) {
+          assignedCategory = 'Other';
+        }
+
+        const categoryId = categoryMap[assignedCategory];
         if (categoryId) {
-          // Track assignment
-          const categoryName = Object.values(categoryMap).find(c => c._id.equals(categoryId))?.name;
-          categoryAssignments[categoryName] = (categoryAssignments[categoryName] || 0) + 1;
-          
-          // Add to bulk update
-          bulkOps.push({
+          updates.push({
             updateOne: {
               filter: { _id: product._id },
               update: { 
                 $set: { 
                   categoryId: categoryId,
-                  updatedAt: new Date()
-                } 
+                  // Also set price if missing
+                  price: product.price || product.basePrice || 100
+                }
               }
             }
           });
+
+          categoryCounts[assignedCategory] = (categoryCounts[assignedCategory] || 0) + 1;
         }
       }
-      
-      if (bulkOps.length > 0) {
-        const result = await productsCollection.bulkWrite(bulkOps);
-        updatedCount += result.modifiedCount;
-        console.log(`  Progress: ${Math.min(i + batchSize, products.length)}/${products.length} products processed`);
+
+      // Execute batch update
+      if (updates.length > 0) {
+        try {
+          const result = await products.bulkWrite(updates);
+          processed += batch.length;
+          console.log(`Processed ${processed}/${totalProducts} products (${result.modifiedCount} updated)`);
+        } catch (err) {
+          console.error('Batch update failed:', err.message);
+          break;
+        }
+      } else {
+        processed += batch.length;
       }
     }
-    
-    console.log(`\n✅ Updated ${updatedCount} products with categories`);
-    
-    // Show category distribution
-    console.log('\n📊 Category assignments:');
-    Object.entries(categoryAssignments)
+
+    console.log('\n=== Category Assignment Summary ===');
+    Object.entries(categoryCounts)
       .sort((a, b) => b[1] - a[1])
       .forEach(([category, count]) => {
-        console.log(`  - ${category}: ${count} products`);
+        console.log(`  ${category}: ${count} products`);
       });
-    
-    // Verify some products
-    console.log('\n📋 Sample categorized products:');
-    const samples = await productsCollection
-      .find({ categoryId: { $exists: true } })
-      .limit(10)
-      .toArray();
-    
-    for (const product of samples) {
-      const category = categories.find(c => c._id.equals(product.categoryId));
-      console.log(`  - ${product.name}`);
-      console.log(`    Category: ${category?.name || 'Unknown'}`);
-    }
-    
-    // Check uncategorized products
-    const uncategorized = await productsCollection.countDocuments({ 
-      $or: [
-        { categoryId: null },
-        { categoryId: { $exists: false } }
-      ]
-    });
-    
-    if (uncategorized > 0) {
-      console.log(`\n⚠️ ${uncategorized} products remain uncategorized`);
-      
-      // Show some uncategorized examples
-      const uncategorizedSamples = await productsCollection
-        .find({ 
-          $or: [
-            { categoryId: null },
-            { categoryId: { $exists: false } }
-          ]
-        })
-        .limit(5)
-        .toArray();
-      
-      if (uncategorizedSamples.length > 0) {
-        console.log('\nUncategorized product examples:');
-        uncategorizedSamples.forEach(p => {
-          console.log(`  - ${p.name}`);
-          if (p.originalUrl) {
-            console.log(`    URL: ${p.originalUrl.substring(0, 80)}...`);
-          }
-        });
-      }
-    }
-    
+
+    // Verify the update
+    const stillWithoutCategory = await products.countDocuments({ categoryId: null });
+    console.log(`\nProducts still without category: ${stillWithoutCategory}`);
+
   } catch (error) {
-    console.error('❌ Error:', error);
+    console.error('Assignment failed:', error.message);
   } finally {
     await client.close();
-    console.log('\n✅ Database connection closed');
+    console.log('\nDisconnected from MongoDB');
   }
 }
 
-// Run
-assignCategories().catch(console.error);
+console.log('Assigning categories to products...');
+assignCategoriesToProducts();

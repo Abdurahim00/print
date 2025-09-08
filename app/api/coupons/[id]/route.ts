@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from "next/server"
 import { getCouponById, updateCoupon, deleteCoupon } from "@/lib/services/couponService"
 import type { UpdateCouponData } from "@/types"
 
+// Force dynamic rendering for this route
+export const dynamic = 'force-dynamic'
+
 export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }

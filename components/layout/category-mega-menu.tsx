@@ -50,8 +50,8 @@ export function CategoryMegaMenu() {
         align="start"
       >
         {/* All Products Link */}
-        <DropdownMenuItem asChild className="cursor-pointer hover:bg-purple-50 dark:hover:bg-purple-900/20">
-          <Link href="/products" className="w-full font-semibold text-purple-600 dark:text-purple-400">
+        <DropdownMenuItem asChild className="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-900/20">
+          <Link href="/products" className="w-full font-semibold text-black dark:text-gray-400">
             <Grid3X3 className="mr-2 h-4 w-4" />
             {language === 'en' ? 'All Products' : 'Alla Produkter'}
           </Link>
@@ -71,7 +71,7 @@ export function CategoryMegaMenu() {
                 {/* Category Header */}
                 <Link 
                   href={`/products?category=${category.slug}`}
-                  className="block font-semibold text-gray-900 dark:text-gray-100 hover:text-purple-600 dark:hover:text-purple-400 transition-colors pb-1 border-b border-gray-200 dark:border-gray-700"
+                  className="block font-semibold text-gray-900 dark:text-gray-100 hover:text-black dark:hover:text-gray-400 transition-colors pb-1 border-b border-gray-200 dark:border-gray-700"
                   onClick={() => setOpen(false)}
                 >
                   {category.name}
@@ -84,7 +84,7 @@ export function CategoryMegaMenu() {
                       <Link
                         key={sub.id}
                         href={`/products?category=${category.slug}&subcategory=${sub.slug}`}
-                        className="block text-sm text-gray-600 dark:text-gray-400 hover:text-purple-600 dark:hover:text-purple-400 transition-colors py-1"
+                        className="block text-sm text-gray-600 dark:text-gray-400 hover:text-black dark:hover:text-gray-400 transition-colors py-1"
                         onClick={() => setOpen(false)}
                       >
                         {sub.name}

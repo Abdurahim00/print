@@ -411,7 +411,8 @@ export const useVariationDesignPersistence = ({
         console.log('🔄 [useVariationDesignPersistence] No design found, canvas cleared')
       }
     }
-  }, [fabricCanvas, getCurrentVariationId, viewMode, loadCurrentDesign])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fabricCanvas, productColor, viewMode, selectedProduct?.id]) // Only depend on actual data changes, not functions
 
   // Additional effect to handle product restoration after hook initialization
   useEffect(() => {
@@ -428,7 +429,8 @@ export const useVariationDesignPersistence = ({
         }
       }, 100)
     }
-  }, [selectedProduct?.id, fabricCanvas, loadCurrentDesign, getCurrentVariationId])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedProduct?.id, fabricCanvas]) // Only depend on actual data changes, not functions
   
   // Persist designs to localStorage whenever they change
   useEffect(() => {

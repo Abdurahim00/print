@@ -6,7 +6,6 @@ import { useFabricCanvas } from "@/hooks/useFabricCanvas"
 import { setViewMode, setSelectedProduct, setProductColor, setSelectedTemplate, setLoadingProduct } from "@/lib/redux/designToolSlices/designSlice"
 import { Button } from "@/components/ui/button"
 import { RootState } from "@/lib/redux/store"
-import Image from "next/image"
 import { ProductAnglesSelector } from "@/components/dashboard/common/ProductAnglesSelector"
 import { LoadSavedDesign } from "./load-saved-design"
 import { useVariationDesignPersistence } from "@/hooks/useVariationDesignPersistence"
@@ -52,9 +51,29 @@ export function CentralCanvas() {
     autoSaveDelay: 1000
   })
   
-  // Set client-side flag
+  // Set client-side flag and load saved design
   useEffect(() => {
     setIsClient(true)
+    
+    // Load saved design from localStorage
+    if (typeof window !== 'undefined') {
+      const savedCanvas = localStorage.getItem('designCanvasJSON')
+      if (savedCanvas && loadFromJSON) {
+        console.log('📂 [CentralCanvas] Loading saved design from localStorage')
+        const fabricCanvas = (window as any).fabricCanvas
+        if (fabricCanvas) {
+          loadFromJSON(fabricCanvas, savedCanvas)
+        } else {
+          // Wait for canvas to be initialized
+          setTimeout(() => {
+            const canvas = (window as any).fabricCanvas
+            if (canvas && loadFromJSON) {
+              loadFromJSON(canvas, savedCanvas)
+            }
+          }, 500)
+        }
+      }
+    }
   }, [])
   
   // Persist current design session (product + view + template) on change
@@ -72,7 +91,8 @@ export function CentralCanvas() {
           angles: selectedProduct.angles,
           colors: selectedProduct.colors,
           price: selectedProduct.price,
-          image: selectedProduct.image,
+          image: selectedProduct.image || selectedProduct.imageUrl,
+          imageUrl: selectedProduct.imageUrl,
           description: selectedProduct.description,
           inStock: selectedProduct.inStock,
           hasVariations: selectedProduct.hasVariations,
@@ -138,7 +158,7 @@ export function CentralCanvas() {
     } catch (error) {
       console.error('Error restoring session state:', error)
     }
-  }, [dispatch, isClient, selectedProduct, productColor, viewMode, selectedTemplate])
+  }, [dispatch, isClient]) // Only depend on dispatch and isClient to avoid loops
 
   // Ensure product is present after refresh: use session data or fetch by productId from URL if missing
   useEffect(() => {
@@ -245,7 +265,7 @@ export function CentralCanvas() {
                 angles: realAngles,
                 colors: realColors,
                 price: productData.price,
-                image: productData.image,
+                image: productData.image || productData.imageUrl,
                 description: productData.description,
                 inStock: productData.inStock,
                 hasVariations: productData.hasVariations,
@@ -424,19 +444,64 @@ export function CentralCanvas() {
   const getCurrentImage = () => {
     if (!selectedProduct) return null
     
-    const product = selectedProduct as Product;
+    const product = selectedProduct as any;
     
-    // If product has variations, try to find image for current view mode
+    // Debug logging
+    console.log('🖼️ [getCurrentImage] Called with product:', {
+      name: product.name,
+      hasVariants: !!product.variants,
+      variantsCount: product.variants?.length,
+      hasImages: !!product.images,
+      imagesCount: product.images?.length,
+      hasImage: !!product.image,
+      viewMode
+    });
+    
+    // If product has variants, try to find image for current variant
+    if (product.variants && Array.isArray(product.variants) && product.variants.length > 0) {
+      // Find the current variant - could be selected by name or index
+      let currentVariant = product.variants[0]; // Default to first variant
+      
+      // Try to find a specific variant if we have selection criteria
+      if (product.selectedVariantIndex !== undefined) {
+        currentVariant = product.variants[product.selectedVariantIndex] || currentVariant;
+      }
+      
+      console.log('🖼️ [getCurrentImage] Using variant:', {
+        variant: currentVariant,
+        hasVariantImage: !!currentVariant?.variant_image,
+        variantImage: currentVariant?.variant_image
+      });
+      
+      // Get image from variant
+      if (currentVariant) {
+        if (currentVariant.variant_image) {
+          console.log('🖼️ [getCurrentImage] Returning variant_image:', currentVariant.variant_image);
+          return currentVariant.variant_image;
+        }
+        if (currentVariant.images && Array.isArray(currentVariant.images) && currentVariant.images.length > 0) {
+          console.log('🖼️ [getCurrentImage] Returning variant images[0]:', currentVariant.images[0]);
+          return currentVariant.images[0];
+        }
+      }
+    }
+    
+    // If product has variations (different structure), try to find image for current view mode
     if (product.hasVariations && product.variations) {
       // Find the variation that matches the current product color
-      const currentVariation = product.variations.find((v: any) => v.color.hex_code === productColor)
+      const currentVariation = product.variations.find((v: any) => v.color?.hex_code === productColor)
       if (currentVariation) {
         const imageForAngle = currentVariation.images?.find((img: any) => img.angle === viewMode && img.url)
         if (imageForAngle) {
           return imageForAngle.url
         }
-        // Fallback to swatch image or main product image
-        return currentVariation.color.swatch_image || product.image
+        // Fallback to variation images
+        if (currentVariation.images && Array.isArray(currentVariation.images) && currentVariation.images.length > 0) {
+          const firstImage = currentVariation.images[0];
+          return typeof firstImage === 'string' ? firstImage : firstImage.url;
+        }
+        // Fallback to swatch image
+        return currentVariation.color?.swatch_image
       }
     } else {
       // For single products without variations, check individual angle images
@@ -466,8 +531,16 @@ export function CentralCanvas() {
       }
     }
     
-    // Fallback to main product image
-    return (product as any).image || null
+    // Fallback to images array
+    if (product.images && Array.isArray(product.images) && product.images.length > 0) {
+      console.log('🖼️ [getCurrentImage] Returning from images array:', product.images[0]);
+      return product.images[0];
+    }
+    
+    // Fallback to imageUrl or image
+    const finalImage = product.imageUrl || product.image || null;
+    console.log('🖼️ [getCurrentImage] Final fallback image:', finalImage);
+    return finalImage
   }
 
   // Debug logging for image restoration
@@ -481,7 +554,7 @@ export function CentralCanvas() {
         variationsCount: selectedProduct.variations?.length,
         currentVariation: getCurrentVariation(),
         currentImage: getCurrentImage(),
-        fallbackImage: (selectedProduct as any).image,
+        fallbackImage: (selectedProduct as any).imageUrl || (selectedProduct as any).image,
         // Debug single product angle images
         singleProductAngles: !selectedProduct.hasVariations ? {
           frontImage: (selectedProduct as any).frontImage,
@@ -611,6 +684,15 @@ export function CentralCanvas() {
   const currentImage = getCurrentImage()
   const currentVariationImages = getCurrentVariationImages()
   const currentVariation = getCurrentVariation()
+  
+  // Debug current image
+  console.log('🎨 [CentralCanvas] Render state:', {
+    hasSelectedProduct: !!selectedProduct,
+    productName: selectedProduct?.name,
+    currentImage,
+    isLoadingProduct,
+    shouldShowImage: selectedProduct && currentImage && !isLoadingProduct
+  })
 
   // Update view mode if current view mode is not available in new angles
   useEffect(() => {
@@ -653,7 +735,7 @@ export function CentralCanvas() {
             ? productData.variations.map((v: any) => v.color?.hex_code).filter(Boolean)
             : [],
           price: productData.price,
-          image: productData.image,
+          image: productData.image || productData.imageUrl,
           description: productData.description,
           inStock: productData.inStock,
           hasVariations: productData.hasVariations,
@@ -744,22 +826,30 @@ export function CentralCanvas() {
             
             {/* Base/Product Image - Background layer */}
             {selectedProduct && currentImage && !isLoadingProduct ? (
-              <div className="absolute inset-0 flex items-center justify-center p-4 lg:p-8">
-                <div className="w-full h-full relative max-w-2xl max-h-full">
-                  <Image
-                    src={currentImage}
-                    alt={(selectedProduct as Product).name}
-                    fill
-                    className="object-contain drop-shadow-lg"
-                    style={{ 
-                      filter: viewMode === "back" ? "brightness(0.85) saturate(1.1)" : "saturate(1.1)",
-                      transform: viewMode === "left" ? "rotateY(25deg)" : 
-                              viewMode === "right" ? "rotateY(-25deg)" : "none",
-                      zIndex: 1
-                    }}
-                  />
+              <>
+                <div className="absolute inset-0 flex items-center justify-center p-4 lg:p-8" style={{ zIndex: 1 }}>
+                  <div className="w-full h-full flex items-center justify-center max-w-2xl max-h-full">
+                    <img
+                      src={currentImage}
+                      alt={(selectedProduct as Product).name}
+                      className="max-w-full max-h-full object-contain drop-shadow-lg"
+                      style={{ 
+                        filter: viewMode === "back" ? "brightness(0.85) saturate(1.1)" : "saturate(1.1)",
+                        transform: viewMode === "left" ? "rotateY(25deg)" : 
+                                viewMode === "right" ? "rotateY(-25deg)" : "none"
+                      }}
+                      onError={(e) => {
+                        console.error('❌ [CentralCanvas] Image failed to load:', currentImage);
+                        const target = e.target as HTMLImageElement;
+                        target.src = '/placeholder.jpg';
+                      }}
+                      onLoad={() => {
+                        console.log('✅ [CentralCanvas] Image loaded successfully:', currentImage);
+                      }}
+                    />
+                  </div>
                 </div>
-              </div>
+              </>
             ) : !isLoadingProduct ? (
               /* Show instructions when no product selected and not loading */
               <div className="absolute inset-0 flex items-center justify-center p-4 lg:p-8" style={{ zIndex: 1 }}>

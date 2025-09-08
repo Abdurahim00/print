@@ -120,7 +120,13 @@ export class OrderService {
       date: order.date,
       total: order.total,
       status: order.status,
-      items: order.items,
+      items: (order.items || []).map((item: any) => ({
+        name: item.name,
+        quantity: item.quantity,
+        price: item.price,
+        hasCustomDesign: !!item.designData?.hasCustomDesign || !!item.designData?.canvasData,
+        // Exclude large design data to reduce payload size
+      })),
       shippingOption: order.shippingOption,
       paymentMethod: order.paymentMethod,
       paymentIntentId: order.paymentIntentId,

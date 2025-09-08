@@ -27,4 +27,15 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
-.vercel
+
+# Large data files
+60k.json
+new.json
+new_raw.txt
+products-backup-*.json
+*.backup.json
+
+# Scripts and logs
+fix-categories.log
+test-*.html
+test-*.js

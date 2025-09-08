@@ -1,6 +1,9 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { OrderService } from "@/lib/services/orderService"
 
+// Force dynamic rendering to prevent ISR caching issues
+export const dynamic = 'force-dynamic'
+
 export async function GET() {
   try {
     console.log("Fetching orders...")

@@ -10,6 +10,7 @@ import { fetchCoupons, createCoupon, updateCoupon, deleteCoupon } from "@/lib/re
 import { translations, productCategories } from "@/lib/constants"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -61,10 +62,16 @@ import { SubcategoryFormDialog } from "./common/SubcategoryFormDialog"
 import { SiteConfigPanel } from "./common/SiteConfigPanel"
 
 // Import form dialog components  
-import { ProductFormDialog } from "./common/ProductFormDialog"
+import dynamic from "next/dynamic"
 import { UserFormDialog } from "./common/UserFormDialog"
 import { TemplateFormDialog } from "./common/TemplateFormDialog"
 import { CouponFormDialog } from "./common/CouponFormDialog"
+
+// Dynamically import ProductFormDialog to avoid SSR issues
+const ProductFormDialog = dynamic(
+  () => import("./common/ProductFormDialog").then(mod => mod.ProductFormDialog),
+  { ssr: false }
+)
 
 type AdminPage = "users" | "products" | "templates" | "coupons" | "categories" | "subcategories" | "analytics" | "site-config"
 
@@ -111,21 +118,30 @@ export function AdminDashboardNew({ onLogout }: AdminDashboardNewProps) {
 
   // Search and filter states
   const [productSearchTerm, setProductSearchTerm] = useState("")
+  const [globalProductSearch, setGlobalProductSearch] = useState("")
   const [selectedProductCategory, setSelectedProductCategory] = useState("all")
   const [userSearchTerm, setUserSearchTerm] = useState("")
   const [selectedUserRole, setSelectedUserRole] = useState("all")
   const [templateSearchTerm, setTemplateSearchTerm] = useState("")
   const [selectedTemplateCategory, setSelectedTemplateCategory] = useState("all")
   const [couponSearchTerm, setCouponSearchTerm] = useState("")
+  const [showDesignableOnly, setShowDesignableOnly] = useState(false)
+  const [currentPage, setCurrentPage] = useState(1)
+  const [productsPerPage, setProductsPerPage] = useState(100) // Start with 100 per page
+  const [totalProducts, setTotalProducts] = useState(43149)
 
   useEffect(() => {
-    dispatch(fetchProducts())
+    // Fetch products with proper pagination to avoid memory issues
+    dispatch(fetchProducts({ 
+      page: currentPage, 
+      limit: productsPerPage
+    }))
     dispatch(fetchUsers())
     dispatch(fetchTemplates())
     dispatch(fetchCoupons())
     dispatch(fetchCategories())
     dispatch(fetchSubcategories())
-  }, [dispatch])
+  }, [dispatch, currentPage, productsPerPage])
 
   // Menu items for sidebar (Analytics on top as requested)
   const menuItems = [
@@ -181,10 +197,46 @@ export function AdminDashboardNew({ onLogout }: AdminDashboardNewProps) {
 
   // Filter functions
   const filteredProducts = products.filter(
-    (product) =>
-      (selectedProductCategory === "all" || product.categoryId === selectedProductCategory) &&
-      product.name.toLowerCase().includes(productSearchTerm.toLowerCase()),
+    (product) => {
+      const matchesCategory = selectedProductCategory === "all" || product.categoryId === selectedProductCategory
+      const matchesSearch = product.name.toLowerCase().includes(productSearchTerm.toLowerCase()) ||
+                           product.description?.toLowerCase().includes(productSearchTerm.toLowerCase()) ||
+                           product.id.toLowerCase().includes(productSearchTerm.toLowerCase())
+      const matchesDesignable = !showDesignableOnly || product.isDesignable
+      return matchesCategory && matchesSearch && matchesDesignable
+    }
   )
+  
+  // Global product search across all products with debouncing
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("")
+  
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(globalProductSearch)
+    }, 300) // 300ms debounce
+    
+    return () => clearTimeout(timer)
+  }, [globalProductSearch])
+  
+  const globalSearchResults = useMemo(() => {
+    if (!debouncedSearchTerm.trim()) return []
+    const searchTerm = debouncedSearchTerm.toLowerCase()
+    try {
+      return products.filter(product => 
+        product?.name?.toLowerCase().includes(searchTerm) ||
+        product?.description?.toLowerCase().includes(searchTerm) ||
+        product?.id?.toLowerCase().includes(searchTerm) ||
+        categories.find((c: any) => c.id === product.categoryId)?.name?.toLowerCase().includes(searchTerm) ||
+        subcategories.some((s: any) => 
+          product.subcategoryIds?.includes(s.id) && 
+          s.name?.toLowerCase().includes(searchTerm)
+        )
+      ).slice(0, 10) // Limit to 10 results for performance
+    } catch (error) {
+      console.error("Search error:", error)
+      return []
+    }
+  }, [debouncedSearchTerm, products, categories, subcategories])
 
   const filteredUsers = users.filter(
     (user) =>
@@ -230,21 +282,28 @@ export function AdminDashboardNew({ onLogout }: AdminDashboardNewProps) {
   }
 
   const handleEditProduct = async (
-    values: { name: string; price: string; categoryId: string; description: string; image: string },
+    values: any, // Accept all product fields including variations, angle images, etc.
     { setSubmitting }: FormikHelpers<any>
   ) => {
     if (!editingProduct) return
     try {
+      // Ensure price is a number
       const productData = {
         ...editingProduct,
         ...values,
-        price: Number.parseFloat(values.price),
+        price: typeof values.price === 'string' ? Number.parseFloat(values.price) : values.price,
       }
+      
+      // Remove _id field to avoid MongoDB immutable field error
+      delete productData._id
+      
+      console.log('Updating product with data:', productData)
       await dispatch(updateProduct(productData))
       toast.success(t.productUpdated.replace("{productName}", values.name))
       setIsEditProductDialogOpen(false)
       setEditingProduct(null)
     } catch (error) {
+      console.error('Failed to update product:', error)
       toast.error(t.failedToUpdateProduct)
     } finally {
       setSubmitting(false)
@@ -428,19 +487,19 @@ export function AdminDashboardNew({ onLogout }: AdminDashboardNewProps) {
                 <Users className="h-5 w-5 text-black" />
                 {t.manageUsers}
               </CardTitle>
-              <div className="flex flex-col sm:flex-row gap-4">
+              <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
                 <div className="relative flex-1">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
+                  <Search className="absolute left-2 sm:left-3 top-1/2 transform -translate-y-1/2 h-3 w-3 sm:h-4 sm:w-4 text-slate-400" />
                   <Input
                     type="search"
                     placeholder={t.searchUsers}
                     value={userSearchTerm}
                     onChange={(e) => setUserSearchTerm(e.target.value)}
-                    className="pl-10 border-slate-300 focus:border-black focus:ring-gray-200"
+                    className="pl-8 sm:pl-10 border-slate-300 focus:border-black focus:ring-gray-200 text-sm sm:text-base h-9 sm:h-10"
                   />
                 </div>
                 <Select value={selectedUserRole} onValueChange={setSelectedUserRole}>
-                  <SelectTrigger className="w-full sm:w-[200px] border-slate-300 focus:border-black focus:ring-gray-200">
+                  <SelectTrigger className="w-full sm:w-[180px] lg:w-[200px] border-slate-300 focus:border-black focus:ring-gray-200 h-9 sm:h-10 text-sm sm:text-base">
                     <SelectValue placeholder={t.filterByRole} />
                   </SelectTrigger>
                   <SelectContent>
@@ -482,29 +541,101 @@ export function AdminDashboardNew({ onLogout }: AdminDashboardNewProps) {
                   {t.addProduct}
                 </Button>
               </div>
-              <div className="flex flex-col sm:flex-row gap-4">
-                <div className="relative flex-1">
+              <div className="flex flex-col gap-4">
+                {/* Global search bar */}
+                <div className="relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
                   <Input
                     type="search"
-                    placeholder={t.searchProducts}
-                    value={productSearchTerm}
-                    onChange={(e) => setProductSearchTerm(e.target.value)}
-                    className="pl-10 border-slate-300 focus:border-black focus:ring-gray-200"
+                    placeholder="Global product search (name, description, category, subcategory)..."
+                    value={globalProductSearch}
+                    onChange={(e) => setGlobalProductSearch(e.target.value)}
+                    onBlur={() => {
+                      // Clear search results after a delay to allow click events
+                      setTimeout(() => setGlobalProductSearch(""), 200)
+                    }}
+                    className="pl-10 pr-4 border-slate-300 focus:border-black focus:ring-gray-200 bg-slate-50"
                   />
+                  {globalSearchResults.length > 0 && debouncedSearchTerm && (
+                    <div className="absolute top-full mt-1 w-full bg-white border rounded-lg shadow-lg z-50 max-h-96 overflow-y-auto">
+                      {globalSearchResults.map((product) => (
+                        <div
+                          key={product.id}
+                          className="p-3 hover:bg-slate-50 cursor-pointer border-b last:border-0"
+                          onMouseDown={(e) => {
+                            e.preventDefault() // Prevent blur from firing
+                            setProductSearchTerm(product.name)
+                            setGlobalProductSearch("")
+                            setSelectedProductCategory("all")
+                          }}
+                        >
+                          <div className="flex items-center gap-3">
+                            {product.image && (
+                              <img 
+                                src={product.image} 
+                                alt={product.name} 
+                                className="w-12 h-12 object-cover rounded"
+                                onError={(e) => {
+                                  (e.target as HTMLImageElement).style.display = 'none'
+                                }}
+                              />
+                            )}
+                            <div className="flex-1">
+                              <p className="font-medium text-sm">{product.name}</p>
+                              <p className="text-xs text-slate-500">
+                                {categories.find((c: any) => c.id === product.categoryId)?.name || "No category"}
+                                {product.isDesignable && (
+                                  <span className="ml-2 text-xs bg-blue-100 text-blue-800 px-1 rounded">Designable</span>
+                                )}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
-                <Select value={selectedProductCategory} onValueChange={setSelectedProductCategory}>
-                  <SelectTrigger className="w-full sm:w-[200px] border-slate-300 focus:border-black focus:ring-gray-200">
-                    <SelectValue placeholder={t.filterByCategory} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {productCategories.map((cat) => (
-                      <SelectItem key={cat.id} value={cat.id}>
-                        {cat.name(t)}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                
+                {/* Filters row */}
+                <div className="flex flex-col sm:flex-row gap-4">
+                  <div className="relative flex-1">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
+                    <Input
+                      type="search"
+                      placeholder={t.searchProducts}
+                      value={productSearchTerm}
+                      onChange={(e) => setProductSearchTerm(e.target.value)}
+                      className="pl-10 border-slate-300 focus:border-black focus:ring-gray-200"
+                    />
+                  </div>
+                  <Select value={selectedProductCategory} onValueChange={setSelectedProductCategory}>
+                    <SelectTrigger className="w-full sm:w-[200px] border-slate-300 focus:border-black focus:ring-gray-200">
+                      <SelectValue placeholder={t.filterByCategory} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Categories</SelectItem>
+                      {categories
+                        .filter((cat: any) => cat.id && cat.id !== '')
+                        .map((cat: any) => (
+                          <SelectItem key={cat.id} value={cat.id}>
+                            {cat.name}
+                          </SelectItem>
+                        ))}
+                    </SelectContent>
+                  </Select>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      id="designableOnly"
+                      checked={showDesignableOnly}
+                      onChange={(e) => setShowDesignableOnly(e.target.checked)}
+                      className="w-4 h-4"
+                    />
+                    <Label htmlFor="designableOnly" className="text-sm cursor-pointer">
+                      Designable Only
+                    </Label>
+                  </div>
+                </div>
               </div>
             </CardHeader>
             <CardContent className="p-0">
@@ -517,6 +648,56 @@ export function AdminDashboardNew({ onLogout }: AdminDashboardNewProps) {
                 onDelete={handleDeleteProduct}
                 onToggleStock={handleToggleProductStock}
               />
+              {/* Pagination Controls */}
+              <div className="p-4 border-t border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <p className="text-sm text-slate-600 dark:text-slate-400">
+                      Showing <span className="font-semibold">{filteredProducts.length}</span> of{" "}
+                      <span className="font-semibold">{products.length}</span> products
+                      {products.length < 43149 && (
+                        <span className="ml-2 text-amber-600">
+                          (Total in DB: 43,149)
+                        </span>
+                      )}
+                    </p>
+                    <Select value={productsPerPage.toString()} onValueChange={(value) => setProductsPerPage(parseInt(value))}>
+                      <SelectTrigger className="w-[140px]">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="20">20 per page</SelectItem>
+                        <SelectItem value="50">50 per page</SelectItem>
+                        <SelectItem value="100">100 per page</SelectItem>
+                        <SelectItem value="200">200 per page</SelectItem>
+                        <SelectItem value="500">500 per page</SelectItem>
+                        <SelectItem value="1000">1000 per page</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                      disabled={currentPage === 1}
+                    >
+                      Previous
+                    </Button>
+                    <span className="text-sm px-3">
+                      Page {currentPage} of {Math.ceil(43149 / productsPerPage)}
+                    </span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage(currentPage + 1)}
+                      disabled={currentPage >= Math.ceil(43149 / productsPerPage)}
+                    >
+                      Next
+                    </Button>
+                  </div>
+                </div>
+              </div>
             </CardContent>
           </Card>
         )
@@ -843,7 +1024,7 @@ export function AdminDashboardNew({ onLogout }: AdminDashboardNewProps) {
             </div>
           </header>
           
-          <main className="flex-1 overflow-y-auto overflow-x-hidden p-6">
+          <main className="flex-1 overflow-y-auto overflow-x-hidden p-3 sm:p-4 lg:p-6">
             {renderContent()}
           </main>
         </SidebarInset>
@@ -856,7 +1037,7 @@ export function AdminDashboardNew({ onLogout }: AdminDashboardNewProps) {
         initialValues={{ name: "", price: "", categoryId: "", description: "", image: "" }}
         onSubmit={handleAddProduct}
         t={t}
-        productCategories={productCategories}
+        productCategories={categories}
         isSubmitting={false}
         isEdit={false}
       />
@@ -867,7 +1048,7 @@ export function AdminDashboardNew({ onLogout }: AdminDashboardNewProps) {
         initialValues={editingProduct || { name: "", price: "", categoryId: "", description: "", image: "" }}
         onSubmit={handleEditProduct}
         t={t}
-        productCategories={productCategories}
+        productCategories={categories}
         isSubmitting={false}
         isEdit={true}
       />

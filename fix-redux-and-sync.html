@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fix Redux State & Design Sync</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            padding: 20px;
+            background: #1a1a1a;
+            color: #e0e0e0;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: #2d2d30;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+        h1 { color: #4ec9b0; margin-bottom: 10px; }
+        h2 { color: #9cdcfe; margin-top: 30px; }
+        button {
+            background: #007acc;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            margin: 5px;
+            cursor: pointer;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+        button:hover { background: #005a9e; }
+        button.danger { background: #f44336; }
+        button.danger:hover { background: #d32f2f; }
+        button.success { background: #4caf50; }
+        button.success:hover { background: #45a049; }
+        .status-box {
+            background: #1e1e1e;
+            border: 2px solid #3e3e42;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .success-status { border-color: #4caf50; }
+        .error-status { border-color: #f44336; }
+        .warning-status { border-color: #ff9800; }
+        pre {
+            background: #1e1e1e;
+            padding: 15px;
+            border-radius: 6px;
+            overflow-x: auto;
+            border: 1px solid #3e3e42;
+        }
+        .log-entry {
+            padding: 8px;
+            margin: 4px 0;
+            border-left: 4px solid #007acc;
+            background: #1e1e1e;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 13px;
+        }
+        .error { border-left-color: #f44336; color: #ff9999; }
+        .success { border-left-color: #4caf50; color: #90ee90; }
+        .warning { border-left-color: #ff9800; color: #ffcc00; }
+        .info { border-left-color: #2196f3; color: #87ceeb; }
+        #output { max-height: 500px; overflow-y: auto; }
+        .angle-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .angle-box {
+            background: #1e1e1e;
+            border: 2px solid #3e3e42;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        .angle-box.has-design { border-color: #4caf50; }
+        .angle-box h3 { margin: 0 0 10px 0; color: #9cdcfe; }
+        .design-preview {
+            background: #2d2d30;
+            padding: 10px;
+            border-radius: 4px;
+            margin-top: 10px;
+            font-size: 12px;
+            color: #d4d4d4;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Redux State & Design Sync Master Fix</h1>
+        <p>Complete solution to initialize Redux state and fix design syncing issues</p>
+        
+        <div class="status-box" id="statusBox">
+            <h3>Current Status</h3>
+            <div id="statusContent">Checking system state...</div>
+        </div>
+
+        <h2>Quick Actions</h2>
+        <div>
+            <button onclick="diagnoseSystem()" class="success">🔍 Full System Diagnosis</button>
+            <button onclick="initializeReduxIfMissing()">🚀 Initialize Redux State</button>
+            <button onclick="injectUniqueDesigns()">💉 Inject Unique Test Designs</button>
+            <button onclick="cleanAndRebuild()" class="warning">🔄 Clean & Rebuild Everything</button>
+            <button onclick="nukeEverything()" class="danger">☢️ Nuclear Reset</button>
+        </div>
+
+        <h2>Test Designs</h2>
+        <div id="angleGrid" class="angle-grid"></div>
+
+        <h2>Output Log</h2>
+        <div id="output"></div>
+    </div>
+
+    <script>
+        const PRODUCT_ID = '68be85eb094d08828df03170'; // Lilio product
+        const ANGLES = ['front', 'back', 'left', 'right'];
+        const COLORS = ['#FF0000', '#00FF00', '#0000FF', '#FFFF00'];
+
+        function log(message, type = 'info') {
+            const output = document.getElementById('output');
+            const entry = document.createElement('div');
+            entry.className = `log-entry ${type}`;
+            const timestamp = new Date().toLocaleTimeString();
+            entry.innerHTML = `[${timestamp}] ${message}`;
+            output.appendChild(entry);
+            output.scrollTop = output.scrollHeight;
+        }
+
+        function updateStatus(message, type = 'info') {
+            const statusBox = document.getElementById('statusBox');
+            const statusContent = document.getElementById('statusContent');
+            statusBox.className = `status-box ${type}-status`;
+            statusContent.innerHTML = message;
+        }
+
+        function diagnoseSystem() {
+            log('=== FULL SYSTEM DIAGNOSIS ===', 'info');
+            
+            // Check Redux persistence
+            const persistRoot = localStorage.getItem('persist:root');
+            if (!persistRoot) {
+                log('❌ Redux persist:root NOT FOUND - This is the main issue!', 'error');
+                updateStatus('Redux state is missing! Click "Initialize Redux State" to fix.', 'error');
+                return false;
+            }
+            
+            try {
+                const parsed = JSON.parse(persistRoot);
+                log('✅ Redux persist:root exists', 'success');
+                
+                // Check design slice
+                if (!parsed.design) {
+                    log('❌ Redux design slice missing', 'error');
+                    return false;
+                }
+                
+                const designState = JSON.parse(parsed.design);
+                log('✅ Redux design slice exists', 'success');
+                log(`  - viewMode: ${designState.viewMode}`, 'info');
+                log(`  - productColor: "${designState.productColor}"`, 'info');
+                log(`  - variationDesigns: ${designState.variationDesigns?.length || 0} designs`, 'info');
+                
+                // Check for old vs new design patterns
+                if (designState.variationDesigns?.length > 0) {
+                    let angleBasedCount = 0;
+                    let colorBasedCount = 0;
+                    
+                    designState.variationDesigns.forEach(d => {
+                        if (d.variationId?.includes('_angle_')) {
+                            angleBasedCount++;
+                        } else {
+                            colorBasedCount++;
+                        }
+                    });
+                    
+                    if (colorBasedCount > 0) {
+                        log(`⚠️ Found ${colorBasedCount} old color-based designs that need cleanup`, 'warning');
+                        updateStatus(`Found ${colorBasedCount} old designs. Clean & Rebuild recommended.`, 'warning');
+                    } else {
+                        log(`✅ All ${angleBasedCount} designs use new angle-based pattern`, 'success');
+                        updateStatus('Redux state looks good!', 'success');
+                    }
+                }
+                
+                // Check localStorage designs
+                const designKeys = Object.keys(localStorage).filter(k => k.startsWith('design_'));
+                log(`\n📦 LocalStorage has ${designKeys.length} design keys`, 'info');
+                
+                // Display current designs
+                displayAngleStatus();
+                
+                return true;
+                
+            } catch (e) {
+                log(`❌ Error parsing Redux state: ${e.message}`, 'error');
+                updateStatus('Redux state is corrupted! Initialize or Clean & Rebuild.', 'error');
+                return false;
+            }
+        }
+
+        function initializeReduxIfMissing() {
+            log('🚀 Initializing Redux State...', 'info');
+            
+            const persistRoot = localStorage.getItem('persist:root');
+            
+            if (persistRoot) {
+                log('Redux state already exists, checking integrity...', 'info');
+                try {
+                    const parsed = JSON.parse(persistRoot);
+                    if (!parsed.design) {
+                        parsed.design = createDefaultDesignState();
+                        localStorage.setItem('persist:root', JSON.stringify(parsed));
+                        log('✅ Added missing design slice to Redux', 'success');
+                    } else {
+                        log('✅ Redux state is intact', 'success');
+                    }
+                } catch (e) {
+                    log('Redux state corrupted, creating new...', 'warning');
+                    createNewReduxState();
+                }
+            } else {
+                createNewReduxState();
+            }
+            
+            updateStatus('Redux state initialized successfully!', 'success');
+            setTimeout(() => diagnoseSystem(), 500);
+        }
+
+        function createDefaultDesignState() {
+            return JSON.stringify({
+                selectedProduct: null,
+                viewMode: 'front',
+                productColor: '',
+                variationDesigns: [],
+                currentDesignId: null,
+                designAreaCm2: 0,
+                designAreaPercentage: 0,
+                isSharedDesign: false,
+                uploadedImages: [],
+                recentColors: [],
+                designHistory: []
+            });
+        }
+
+        function createNewReduxState() {
+            const newState = {
+                _persist: JSON.stringify({
+                    version: -1,
+                    rehydrated: true
+                }),
+                design: createDefaultDesignState(),
+                products: JSON.stringify({
+                    items: [],
+                    status: 'idle',
+                    error: null
+                })
+            };
+            
+            localStorage.setItem('persist:root', JSON.stringify(newState));
+            log('✅ Created new Redux state from scratch', 'success');
+        }
+
+        function injectUniqueDesigns() {
+            log('💉 Injecting unique test designs for each angle...', 'info');
+            
+            // First ensure Redux exists
+            if (!localStorage.getItem('persist:root')) {
+                log('Redux state missing, initializing first...', 'warning');
+                initializeReduxIfMissing();
+            }
+            
+            const testDesigns = ANGLES.map((angle, index) => ({
+                variationId: `${PRODUCT_ID}_angle_${angle}`,
+                viewMode: angle,
+                canvasJSON: {
+                    version: "5.3.0",
+                    objects: [{
+                        type: "text",
+                        text: `${angle.toUpperCase()} VIEW - Design #${index + 1}`,
+                        fontSize: 48,
+                        fill: COLORS[index],
+                        left: 100 + (index * 20),
+                        top: 100 + (index * 20),
+                        angle: index * 15
+                    }]
+                },
+                lastModified: Date.now(),
+                isShared: false,
+                designAreaCm2: 100,
+                designAreaPercentage: 10
+            }));
+            
+            // Inject into Redux
+            try {
+                const persistRoot = JSON.parse(localStorage.getItem('persist:root'));
+                const designState = JSON.parse(persistRoot.design);
+                
+                // Clear old designs and add new ones
+                designState.variationDesigns = testDesigns;
+                designState.currentDesignId = null;
+                designState.productColor = '';
+                designState.viewMode = 'front';
+                
+                persistRoot.design = JSON.stringify(designState);
+                localStorage.setItem('persist:root', JSON.stringify(persistRoot));
+                
+                log('✅ Injected test designs into Redux:', 'success');
+                testDesigns.forEach(d => {
+                    log(`  ${d.viewMode}: "${d.canvasJSON.objects[0].text}" (${d.canvasJSON.objects[0].fill})`, 'success');
+                });
+                
+                // Also save to localStorage for backward compatibility
+                testDesigns.forEach(design => {
+                    const key = `design_${design.variationId}`;
+                    localStorage.setItem(key, JSON.stringify(design.canvasJSON));
+                    log(`  Saved to localStorage: ${key}`, 'info');
+                });
+                
+                updateStatus('Test designs injected! Refresh the design tool to test.', 'success');
+                displayAngleStatus();
+                
+            } catch (e) {
+                log(`❌ Error injecting designs: ${e.message}`, 'error');
+                updateStatus('Failed to inject designs. Try Clean & Rebuild.', 'error');
+            }
+        }
+
+        function displayAngleStatus() {
+            const grid = document.getElementById('angleGrid');
+            grid.innerHTML = '';
+            
+            ANGLES.forEach((angle, index) => {
+                const box = document.createElement('div');
+                box.className = 'angle-box';
+                
+                const angleId = `${PRODUCT_ID}_angle_${angle}`;
+                const designKey = `design_${angleId}`;
+                const stored = localStorage.getItem(designKey);
+                
+                let content = `<h3>${angle.toUpperCase()}</h3>`;
+                
+                if (stored) {
+                    box.classList.add('has-design');
+                    try {
+                        const parsed = JSON.parse(stored);
+                        const objectCount = parsed.objects?.length || 0;
+                        const firstObject = parsed.objects?.[0];
+                        content += `
+                            <div style="color: ${COLORS[index]}">✅ Has Design</div>
+                            <div class="design-preview">
+                                ${objectCount} objects<br>
+                                ${firstObject?.text || firstObject?.type || 'No preview'}
+                            </div>
+                        `;
+                    } catch (e) {
+                        content += '<div>⚠️ Invalid design data</div>';
+                    }
+                } else {
+                    content += '<div>⭕ No design</div>';
+                }
+                
+                box.innerHTML = content;
+                grid.appendChild(box);
+            });
+        }
+
+        function cleanAndRebuild() {
+            log('🔄 Starting Clean & Rebuild process...', 'warning');
+            
+            // Step 1: Remove all old design keys
+            const oldKeys = Object.keys(localStorage).filter(k => 
+                k.includes('design_') && !k.includes('_angle_')
+            );
+            
+            oldKeys.forEach(key => {
+                localStorage.removeItem(key);
+                log(`  Removed old key: ${key}`, 'info');
+            });
+            
+            if (oldKeys.length > 0) {
+                log(`✅ Removed ${oldKeys.length} old design keys`, 'success');
+            }
+            
+            // Step 2: Clean Redux state
+            const persistRoot = localStorage.getItem('persist:root');
+            if (persistRoot) {
+                try {
+                    const parsed = JSON.parse(persistRoot);
+                    const designState = JSON.parse(parsed.design);
+                    
+                    // Keep only angle-based designs
+                    const oldCount = designState.variationDesigns?.length || 0;
+                    designState.variationDesigns = (designState.variationDesigns || []).filter(
+                        d => d.variationId?.includes('_angle_')
+                    );
+                    const newCount = designState.variationDesigns.length;
+                    
+                    // Clear problematic fields
+                    designState.productColor = '';
+                    designState.currentDesignId = null;
+                    
+                    parsed.design = JSON.stringify(designState);
+                    localStorage.setItem('persist:root', JSON.stringify(parsed));
+                    
+                    log(`✅ Cleaned Redux: ${oldCount} → ${newCount} designs`, 'success');
+                    
+                } catch (e) {
+                    log(`Error cleaning Redux: ${e.message}`, 'error');
+                    log('Creating fresh Redux state...', 'warning');
+                    createNewReduxState();
+                }
+            } else {
+                log('No Redux state found, creating new...', 'warning');
+                createNewReduxState();
+            }
+            
+            // Step 3: Inject fresh test designs
+            setTimeout(() => {
+                injectUniqueDesigns();
+                log('\n✅ Clean & Rebuild complete!', 'success');
+                updateStatus('System cleaned and rebuilt successfully!', 'success');
+            }, 500);
+        }
+
+        function nukeEverything() {
+            if (!confirm('⚠️ This will delete ALL design data and Redux state. Are you absolutely sure?')) return;
+            
+            log('☢️ NUCLEAR RESET INITIATED...', 'error');
+            
+            // Remove all design-related keys
+            const keysToRemove = Object.keys(localStorage).filter(k => 
+                k.includes('design') || 
+                k.includes('variation') || 
+                k.includes('persist:root') ||
+                k.includes('Design')
+            );
+            
+            keysToRemove.forEach(key => {
+                localStorage.removeItem(key);
+                log(`  Destroyed: ${key}`, 'error');
+            });
+            
+            log(`\n☢️ Destroyed ${keysToRemove.length} keys total`, 'error');
+            
+            // Recreate minimal Redux state
+            setTimeout(() => {
+                createNewReduxState();
+                log('✅ Created fresh Redux state', 'success');
+                log('\n🔄 System reset complete. Refresh the page to start fresh.', 'warning');
+                updateStatus('Nuclear reset complete. Refresh the page.', 'warning');
+            }, 1000);
+        }
+
+        // Auto-diagnose on load
+        window.addEventListener('load', () => {
+            setTimeout(() => diagnoseSystem(), 100);
+        });
+    </script>
+</body>
+</html>

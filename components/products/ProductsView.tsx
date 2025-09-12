@@ -6,8 +6,8 @@ import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks"
 import { fetchProducts, fetchCategoryCounts } from "@/lib/redux/slices/productsSlice"
 import { fetchCategories, fetchSubcategories } from "@/lib/redux/slices/categoriesSlice"
 import { translations } from "@/lib/constants"
-import { useRouter, useSearchParams } from "next/navigation"
-import { ProductCard } from "@/components/products/product-card"
+import { useRouter, useSearchParams, usePathname } from "next/navigation"
+import { ProductCardEnhanced } from "@/components/products/product-card-enhanced"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Search, Filter, SlidersHorizontal, X, ChevronDown, ChevronRight, ChevronLeft, Palette } from "lucide-react"
@@ -27,12 +27,16 @@ import {
 export function ProductsView({ categorySlug, subcategorySlug }: { categorySlug?: string; subcategorySlug?: string }) {
   const dispatch = useAppDispatch()
   const router = useRouter()
+  const pathname = usePathname()
   const searchParams = useSearchParams()
   const { items: products, loading, error, pagination, filters, categoryCounts } = useAppSelector((state) => state.products)
   const { language } = useAppSelector((state) => state.app)
   const sessionUser = useAppSelector((s: any) => s.auth.user)
   const t = translations[language]
   const [loadTimeout, setLoadTimeout] = useState(false)
+  
+  // Extract locale from pathname
+  const locale = pathname.split('/')[1] === 'sv' ? 'sv' : 'en'
   
   // Store category counts once when they first arrive
   useEffect(() => {
@@ -104,8 +108,8 @@ export function ProductsView({ categorySlug, subcategorySlug }: { categorySlug?:
       try {
         // Load all data in parallel for better performance
         const promises = [
-          dispatch(fetchCategories()),
-          dispatch(fetchSubcategories())
+          dispatch(fetchCategories({ locale })),
+          dispatch(fetchSubcategories({ locale }))
         ]
         
         // Only fetch category counts once
@@ -118,16 +122,25 @@ export function ProductsView({ categorySlug, subcategorySlug }: { categorySlug?:
         // Otherwise wait for categories to load first
         if (cats.length > 0 || !categorySlug) {
           const category = categorySlug ? cats.find((c: any) => c.slug === categorySlug) : null
+          const subcategory = subcategorySlug && category ? subs.find((s: any) => {
+            // Handle both full paths (profilklader/byxor) and simple slugs (byxor)
+            return (s.slug === subcategorySlug || 
+                    s.slug.endsWith('/' + subcategorySlug) || 
+                    s.slug === `${categorySlug}/${subcategorySlug}`) && 
+                   s.categoryId === category.id
+          }) : null
           promises.push(
             dispatch(fetchProducts({ 
               page: currentPage, 
               limit: 20,
               categoryId: category?.id || selectedCategoryFilter || undefined,
-              subcategoryId: selectedSubcategoryFilter || undefined,
+              subcategoryId: subcategory?.id || selectedSubcategoryFilter || undefined,
               search: searchTerm || undefined,
               sortBy: sortBy,
               minPrice: priceRange.min > 0 ? priceRange.min : undefined,
-              maxPrice: priceRange.max < 10000 ? priceRange.max : undefined
+              maxPrice: priceRange.max < 10000 ? priceRange.max : undefined,
+              designableOnly: showDesignableOnly || undefined,
+              locale: locale
             }))
           )
         }
@@ -138,7 +151,8 @@ export function ProductsView({ categorySlug, subcategorySlug }: { categorySlug?:
         if (categorySlug && cats.length === 0) {
           await dispatch(fetchProducts({ 
             page: currentPage, 
-            limit: 20
+            limit: 20,
+            locale: locale
           }))
         }
       } catch (err) {
@@ -163,16 +177,28 @@ export function ProductsView({ categorySlug, subcategorySlug }: { categorySlug?:
     const loadFilteredProducts = async () => {
       setLoadTimeout(false) // Reset timeout when making a new request
       
+      // Get the category and subcategory from URL if present
+      const category = categorySlug ? cats.find((c: any) => c.slug === categorySlug) : null
+      const subcategory = subcategorySlug && category ? subs.find((s: any) => {
+        // Handle both full paths (profilklader/byxor) and simple slugs (byxor)
+        return (s.slug === subcategorySlug || 
+                s.slug.endsWith('/' + subcategorySlug) || 
+                s.slug === `${categorySlug}/${subcategorySlug}`) && 
+               s.categoryId === category.id
+      }) : null
+      
       // Fetch products only - category counts remain static
       await dispatch(fetchProducts({
         page: currentPage,
         limit: 20,
-        categoryId: selectedCategoryFilter || undefined,
-        subcategoryId: selectedSubcategoryFilter || undefined,
+        categoryId: category?.id || selectedCategoryFilter || undefined,
+        subcategoryId: subcategory?.id || selectedSubcategoryFilter || undefined,
         search: searchTerm || undefined,
         sortBy: sortBy,
         minPrice: priceRange.min > 0 ? priceRange.min : undefined,
-        maxPrice: priceRange.max < 10000 ? priceRange.max : undefined
+        maxPrice: priceRange.max < 10000 ? priceRange.max : undefined,
+        designableOnly: showDesignableOnly || undefined,
+        locale: locale
       }))
     }
     
@@ -185,7 +211,7 @@ export function ProductsView({ categorySlug, subcategorySlug }: { categorySlug?:
     }, debounceDelay)
     
     return () => clearTimeout(debounceTimer)
-  }, [dispatch, currentPage, selectedCategoryFilter, selectedSubcategoryFilter, searchTerm, sortBy, priceRange.min, priceRange.max])
+  }, [dispatch, currentPage, selectedCategoryFilter, selectedSubcategoryFilter, searchTerm, sortBy, priceRange.min, priceRange.max, showDesignableOnly, categorySlug, subcategorySlug, cats, subs])
   
   // Save scroll position before navigating away
   useEffect(() => {
@@ -226,31 +252,8 @@ export function ProductsView({ categorySlug, subcategorySlug }: { categorySlug?:
     return subs.find((s: any) => s.slug === subcategorySlug && s.categoryId === selectedCategory.id)
   }, [subcategorySlug, selectedCategory, subs])
 
-  // Filter for designable products if needed
-  const filteredAndSortedProducts = useMemo(() => {
-    if (!showDesignableOnly) return products
-    
-    // Filter products that are designable (check both product and category)
-    return products.filter((product: any) => {
-      // Check if product itself is marked as designable
-      if (product.isDesignable === true) {
-        return true
-      }
-      
-      // Check if category is designable
-      const category = cats.find((c: any) => c.id === product.categoryId)
-      if (category?.isDesignable === true) {
-        return true
-      }
-      
-      // Legacy check for designableAreas
-      if (category?.designableAreas && category.designableAreas.length > 0) {
-        return true
-      }
-      
-      return false
-    })
-  }, [products, showDesignableOnly, cats])
+  // No need for client-side filtering since we're doing it server-side now
+  const filteredAndSortedProducts = products
 
 
   const ProductCardSkeleton = () => (
@@ -356,21 +359,21 @@ export function ProductsView({ categorySlug, subcategorySlug }: { categorySlug?:
             </div>
             
             {/* Controls */}
-            <div className="flex gap-2">
+            <div className="flex gap-1.5 sm:gap-2">
               {/* Filter Toggle */}
               <Button
                 onClick={() => setShowFilters(!showFilters)}
-                className={`h-10 sm:h-12 px-3 sm:px-6 border-2 font-bold uppercase transition-all text-xs sm:text-sm ${
+                className={`h-9 sm:h-10 lg:h-12 px-2.5 sm:px-3 lg:px-6 border border-black sm:border-2 font-bold uppercase transition-all text-[10px] sm:text-xs lg:text-sm ${
                   showFilters 
                     ? 'bg-black text-white dark:bg-white dark:text-black' 
                     : 'bg-transparent border-black text-black dark:border-white dark:text-white hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black'
                 }`}
               >
-                <Filter className="h-4 sm:h-5 w-4 sm:w-5 mr-1 sm:mr-2" />
+                <Filter className="h-3 w-3 sm:h-4 sm:w-4 lg:h-5 lg:w-5 mr-1 sm:mr-2" />
                 <span className="hidden sm:inline">Filters</span>
                 <span className="sm:hidden">Filter</span>
                 {(selectedCategoryFilter || selectedSubcategoryFilter || showDesignableOnly) && (
-                  <span className="ml-1 sm:ml-2 px-1.5 sm:px-2 py-0.5 bg-white text-black dark:bg-black dark:text-white rounded-full text-[10px] sm:text-xs">
+                  <span className="ml-1 sm:ml-2 px-1 sm:px-1.5 lg:px-2 py-0.5 bg-white text-black dark:bg-black dark:text-white rounded-full text-[8px] sm:text-[10px] lg:text-xs">
                     {(selectedCategoryFilter ? 1 : 0) + (selectedSubcategoryFilter ? 1 : 0) + (showDesignableOnly ? 1 : 0)}
                   </span>
                 )}
@@ -541,7 +544,9 @@ export function ProductsView({ categorySlug, subcategorySlug }: { categorySlug?:
                                 All {category.name}
                               </button>
                               {categorySubcategories.map((subcategory: any) => {
-                                const subCount = categoryCount?.subcategories?.find(sc => sc.subcategoryId === subcategory.id)?.count || 0
+                                const subCount = categoryCount?.subcategories?.find(sc => 
+                                  sc.subcategoryId?.toString() === subcategory.id?.toString()
+                                )?.count || 0
                                 return (
                                   <button
                                   key={subcategory.id}
@@ -674,7 +679,9 @@ export function ProductsView({ categorySlug, subcategorySlug }: { categorySlug?:
                                 {categorySubcategories.map((subcategory: any) => {
                                   // Use subcategory counts from Redux if available
                                   const categoryData = categoryCounts.find(cc => cc.categoryId === category.id)
-                                  const subCount = categoryData?.subcategories?.find((sc: any) => sc.subcategoryId === subcategory.id)?.count || 0
+                                  const subCount = categoryData?.subcategories?.find((sc: any) => 
+                                    sc.subcategoryId?.toString() === subcategory.id?.toString()
+                                  )?.count || 0
                                   
                                   return (
                                     <button
@@ -785,7 +792,7 @@ export function ProductsView({ categorySlug, subcategorySlug }: { categorySlug?:
                     transition={{ delay: Math.min(index * 0.02, 0.3) }}
                     className="h-full"
                   >
-                    <ProductCard product={product} />
+                    <ProductCardEnhanced product={product} />
                   </motion.div>
                 ))}
               </div>

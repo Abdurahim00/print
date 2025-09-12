@@ -6,13 +6,14 @@ import { translations, productCategories } from "@/lib/constants"
 import { getProductImage } from "@/lib/utils/product-image"
 import { Card, CardContent, CardFooter } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { ProductImage } from "@/components/ui/product-image"
 import { Palette, ShoppingCart, Eye } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useMemo, memo, useState, useEffect } from "react"
 import { composeProductAndDesign } from "@/lib/utils/imageCompose"
-import { formatSEK } from "@/lib/utils"
+import { useCurrency } from "@/contexts/CurrencyContext"
 import { addToCart } from "@/lib/redux/slices/cartSlice"
 import { useToast } from "@/hooks/use-toast"
 import { SizeSelectionModal } from "./size-selection-modal"
@@ -24,14 +25,13 @@ interface ProductCardProps {
 }
 
 function ProductCardComponent({ product }: ProductCardProps) {
+  const { formatPrice } = useCurrency()
   const dispatch = useAppDispatch()
   const router = useRouter()
   const searchParams = useSearchParams()
   const { toast } = useToast()
   const [sizeModalOpen, setSizeModalOpen] = useState(false)
   const [quantityModalOpen, setQuantityModalOpen] = useState(false)
-  const [imageLoaded, setImageLoaded] = useState(false)
-  const [imageError, setImageError] = useState(false)
   const { language } = useAppSelector((state) => state.app)
   const t = translations[language]
   
@@ -126,29 +126,17 @@ function ProductCardComponent({ product }: ProductCardProps) {
       product.inStock ? 'hover:scale-102 sm:hover:scale-105' : 'opacity-60'
     }`}>
       <Link 
-        href={`/product/${product.id}${searchParams.toString() ? `?from=${encodeURIComponent(searchParams.toString())}` : ''}`} 
+        href={`/product/${(product as any)._id || product.id}${searchParams.toString() ? `?from=${encodeURIComponent(searchParams.toString())}` : ''}`} 
         className="relative w-full aspect-[4/3] overflow-hidden bg-gray-100 dark:bg-gray-800 flex-shrink-0 cursor-pointer"
       >
-        {/* Loading skeleton while image loads */}
-        {!imageLoaded && !imageError && (
-          <div className="absolute inset-0 bg-gray-200 dark:bg-gray-700 animate-pulse" />
-        )}
-        
-        <Image
-          src={imageError ? "/placeholder.jpg" : getProductImage(product)}
+        <ProductImage
+          src={getProductImage(product)}
           alt={product.name}
           fill
           sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-          className={`object-contain p-2 bg-gray-50 group-hover:scale-105 transition-transform duration-500 ${
-            imageLoaded ? 'opacity-100' : 'opacity-0'
-          }`}
+          className="object-contain p-2 bg-gray-50 group-hover:scale-105 transition-transform duration-500"
           loading="lazy"
           quality={85}
-          onLoad={() => setImageLoaded(true)}
-          onError={() => {
-            setImageError(true)
-            setImageLoaded(true)
-          }}
         />
         {appliedDesignForCategory && (
           <>
@@ -192,13 +180,13 @@ function ProductCardComponent({ product }: ProductCardProps) {
           {activeCoupon && activeCoupon.discountType === "percentage" && product.eligibleForCoupons ? (
             <div>
               <span className="text-base sm:text-xl lg:text-2xl font-black text-black dark:text-white">
-                {formatSEK(product.price * (1 - activeCoupon.discountValue / 100))}
+                {formatPrice(product.price * (1 - activeCoupon.discountValue / 100))}
               </span>
-              <span className="text-gray-400 line-through text-[10px] sm:text-xs lg:text-sm ml-1 sm:ml-2">{formatSEK(product.price)}</span>
+              <span className="text-gray-400 line-through text-[10px] sm:text-xs lg:text-sm ml-1 sm:ml-2">{formatPrice(product.price)}</span>
             </div>
           ) : (
             <p className="text-base sm:text-xl lg:text-2xl font-black text-black dark:text-white">
-              {formatSEK(product.price)}
+              {formatPrice(product.price)}
             </p>
           )}
         </div>

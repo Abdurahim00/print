@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { ProductService } from "@/lib/services/productService"
+import { getLocalizedProduct } from "@/lib/utils/translations"
 
 // Use edge runtime for better performance
 export const runtime = 'nodejs'
@@ -11,10 +12,13 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
     
-    // Pagination parameters
+    // Pagination parameters - support fetching products in reasonable chunks
     const page = parseInt(searchParams.get('page') || '1')
-    const limit = parseInt(searchParams.get('limit') || '20')
+    const limit = Math.min(parseInt(searchParams.get('limit') || '100'), 5000) // Max 5000 to avoid MongoDB memory issues
     const skip = (page - 1) * limit
+    
+    // Get locale parameter
+    const locale = searchParams.get('locale') || 'en'
     
     // Filter parameters
     const categoryId = searchParams.get('categoryId')
@@ -56,8 +60,13 @@ export async function GET(request: NextRequest) {
       total: result.total 
     })
     
+    // Localize products if locale is provided
+    const localizedProducts = result.products.map(product => 
+      locale !== 'en' ? getLocalizedProduct(product, locale) : product
+    )
+    
     const response = {
-      products: result.products,
+      products: localizedProducts,
       pagination: {
         page,
         limit,

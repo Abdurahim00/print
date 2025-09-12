@@ -21,6 +21,7 @@ import { DesignElementsSummary } from "@/components/DesignElementsSummary"
 import { exportDesignOnly, exportComposite, createPrintReadyPackage } from "@/lib/utils/designExport"
 import { exportDesignSimple } from "@/lib/utils/simpleDesignExport"
 import { ExportOptionsDialog } from "./ExportOptionsDialog"
+import { MultiPositionExportDialog } from "./MultiPositionExportDialog"
 import { Download, FileImage, FileText, Package2, Layers } from "lucide-react"
 
 // Helper functions to extract design data from different structures
@@ -46,7 +47,7 @@ export function OperationsDashboard() {
   const t = translations[language]
 
   // Use document visibility API to prevent unnecessary API calls
-  const [isVisible, setIsVisible] = useState(true); // Default to true for SSR
+  const [isVisible, setIsVisible] = useState(typeof window !== 'undefined' ? !document.hidden : true);
   const [lastFetch, setLastFetch] = useState(0);
   const REFRESH_THRESHOLD = 300000; // 5 minutes in milliseconds
 
@@ -57,14 +58,10 @@ export function OperationsDashboard() {
   // Export modal state
   const [exportModalOpen, setExportModalOpen] = useState(false)
   const [exportingItemIndex, setExportingItemIndex] = useState<number | null>(null)
+  const [multiPositionExportOpen, setMultiPositionExportOpen] = useState(false)
+  const [exportingItem, setExportingItem] = useState<any>(null)
+  const [exportingOrder, setExportingOrder] = useState<any>(null)
   
-  // Initialize visibility state safely on client side
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      setIsVisible(!document.hidden);
-    }
-  }, []);
-
   useEffect(() => {
     // Only run on client side
     if (typeof window === 'undefined') return;

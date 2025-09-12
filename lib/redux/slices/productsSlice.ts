@@ -10,6 +10,8 @@ interface FetchProductsParams {
   sortBy?: string
   minPrice?: number
   maxPrice?: number
+  designableOnly?: boolean
+  locale?: string
 }
 
 // Cache for products to avoid redundant fetches
@@ -70,9 +72,9 @@ export const fetchProducts = createAsyncThunk(
     try {
       const queryParams = new URLSearchParams()
       
-      // Add pagination params
+      // Add pagination params - fetch products in reasonable chunks
       queryParams.append('page', (params.page || 1).toString())
-      queryParams.append('limit', (params.limit || 20).toString())
+      queryParams.append('limit', (params.limit || 1000).toString()) // Fetch 1000 products per page for performance
       
       // Add filter params
       if (params.categoryId) queryParams.append('categoryId', params.categoryId)
@@ -81,9 +83,11 @@ export const fetchProducts = createAsyncThunk(
       if (params.sortBy) queryParams.append('sortBy', params.sortBy)
       if (params.minPrice !== undefined) queryParams.append('minPrice', params.minPrice.toString())
       if (params.maxPrice !== undefined) queryParams.append('maxPrice', params.maxPrice.toString())
+      if (params.designableOnly) queryParams.append('designableOnly', 'true')
+      if (params.locale) queryParams.append('locale', params.locale)
       
-      // Add optimized fields for list view (reduce payload size)
-      queryParams.append('fields', 'name,price,basePrice,image,imageUrl,images,categoryId,subcategoryIds,description,inStock,featured,brand,colors,isDesignable')
+      // Fetch ALL fields including all image fields for admin dashboard
+      // Removed field limitation to ensure all product data including images is fetched
       
       const cacheKey = queryParams.toString()
       const cached = productCache.get(cacheKey)
@@ -138,7 +142,7 @@ export const createProduct = createAsyncThunk(
 export const updateProduct = createAsyncThunk(
   "products/updateProduct",
   async (productData: Product) => {
-    const { id, ...update } = productData as any
+    const { id, _id, ...update } = productData as any
     const response = await fetch(`/api/products/${id}`, {
       method: "PUT",
       headers: {

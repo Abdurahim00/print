@@ -3,9 +3,8 @@
 import { useState, useEffect, useMemo } from "react"
 import Logo from "@/public/mr-logo.png"
 import { useAppSelector, useAppDispatch } from "@/lib/redux/hooks"
-import { setLanguage } from "@/lib/redux/slices/appSlice"
 import { setSessionUser } from "@/lib/redux/slices/authSlice" // New import
-import { translations } from "@/lib/constants"
+import { useTranslations } from 'next-intl'
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -36,8 +35,12 @@ import { useAppSelector as useSelector } from "@/lib/redux/hooks"
 import { SafeStorage } from "@/lib/utils/storage"
 import { validateCouponCode, setActiveCoupon, fetchCoupons } from "@/lib/redux/slices/couponsSlice"
 import { CategoryDropdown } from "./category-dropdown"
+import { CurrencySwitcher } from "./currency-switcher"
+import { LanguageSwitcher } from "./language-switcher"
 
 export function Navbar() {
+  const t = useTranslations('navigation')
+  const tCommon = useTranslations('common')
   const dispatch = useAppDispatch()
   const router = useRouter()
   const pathname = usePathname()
@@ -47,7 +50,6 @@ export function Navbar() {
   const [searchQuery, setSearchQuery] = useState("")
   const [mounted, setMounted] = useState(false)
   const { data: session, status } = useSession() // Get session data
-  const { language } = useAppSelector((state) => state.app)
   const { items: cartItems } = useAppSelector((state) => state.cart)
   const activeCoupon = useSelector((s) => (s as any).coupons.activeCoupon)
   const availableCoupons = useSelector((s) => (s as any).coupons.items)
@@ -83,8 +85,6 @@ export function Navbar() {
       return c.isActive && from <= now && now <= until
     }) || null
   }, [availableCoupons])
-
-  const t = translations[language]
 
   // Update Redux user state when NextAuth session changes
   useEffect(() => {
@@ -174,10 +174,6 @@ export function Navbar() {
     return () => clearTimeout(t)
   }, [cartItems, status, session])
 
-  const handleLanguageChange = (lang: "en" | "sv") => {
-    dispatch(setLanguage(lang))
-  }
-
   const closeMobileMenu = () => {
     setMobileMenuOpen(false)
   }
@@ -197,16 +193,16 @@ export function Navbar() {
       )}
       
       {/* Main Navbar */}
-      <div className="container mx-auto px-3 sm:px-6 lg:px-8">
-        <div className="flex h-14 sm:h-16 items-center justify-between gap-2">
+      <div className="container mx-auto px-2 sm:px-4 lg:px-8">
+        <div className="flex h-14 sm:h-16 items-center justify-between gap-1 sm:gap-2">
           {/* Mobile Search Button */}
           <Button 
             variant="ghost" 
             size="icon"
-            className="md:hidden flex-shrink-0"
+            className="md:hidden flex-shrink-0 h-8 w-8 sm:h-10 sm:w-10"
             onClick={() => setSearchOpen(true)}
           >
-            <Search className="h-5 w-5" />
+            <Search className="h-4 w-4 sm:h-5 sm:w-5" />
           </Button>
 
           {/* Desktop Search Field */}
@@ -229,40 +225,32 @@ export function Navbar() {
           </div>
 
           {/* Center - Logo */}
-          <div className="flex-1 flex justify-center">
+          <div className="flex-1 flex justify-center min-w-0">
             <Link href="/" className="flex items-center gap-2 cursor-pointer">
               <Image 
                 src={Logo} 
                 alt="MR MERCH" 
                 width={150} 
                 height={50} 
-                className="object-contain w-[100px] sm:w-[120px] md:w-[150px] h-auto" 
+                className="object-contain w-[80px] xs:w-[90px] sm:w-[110px] md:w-[130px] lg:w-[150px] h-auto max-h-8 sm:max-h-10" 
               />
             </Link>
           </div>
 
           {/* Right Side - Actions */}
-          <div className="flex-1 flex justify-end items-center gap-2">
+          <div className="flex-1 flex justify-end items-center gap-1 sm:gap-2 min-w-0">
             {/* Desktop Actions */}
-            <div className="hidden md:flex items-center gap-2">
-              <Select value={language} onValueChange={handleLanguageChange}>
-                <SelectTrigger className="w-[120px] bg-black text-white border-black hover:bg-gray-900 hover:text-white dark:bg-white dark:text-black dark:border-white dark:hover:bg-gray-100">
-                  <Languages className="h-4 w-4 mr-2 " />
-                  <SelectValue placeholder={t.language} />
-                </SelectTrigger>
-                <SelectContent className="bg-black text-white border-black dark:bg-white dark:text-black dark:border-white">
-                  <SelectItem value="en" className="text-white dark:text-black data-[highlighted]:bg-gray-800 dark:data-[highlighted]:bg-gray-200">English</SelectItem>
-                  <SelectItem value="sv" className="text-white dark:text-black data-[highlighted]:bg-gray-800 dark:data-[highlighted]:bg-gray-200">Svenska</SelectItem>
-                </SelectContent>
-              </Select>
+            <div className="hidden lg:flex items-center gap-1 xl:gap-2">
+              <CurrencySwitcher />
+              <LanguageSwitcher />
 
               {/* Cart Icon - Always visible */}
-              <Button className="bg-black hover:bg-gray-900 text-white dark:bg-white dark:text-black dark:hover:bg-gray-100" asChild>
+              <Button className="bg-black hover:bg-gray-900 text-white dark:bg-white dark:text-black dark:hover:bg-gray-100 text-xs xl:text-sm px-2 xl:px-3 h-8 xl:h-9" asChild>
                 <Link href="/cart" className="flex items-center">
-                  <ShoppingCart className="mr-2 h-4 w-4" />
-                  {t.cart}
+                  <ShoppingCart className="mr-1 xl:mr-2 h-3 w-3 xl:h-4 xl:w-4" />
+                  <span className="hidden xl:inline">{t('cart')}</span>
                   {cartItemCount > 0 && (
-                    <span className="ml-1 bg-white text-black rounded-full px-2.5 py-1 text-xs font-bold">{cartItemCount}</span>
+                    <span className="ml-1 bg-white text-black rounded-full px-1.5 xl:px-2.5 py-0.5 xl:py-1 text-xs font-bold">{cartItemCount}</span>
                   )}
                 </Link>
               </Button>
@@ -276,41 +264,44 @@ export function Navbar() {
                       pathname === '/dashboard' || pathname?.startsWith('/dashboard') 
                         ? 'bg-primary text-white' 
                         : 'hover:bg-primary hover:text-white'
-                    } transition-colors hidden lg:inline-flex`}
+                    } transition-colors hidden xl:inline-flex text-xs px-2 h-8`}
                   >
                     <Link href="/dashboard" className="flex items-center">
-                      <LayoutDashboard className="mr-2 h-4 w-4" /> {t.dashboard}
+                      <LayoutDashboard className="mr-1 h-3 w-3" /> 
+                      <span className="hidden 2xl:inline">{t('dashboard')}</span>
                     </Link>
                   </Button>
-                  <Button onClick={handleLogout} variant="ghost" className="hover:bg-primary hover:text-white">
-                    <LogOut className="mr-2 h-4 w-4" />
-                    {t.logout}
+                  <Button onClick={handleLogout} variant="ghost" className="hover:bg-primary hover:text-white text-xs px-2 h-8">
+                    <LogOut className="mr-1 h-3 w-3" />
+                    <span className="hidden xl:inline">{t('logout')}</span>
                   </Button>
                 </>
               ) : (
                 <>
-                  <Button variant="outline" asChild>
+                  <Button variant="outline" asChild className="text-xs px-2 h-8">
                     <Link href="/login" className="flex items-center">
-                      <LogIn className="mr-2 h-4 w-4" /> {t.login}
+                      <LogIn className="mr-1 h-3 w-3" /> 
+                      <span className="hidden xl:inline">{t('login')}</span>
                     </Link>
                   </Button>
-                  <Button asChild className="bg-primary hover:bg-primary hover:text-white text-white">
+                  <Button asChild className="bg-primary hover:bg-primary hover:text-white text-white text-xs px-2 h-8">
                     <Link href="/signup" className="flex items-center">
-                      <UserPlus className="mr-2 h-4 w-4" /> {t.signup}
+                      <UserPlus className="mr-1 h-3 w-3" /> 
+                      <span className="hidden xl:inline">{t('signup')}</span>
                     </Link>
                   </Button>
                 </>
               )}
             </div>
 
-            {/* Mobile Actions */}
-            <div className="flex md:hidden items-center gap-2">
+            {/* Mobile & Tablet Actions */}
+            <div className="flex lg:hidden items-center gap-1 sm:gap-2">
               {/* Cart Icon - Always visible on mobile */}
               <Link href="/cart" className="relative">
-                <Button variant="outline" size="icon">
-                  <ShoppingCart className="h-4 w-4" />
+                <Button variant="outline" size="icon" className="h-8 w-8 sm:h-9 sm:w-9">
+                  <ShoppingCart className="h-3 w-3 sm:h-4 sm:w-4" />
                   {cartItemCount > 0 && (
-                    <span className="absolute -top-1 -right-1 bg-black text-white rounded-full w-5 h-5 text-xs flex items-center justify-center">
+                    <span className="absolute -top-1 -right-1 bg-black text-white rounded-full w-4 h-4 sm:w-5 sm:h-5 text-xs flex items-center justify-center">
                       {cartItemCount}
                     </span>
                   )}
@@ -320,52 +311,45 @@ export function Navbar() {
               {/* Mobile Menu */}
               <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
                 <SheetTrigger asChild>
-                  <Button variant="ghost" size="icon">
-                    <Menu className="h-5 w-5" />
+                  <Button variant="ghost" size="icon" className="h-8 w-8 sm:h-9 sm:w-9">
+                    <Menu className="h-4 w-4 sm:h-5 sm:w-5" />
                   </Button>
                 </SheetTrigger>
-            <SheetContent side="right" className="w-full sm:w-[400px] max-w-[100vw]">
-              <SheetHeader>
-                <SheetTitle className="text-left">{t.platformName}</SheetTitle>
+            <SheetContent side="right" className="w-full sm:w-[400px] max-w-[100vw] p-4 overflow-y-auto">
+              <SheetHeader className="pb-4">
+                <SheetTitle className="text-left text-base sm:text-lg">{tCommon('platformName')}</SheetTitle>
               </SheetHeader>
 
-              <div className="flex flex-col gap-4 mt-6">
-                {/* Language Selector */}
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">{t.language}</label>
-                  <Select value={language} onValueChange={handleLanguageChange}>
-                    <SelectTrigger className="bg-primary text-white border-primary hover:bg-primary hover:text-white">
-                      <Languages className="h-4 w-4 mr-2" />
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent className="bg-primary text-white border-primary">
-                      <SelectItem value="en" className="text-white data-[highlighted]:bg-gray-700 data-[highlighted]:text-white">English</SelectItem>
-                      <SelectItem value="sv" className="text-white data-[highlighted]:bg-gray-700 data-[highlighted]:text-white">Svenska</SelectItem>
-                    </SelectContent>
-                  </Select>
+              <div className="flex flex-col gap-3 sm:gap-4">
+                {/* Currency and Language Selectors */}
+                <div className="grid grid-cols-2 gap-3">
+                  <CurrencySwitcher />
+                  <LanguageSwitcher />
                 </div>
 
                 <Separator />
 
                 {/* Navigation Links */}
-                <div className="space-y-2">
-                  <CategoryDropdown />
-                  <Button variant="ghost" asChild className="w-full justify-start" onClick={closeMobileMenu}>
+                <div className="space-y-1 sm:space-y-2">
+                  <div className="w-full">
+                    <CategoryDropdown />
+                  </div>
+                  <Button variant="ghost" asChild className="w-full justify-start h-10 sm:h-12 text-sm sm:text-base" onClick={closeMobileMenu}>
                     <Link href="/products">
-                      <Package className="mr-2 h-4 w-4" />
-                      {t.products}
+                      <Package className="mr-2 h-4 w-4 flex-shrink-0" />
+                      {t('allProducts')}
                     </Link>
                   </Button>
-                  <Button variant="ghost" asChild className="w-full justify-start" onClick={closeMobileMenu}>
+                  <Button variant="ghost" asChild className="w-full justify-start h-10 sm:h-12 text-sm sm:text-base" onClick={closeMobileMenu}>
                     <Link href="/design-tool">
-                      <Brush className="mr-2 h-4 w-4" />
-                      {t.designTool}
+                      <Brush className="mr-2 h-4 w-4 flex-shrink-0" />
+                      {t('designTool')}
                     </Link>
                   </Button>
-                  <Button variant="ghost" asChild className="w-full justify-start" onClick={closeMobileMenu}>
+                  <Button variant="ghost" asChild className="w-full justify-start h-10 sm:h-12 text-sm sm:text-base" onClick={closeMobileMenu}>
                     <Link href="/car-mockup">
-                      <Car className="mr-2 h-4 w-4" />
-                      {t.carWrapDesigner}
+                      <Car className="mr-2 h-4 w-4 flex-shrink-0" />
+                      {t('carWrapDesigner')}
                     </Link>
                   </Button>
                 </div>
@@ -376,7 +360,7 @@ export function Navbar() {
                     <Button 
                       variant="ghost" 
                       asChild 
-                      className={`w-full justify-start ${
+                      className={`w-full justify-start h-10 sm:h-12 text-sm sm:text-base ${
                         pathname === '/dashboard' || pathname?.startsWith('/dashboard') 
                           ? 'bg-primary text-white' 
                           : 'hover:bg-primary hover:text-white'
@@ -384,8 +368,8 @@ export function Navbar() {
                       onClick={closeMobileMenu}
                     >
                       <Link href="/dashboard">
-                        <LayoutDashboard className="mr-2 h-4 w-4" />
-                        {t.dashboard}
+                        <LayoutDashboard className="mr-2 h-4 w-4 flex-shrink-0" />
+                        {t('dashboard')}
                       </Link>
                     </Button>
                   </>
@@ -396,13 +380,13 @@ export function Navbar() {
                 {/* Auth Actions */}
                 {status === "authenticated" && session?.user ? (
                   <div className="space-y-2">
-                    <div className="text-sm text-black dark:text-gray-400 p-2">
-                      <p className="font-medium">{session.user.email}</p>
-                      <p className="text-xs">{(session.user as any).customerNumber}</p>
+                    <div className="text-sm text-black dark:text-gray-400 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                      <p className="font-medium truncate text-xs sm:text-sm">{session.user.email}</p>
+                      <p className="text-xs opacity-70">{(session.user as any).customerNumber}</p>
                     </div>
-                    <Button onClick={handleLogout} variant="ghost" className="w-full justify-start hover:bg-primary hover:text-white">
-                      <LogOut className="mr-2 h-4 w-4" />
-                      {t.logout}
+                    <Button onClick={handleLogout} variant="ghost" className="w-full justify-start hover:bg-primary hover:text-white h-10 sm:h-12 text-sm sm:text-base">
+                      <LogOut className="mr-2 h-4 w-4 flex-shrink-0" />
+                      {t('logout')}
                     </Button>
                   </div>
                 ) : (
@@ -410,22 +394,22 @@ export function Navbar() {
                     <Button
                       variant="outline"
                       asChild
-                      className="w-full justify-start bg-transparent"
+                      className="w-full justify-start bg-transparent h-10 sm:h-12 text-sm sm:text-base"
                       onClick={closeMobileMenu}
                     >
                       <Link href="/login">
-                        <LogIn className="mr-2 h-4 w-4" />
-                        {t.login}
+                        <LogIn className="mr-2 h-4 w-4 flex-shrink-0" />
+                        {t('login')}
                       </Link>
                     </Button>
                     <Button
                       asChild
-                      className="w-full justify-start bg-black hover:bg-gray-800 hover:text-white text-white"
+                      className="w-full justify-start bg-black hover:bg-gray-800 hover:text-white text-white h-10 sm:h-12 text-sm sm:text-base"
                       onClick={closeMobileMenu}
                     >
                       <Link href="/signup">
-                        <UserPlus className="mr-2 h-4 w-4" />
-                        {t.signup}
+                        <UserPlus className="mr-2 h-4 w-4 flex-shrink-0" />
+                        {t('signup')}
                       </Link>
                     </Button>
                   </div>
@@ -438,20 +422,21 @@ export function Navbar() {
         </div>
         
         {/* Secondary Navigation Bar */}
-        <div className="hidden md:block border-t border-gray-200 dark:border-gray-700">
-          <nav className="flex items-center justify-center gap-8 py-3">
+        <div className="hidden lg:block border-t border-gray-200 dark:border-gray-700">
+          <nav className="flex items-center justify-center gap-4 xl:gap-8 py-2 xl:py-3 px-2">
             <Button 
               className={`${
                 pathname === '/products' || pathname?.startsWith('/products') 
                   ? 'bg-primary text-white' 
                   : 'hover:bg-primary hover:text-white'
-              } transition-colors`} 
+              } transition-colors text-xs xl:text-sm px-2 xl:px-3 h-8 xl:h-9`} 
               variant="ghost" 
               asChild
             >
               <Link href="/products" className="flex items-center">
-                <Package className="mr-2 h-4 w-4" />
-                {t.products}
+                <Package className="mr-1 xl:mr-2 h-3 w-3 xl:h-4 xl:w-4" />
+                <span className="hidden xl:inline">{t('allProducts')}</span>
+                <span className="xl:hidden">Products</span>
               </Link>
             </Button>
             
@@ -460,13 +445,14 @@ export function Navbar() {
                 pathname === '/design-tool' || pathname?.startsWith('/design-tool') 
                   ? 'bg-primary text-white' 
                   : 'hover:bg-primary hover:text-white'
-              } transition-colors`} 
+              } transition-colors text-xs xl:text-sm px-2 xl:px-3 h-8 xl:h-9`} 
               variant="ghost" 
               asChild
             >
               <Link href="/design-tool" className="flex items-center">
-                <Palette className="mr-2 h-4 w-4" />
-                {t.designTool}
+                <Palette className="mr-1 xl:mr-2 h-3 w-3 xl:h-4 xl:w-4" />
+                <span className="hidden xl:inline">{t('designTool')}</span>
+                <span className="xl:hidden">Design</span>
               </Link>
             </Button>
             
@@ -475,28 +461,31 @@ export function Navbar() {
                 pathname === '/car-mockup' || pathname?.startsWith('/car-mockup') 
                   ? 'bg-primary text-white' 
                   : 'hover:bg-primary hover:text-white'
-              } transition-colors`} 
+              } transition-colors text-xs xl:text-sm px-2 xl:px-3 h-8 xl:h-9`} 
               variant="ghost" 
               asChild
             >
               <Link href="/car-mockup" className="flex items-center">
-                <Car className="mr-2 h-4 w-4" />
-                {t.carWrapDesigner}
+                <Car className="mr-1 xl:mr-2 h-3 w-3 xl:h-4 xl:w-4" />
+                <span className="hidden xl:inline">{t('carWrapDesigner')}</span>
+                <span className="xl:hidden">Car Wrap</span>
               </Link>
             </Button>
             
-            <CategoryDropdown />
+            <div className="flex-shrink-0">
+              <CategoryDropdown />
+            </div>
           </nav>
         </div>
       </div>
 
       {/* Mobile Search Modal */}
       <Dialog open={searchOpen} onOpenChange={setSearchOpen}>
-        <DialogContent className="top-[10%] translate-y-0 max-w-[calc(100vw-2rem)] sm:max-w-lg">
+        <DialogContent className="top-[10%] translate-y-0 max-w-[calc(100vw-1rem)] sm:max-w-[calc(100vw-2rem)] md:max-w-lg mx-2 sm:mx-4">
           <DialogHeader>
-            <DialogTitle>Search Products</DialogTitle>
+            <DialogTitle className="text-base sm:text-lg">Search Products</DialogTitle>
           </DialogHeader>
-          <div className="relative mt-4">
+          <div className="relative mt-3 sm:mt-4">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
             <input
               type="text"
@@ -509,7 +498,7 @@ export function Navbar() {
                   setSearchOpen(false)
                 }
               }}
-              className="w-full pl-10 pr-4 py-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent"
+              className="w-full pl-10 pr-4 py-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent text-sm sm:text-base"
               autoFocus
             />
           </div>
@@ -518,9 +507,9 @@ export function Navbar() {
 
       {/* Coupon modal */}
       <Dialog open={couponModalOpen} onOpenChange={setCouponModalOpen}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-[calc(100vw-1rem)] sm:max-w-[calc(100vw-2rem)] md:max-w-lg mx-2 sm:mx-4">
           <DialogHeader>
-            <DialogTitle className="text-2xl font-extrabold text-center">
+            <DialogTitle className="text-lg sm:text-xl md:text-2xl font-extrabold text-center">
               {promoCoupon && promoCoupon.discountType === "percentage"
                 ? `${promoCoupon.discountValue}% OFF EVERYTHING`
                 : activeCoupon && activeCoupon.discountType === "percentage"
@@ -528,30 +517,42 @@ export function Navbar() {
                 : "COUPON"}
             </DialogTitle>
           </DialogHeader>
-          <div className="space-y-4 text-center">
-            <div className="text-lg font-semibold">Promo code: <span className="font-mono">{promoCoupon?.code ?? activeCoupon?.code ?? "No active coupon"}</span></div>
-            <Button className="bg-black hover:bg-gray-800" onClick={async () => {
-              const code = promoCoupon?.code ?? activeCoupon?.code
-              if (!code) { setCouponModalOpen(false); return }
-              const orderTotal = cartItems.reduce((sum, item) => sum + (item.quantity * item.price), 0)
-              try {
-                const result = await dispatch(validateCouponCode({ code, orderTotal, cartItems }) as any)
-                const payload = result?.payload
-                if (payload?.isValid && payload?.coupon) {
-                  dispatch(setActiveCoupon(payload.coupon))
-                  setCouponModalOpen(false)
-                  // Toast celebration
-                  try {
-                    const { toast } = await import("@/hooks/use-toast")
-                    toast({
-                      title: "🎉 Coupon Applied",
-                      description: `${payload.coupon.code} activated. Prices for eligible products are discounted ${payload.coupon.discountValue}%`,
-                    })
-                  } catch {}
-                }
-              } catch {}
-            }}>Redeem coupon</Button>
-            <p className="text-xs text-slate-500">Discount applies to products marked as eligible. Shown prices will reflect the discount.</p>
+          <div className="space-y-3 sm:space-y-4 text-center p-2">
+            <div className="text-sm sm:text-base md:text-lg font-semibold">
+              Promo code: 
+              <span className="font-mono block sm:inline text-xs sm:text-sm md:text-base mt-1 sm:mt-0 sm:ml-2">
+                {promoCoupon?.code ?? activeCoupon?.code ?? "No active coupon"}
+              </span>
+            </div>
+            <Button 
+              className="bg-black hover:bg-gray-800 w-full sm:w-auto text-sm sm:text-base px-6 py-2 sm:py-3" 
+              onClick={async () => {
+                const code = promoCoupon?.code ?? activeCoupon?.code
+                if (!code) { setCouponModalOpen(false); return }
+                const orderTotal = cartItems.reduce((sum, item) => sum + (item.quantity * item.price), 0)
+                try {
+                  const result = await dispatch(validateCouponCode({ code, orderTotal, cartItems }) as any)
+                  const payload = result?.payload
+                  if (payload?.isValid && payload?.coupon) {
+                    dispatch(setActiveCoupon(payload.coupon))
+                    setCouponModalOpen(false)
+                    // Toast celebration
+                    try {
+                      const { toast } = await import("@/hooks/use-toast")
+                      toast({
+                        title: "🎉 Coupon Applied",
+                        description: `${payload.coupon.code} activated. Prices for eligible products are discounted ${payload.coupon.discountValue}%`,
+                      })
+                    } catch {}
+                  }
+                } catch {}
+              }}
+            >
+              Redeem coupon
+            </Button>
+            <p className="text-xs sm:text-sm text-slate-500 px-2">
+              Discount applies to products marked as eligible. Shown prices will reflect the discount.
+            </p>
           </div>
         </DialogContent>
       </Dialog>

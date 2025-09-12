@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Angle Sync Issue</title>
+    <style>
+        body {
+            font-family: monospace;
+            padding: 20px;
+            background: #1e1e1e;
+            color: #d4d4d4;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        h1 {
+            color: #4ec9b0;
+        }
+        button {
+            background: #007acc;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin: 5px;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+        button:hover {
+            background: #005a9e;
+        }
+        .log {
+            background: #2d2d30;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 4px;
+            max-height: 600px;
+            overflow-y: auto;
+        }
+        .error {
+            color: #f48771;
+        }
+        .success {
+            color: #4ec9b0;
+        }
+        .warning {
+            color: #dcdcaa;
+        }
+        .info {
+            color: #9cdcfe;
+        }
+        .design-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+        .design-card {
+            background: #2d2d30;
+            padding: 15px;
+            border-radius: 4px;
+            border: 2px solid #3e3e42;
+        }
+        .design-card.front {
+            border-color: #4ec9b0;
+        }
+        .design-card.back {
+            border-color: #c586c0;
+        }
+        .design-card.left {
+            border-color: #dcdcaa;
+        }
+        .design-card.right {
+            border-color: #9cdcfe;
+        }
+        .design-id {
+            color: #569cd6;
+            word-break: break-all;
+        }
+        pre {
+            background: #1e1e1e;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Debug Angle Sync Issue</h1>
+        <p>Checking why designs are syncing between front/back/left/right angles</p>
+        
+        <div>
+            <button onclick="analyzeLocalStorage()">Analyze LocalStorage</button>
+            <button onclick="checkReduxState()">Check Redux State</button>
+            <button onclick="simulateAngleSwitch()">Simulate Angle Switch</button>
+            <button onclick="clearAllDesigns()">Clear All Designs</button>
+            <button onclick="createTestDesigns()">Create Test Designs</button>
+        </div>
+
+        <div id="designGrid" class="design-grid"></div>
+        <div id="output" class="log"></div>
+    </div>
+
+    <script>
+        function log(message, type = 'info') {
+            const output = document.getElementById('output');
+            const entry = document.createElement('div');
+            entry.className = type;
+            entry.innerHTML = `[${new Date().toLocaleTimeString()}] ${message}`;
+            output.appendChild(entry);
+            output.scrollTop = output.scrollHeight;
+        }
+
+        function analyzeLocalStorage() {
+            log('=== Analyzing LocalStorage ===', 'info');
+            
+            // Find all design keys
+            const designKeys = Object.keys(localStorage).filter(key => 
+                key.includes('design_') || key.includes('angle')
+            );
+            
+            log(`Found ${designKeys.length} design keys`, 'info');
+            
+            const designs = {};
+            const anglePattern = /_angle_/;
+            const colorPattern = /_#|_[0-9a-fA-F]{6}_/;
+            
+            designKeys.forEach(key => {
+                const data = localStorage.getItem(key);
+                try {
+                    const parsed = JSON.parse(data);
+                    const objectCount = parsed.objects?.length || 0;
+                    
+                    // Check if it's using the new angle pattern or old color pattern
+                    const usesAnglePattern = anglePattern.test(key);
+                    const usesColorPattern = colorPattern.test(key);
+                    
+                    // Extract the angle from the key
+                    let angle = 'unknown';
+                    if (key.includes('_front')) angle = 'front';
+                    else if (key.includes('_back')) angle = 'back';
+                    else if (key.includes('_left')) angle = 'left';
+                    else if (key.includes('_right')) angle = 'right';
+                    
+                    if (!designs[angle]) designs[angle] = [];
+                    
+                    designs[angle].push({
+                        key,
+                        objectCount,
+                        usesAnglePattern,
+                        usesColorPattern,
+                        objects: parsed.objects?.map(obj => ({
+                            type: obj.type,
+                            text: obj.text || obj.src || 'N/A'
+                        }))
+                    });
+                    
+                    const patternType = usesAnglePattern ? '✅ ANGLE' : usesColorPattern ? '❌ COLOR' : '⚠️ UNKNOWN';
+                    log(`  ${patternType} ${key}: ${objectCount} objects (${angle})`, 
+                        usesAnglePattern ? 'success' : 'error');
+                    
+                    // Check for duplicate content across angles
+                    if (objectCount > 0) {
+                        const content = JSON.stringify(parsed.objects);
+                        Object.entries(designs).forEach(([otherAngle, otherDesigns]) => {
+                            if (otherAngle !== angle) {
+                                otherDesigns.forEach(otherDesign => {
+                                    if (otherDesign.objectCount > 0) {
+                                        const otherContent = localStorage.getItem(otherDesign.key);
+                                        const otherParsed = JSON.parse(otherContent);
+                                        if (JSON.stringify(otherParsed.objects) === content) {
+                                            log(`  ⚠️ DUPLICATE CONTENT: ${angle} and ${otherAngle} have identical designs!`, 'error');
+                                        }
+                                    }
+                                });
+                            }
+                        });
+                    }
+                } catch (e) {
+                    log(`  Error parsing ${key}: ${e.message}`, 'error');
+                }
+            });
+            
+            // Display design grid
+            displayDesignGrid(designs);
+            
+            // Check for problematic patterns
+            const problemKeys = designKeys.filter(key => !key.includes('_angle_'));
+            if (problemKeys.length > 0) {
+                log(`\n⚠️ Found ${problemKeys.length} keys NOT using angle pattern:`, 'warning');
+                problemKeys.forEach(key => log(`  - ${key}`, 'warning'));
+            }
+        }
+
+        function displayDesignGrid(designs) {
+            const grid = document.getElementById('designGrid');
+            grid.innerHTML = '';
+            
+            ['front', 'back', 'left', 'right'].forEach(angle => {
+                const card = document.createElement('div');
+                card.className = `design-card ${angle}`;
+                
+                const angleDesigns = designs[angle] || [];
+                const angleContent = angleDesigns.map(d => `
+                    <div style="margin: 10px 0;">
+                        <div class="design-id">${d.key}</div>
+                        <div>Objects: ${d.objectCount}</div>
+                        <div>Pattern: ${d.usesAnglePattern ? '✅ Angle' : '❌ Color'}</div>
+                        ${d.objects ? `<pre>${JSON.stringify(d.objects, null, 2)}</pre>` : ''}
+                    </div>
+                `).join('');
+                
+                card.innerHTML = `
+                    <h3>${angle.toUpperCase()}</h3>
+                    ${angleContent || '<div>No design</div>'}
+                `;
+                
+                grid.appendChild(card);
+            });
+        }
+
+        function checkReduxState() {
+            log('=== Checking Redux State ===', 'info');
+            
+            const persistRoot = localStorage.getItem('persist:root');
+            if (!persistRoot) {
+                log('No Redux persist data found', 'error');
+                return;
+            }
+            
+            try {
+                const parsed = JSON.parse(persistRoot);
+                if (parsed.design) {
+                    const designState = JSON.parse(parsed.design);
+                    
+                    log('Current Design State:', 'info');
+                    log(`  productColor: "${designState.productColor}"`, designState.productColor ? 'warning' : 'success');
+                    log(`  viewMode: ${designState.viewMode}`, 'info');
+                    log(`  currentDesignId: ${designState.currentDesignId}`, 'info');
+                    log(`  Variation designs: ${designState.variationDesigns?.length || 0}`, 'info');
+                    
+                    if (designState.variationDesigns?.length > 0) {
+                        log('\nVariation Designs in Redux:', 'info');
+                        designState.variationDesigns.forEach(vd => {
+                            const usesAnglePattern = vd.variationId?.includes('_angle_');
+                            log(`  ${usesAnglePattern ? '✅' : '❌'} ${vd.variationId} / ${vd.viewMode}`, 
+                                usesAnglePattern ? 'success' : 'error');
+                        });
+                    }
+                }
+            } catch (e) {
+                log(`Error parsing Redux state: ${e.message}`, 'error');
+            }
+        }
+
+        function simulateAngleSwitch() {
+            log('=== Simulating Angle Switch ===', 'info');
+            
+            const testProductId = 'test_product_' + Date.now();
+            const angles = ['front', 'back', 'left', 'right'];
+            
+            log(`Creating designs for product: ${testProductId}`, 'info');
+            
+            angles.forEach((angle, index) => {
+                // Using the new angle pattern
+                const angleId = `${testProductId}_angle_${angle}`;
+                const designKey = `design_${angleId}`;
+                
+                const testDesign = {
+                    version: "5.3.0",
+                    objects: [{
+                        type: "text",
+                        text: `Design for ${angle.toUpperCase()} - ${index}`,
+                        left: 100 + (index * 10),
+                        top: 100 + (index * 10)
+                    }]
+                };
+                
+                localStorage.setItem(designKey, JSON.stringify(testDesign));
+                log(`  Created: ${designKey}`, 'success');
+            });
+            
+            // Now check if they're independent
+            log('\nVerifying independence:', 'info');
+            angles.forEach(angle => {
+                const angleId = `${testProductId}_angle_${angle}`;
+                const designKey = `design_${angleId}`;
+                const stored = localStorage.getItem(designKey);
+                
+                if (stored) {
+                    const parsed = JSON.parse(stored);
+                    const text = parsed.objects[0]?.text;
+                    const expectedText = `Design for ${angle.toUpperCase()}`;
+                    
+                    if (text.startsWith(expectedText)) {
+                        log(`  ✅ ${angle}: Correct unique design`, 'success');
+                    } else {
+                        log(`  ❌ ${angle}: Wrong design! Expected "${expectedText}", got "${text}"`, 'error');
+                    }
+                } else {
+                    log(`  ❌ ${angle}: No design found!`, 'error');
+                }
+            });
+        }
+
+        function clearAllDesigns() {
+            log('=== Clearing All Designs ===', 'warning');
+            
+            const keysToRemove = Object.keys(localStorage).filter(key => 
+                key.includes('design_') || key.includes('variationDesigns')
+            );
+            
+            keysToRemove.forEach(key => {
+                localStorage.removeItem(key);
+                log(`  Removed: ${key}`, 'info');
+            });
+            
+            // Also clear Redux design state
+            const persistRoot = localStorage.getItem('persist:root');
+            if (persistRoot) {
+                try {
+                    const parsed = JSON.parse(persistRoot);
+                    if (parsed.design) {
+                        const designState = JSON.parse(parsed.design);
+                        designState.variationDesigns = [];
+                        designState.currentDesignId = null;
+                        parsed.design = JSON.stringify(designState);
+                        localStorage.setItem('persist:root', JSON.stringify(parsed));
+                        log('  Cleared Redux design state', 'success');
+                    }
+                } catch (e) {
+                    log(`  Error clearing Redux state: ${e.message}`, 'error');
+                }
+            }
+            
+            log(`Cleared ${keysToRemove.length} design keys`, 'success');
+        }
+
+        function createTestDesigns() {
+            log('=== Creating Test Designs ===', 'info');
+            
+            const productId = '68be85eb094d08828df03170'; // The Lilio product from your logs
+            const angles = ['front', 'back', 'left', 'right'];
+            
+            angles.forEach((angle, index) => {
+                const angleId = `${productId}_angle_${angle}`;
+                const designKey = `design_${angleId}`;
+                
+                const uniqueDesign = {
+                    version: "5.3.0",
+                    objects: [{
+                        type: "text",
+                        text: `${angle.toUpperCase()} DESIGN - Should NOT sync`,
+                        fontSize: 24,
+                        fill: ['#FF0000', '#00FF00', '#0000FF', '#FFFF00'][index],
+                        left: 50 + (index * 20),
+                        top: 50 + (index * 20)
+                    }]
+                };
+                
+                localStorage.setItem(designKey, JSON.stringify(uniqueDesign));
+                log(`  Created unique design for ${angle}: ${designKey}`, 'success');
+            });
+            
+            log('Test designs created! Refresh the design tool to test.', 'success');
+        }
+
+        // Auto-run analysis on load
+        window.addEventListener('load', () => {
+            analyzeLocalStorage();
+            checkReduxState();
+        });
+    </script>
+</body>
+</html>

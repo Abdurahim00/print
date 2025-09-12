@@ -21,13 +21,14 @@ const initialState: CategoriesState = {
 
 export const fetchCategories = createAsyncThunk(
   "categories/fetchCategories",
-  async (forceRefresh: boolean = false, { getState }) => {
+  async (params: { forceRefresh?: boolean; locale?: string } = {}, { getState }) => {
     const state = getState() as any
+    const { forceRefresh = false, locale = 'en' } = params
     // Skip fetch if already loaded (unless force refresh is requested)
     if (!forceRefresh && state.categories.categoriesLoaded) {
       return state.categories.categories
     }
-    const res = await fetch("/api/categories")
+    const res = await fetch(`/api/categories?locale=${locale}`)
     if (!res.ok) throw new Error("Failed to fetch categories")
     return res.json()
   }
@@ -53,13 +54,15 @@ export const deleteCategory = createAsyncThunk("categories/deleteCategory", asyn
 
 export const fetchSubcategories = createAsyncThunk(
   "categories/fetchSubcategories",
-  async (categoryId?: string, { getState }) => {
+  async (params: { categoryId?: string; locale?: string } = {}, { getState }) => {
     const state = getState() as any
+    const { categoryId, locale = 'en' } = params
     // Skip fetch if already loaded and no specific category requested
     if (!categoryId && state.categories.subcategoriesLoaded) {
       return state.categories.subcategories
     }
-    const url = categoryId ? `/api/subcategories?categoryId=${categoryId}` : "/api/subcategories"
+    let url = `/api/subcategories?locale=${locale}`
+    if (categoryId) url += `&categoryId=${categoryId}`
     const res = await fetch(url)
     if (!res.ok) throw new Error("Failed to fetch subcategories")
     return res.json()

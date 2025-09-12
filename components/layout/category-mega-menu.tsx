@@ -83,7 +83,7 @@ export function CategoryMegaMenu() {
                     {categorySubcategories.map((sub: any) => (
                       <Link
                         key={sub.id}
-                        href={`/products?category=${category.slug}&subcategory=${sub.slug}`}
+                        href={`/products/${category.slug}/${sub.slug}`}
                         className="block text-sm text-gray-600 dark:text-gray-400 hover:text-black dark:hover:text-gray-400 transition-colors py-1"
                         onClick={() => setOpen(false)}
                       >

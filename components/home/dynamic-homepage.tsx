@@ -228,11 +228,11 @@ const ProductCarousel = ({ featuredProducts }: { featuredProducts: any[] }) => {
   if (!currentProduct) return null
   
   return (
-    <div className="relative w-full h-full min-h-[500px] sm:min-h-[600px] lg:min-h-[700px] overflow-hidden bg-white dark:bg-gray-900">
-      <div className="relative h-full flex flex-col p-4 sm:p-6 lg:p-12">
-        <div className="mb-6 sm:mb-8">
+    <div className="relative w-full h-full min-h-[400px] sm:min-h-[500px] lg:min-h-[600px] overflow-hidden bg-white dark:bg-gray-900">
+      <div className="relative h-full flex flex-col p-3 sm:p-4 lg:p-8 xl:p-12">
+        <div className="mb-4 sm:mb-6 lg:mb-8">
           <motion.h3 
-            className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-2"
+            className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white mb-2"
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.5 }}
@@ -240,7 +240,7 @@ const ProductCarousel = ({ featuredProducts }: { featuredProducts: any[] }) => {
             Featured Products
           </motion.h3>
           <motion.p 
-            className="text-gray-600 dark:text-gray-300 text-base sm:text-lg"
+            className="text-gray-600 dark:text-gray-300 text-sm sm:text-base lg:text-lg"
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.6 }}
@@ -249,17 +249,17 @@ const ProductCarousel = ({ featuredProducts }: { featuredProducts: any[] }) => {
           </motion.p>
         </div>
         
-        <div className="flex-1 flex items-center justify-center mb-16 sm:mb-20">
+        <div className="flex-1 flex items-center justify-center mb-12 sm:mb-16 lg:mb-20">
           <AnimatePresence mode="wait">
             <motion.div
               key={currentProduct.id || currentProduct._id}
-              className="w-full max-w-sm sm:max-w-xl lg:max-w-2xl"
+              className="w-full max-w-xs sm:max-w-lg lg:max-w-xl xl:max-w-2xl px-2 sm:px-0"
               initial={{ opacity: 0, x: 100 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -100 }}
               transition={{ duration: 0.5, ease: "easeInOut" }}
             >
-              <Link href={`/product/${currentProduct.id}`} className="block relative h-64 sm:h-80 lg:h-96 mb-4 sm:mb-6 overflow-hidden bg-black dark:bg-white cursor-pointer group">
+              <Link href={`/product/${currentProduct._id || currentProduct.id}`} className="block relative h-48 sm:h-64 lg:h-80 xl:h-96 mb-3 sm:mb-4 lg:mb-6 overflow-hidden bg-black dark:bg-white cursor-pointer group">
                 <Image
                   src={getOptimizedImageUrl(getProductImage(currentProduct))}
                   alt={currentProduct.name}
@@ -274,17 +274,17 @@ const ProductCarousel = ({ featuredProducts }: { featuredProducts: any[] }) => {
                 
                 <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-black/80 to-transparent" />
                 
-                <div className="absolute bottom-4 left-4 sm:bottom-6 sm:left-6">
-                  <div className="bg-white text-black px-3 py-1.5 sm:px-4 sm:py-2">
-                    <span className="text-xl sm:text-2xl lg:text-3xl font-black">
+                <div className="absolute bottom-2 left-2 sm:bottom-4 sm:left-4 lg:bottom-6 lg:left-6">
+                  <div className="bg-white text-black px-2 py-1 sm:px-3 sm:py-1.5 lg:px-4 lg:py-2">
+                    <span className="text-base sm:text-xl lg:text-2xl xl:text-3xl font-black">
                       {typeof currentProduct.price === 'number' ? currentProduct.price.toFixed(2) : (currentProduct.basePrice || 0).toFixed(2)} SEK
                     </span>
                   </div>
-                  <div className="h-1 bg-black" />
+                  <div className="h-0.5 sm:h-1 bg-black" />
                 </div>
                 
                 {currentProduct.badge && (
-                  <div className={`absolute top-4 right-4 px-3 py-1 text-xs font-bold uppercase ${currentProduct.badgeColor || 'bg-black text-white'}`}>
+                  <div className={`absolute top-2 right-2 sm:top-4 sm:right-4 px-2 py-1 sm:px-3 sm:py-1 text-xs font-bold uppercase ${currentProduct.badgeColor || 'bg-black text-white'}`}>
                     {currentProduct.badge}
                   </div>
                 )}
@@ -294,9 +294,9 @@ const ProductCarousel = ({ featuredProducts }: { featuredProducts: any[] }) => {
                 </div>
               </Link>
               
-              <div className="text-center">
-                <Link href={`/product/${currentProduct.id}`} className="hover:underline">
-                  <h4 className="text-xl sm:text-2xl font-semibold text-gray-900 dark:text-white mb-4 sm:mb-6 cursor-pointer">
+              <div className="text-center px-2">
+                <Link href={`/product/${currentProduct._id || currentProduct.id}`} className="hover:underline">
+                  <h4 className="text-lg sm:text-xl lg:text-2xl font-semibold text-gray-900 dark:text-white mb-3 sm:mb-4 lg:mb-6 cursor-pointer line-clamp-2">
                     {currentProduct.name}
                   </h4>
                 </Link>
@@ -305,28 +305,30 @@ const ProductCarousel = ({ featuredProducts }: { featuredProducts: any[] }) => {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 1 }}
-                  className="flex gap-2 sm:gap-3 px-2 sm:px-0"
+                  className="flex flex-col sm:flex-row gap-2 sm:gap-3"
                 >
                   <Button 
                     size="lg" 
-                    className="flex-1 bg-black hover:bg-gray-900 text-white dark:bg-white dark:text-black dark:hover:bg-gray-100 min-h-[44px] touch-manipulation text-sm sm:text-base"
+                    className="flex-1 bg-black hover:bg-gray-900 text-white dark:bg-white dark:text-black dark:hover:bg-gray-100 min-h-[44px] touch-manipulation text-xs sm:text-sm lg:text-base px-3 sm:px-4"
                     asChild
                   >
-                    <Link href={`/product/${currentProduct.id}`} className="flex items-center justify-center">
-                      <span className="font-black uppercase">View Details</span>
-                      <ArrowRight className="ml-2 h-4 w-4" />
+                    <Link href={`/product/${currentProduct._id || currentProduct.id}`} className="flex items-center justify-center">
+                      <span className="font-black uppercase hidden sm:inline">View Details</span>
+                      <span className="font-black uppercase sm:hidden">View</span>
+                      <ArrowRight className="ml-1 sm:ml-2 h-3 w-3 sm:h-4 sm:w-4" />
                     </Link>
                   </Button>
                   <Button 
                     size="lg" 
-                    className="flex-1 border-2 border-black dark:border-white bg-transparent text-black dark:text-white hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black transition-colors"
+                    className="flex-1 border-2 border-black dark:border-white bg-transparent text-black dark:text-white hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black transition-colors min-h-[44px] text-xs sm:text-sm lg:text-base px-3 sm:px-4"
                     onClick={() => {
                       dispatch(addToCart(currentProduct))
                       toast.success('Added to cart!')
                     }}
                   >
-                    <ShoppingCart className="mr-2 h-5 w-5" />
-                    <span className="font-black uppercase">Add to Cart</span>
+                    <ShoppingCart className="mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4 lg:h-5 lg:w-5" />
+                    <span className="font-black uppercase hidden sm:inline">Add to Cart</span>
+                    <span className="font-black uppercase sm:hidden">Add</span>
                   </Button>
                 </motion.div>
               </div>
@@ -334,25 +336,25 @@ const ProductCarousel = ({ featuredProducts }: { featuredProducts: any[] }) => {
           </AnimatePresence>
         </div>
         
-        <div className="absolute bottom-6 sm:bottom-8 lg:bottom-12 left-4 right-4 sm:left-8 sm:right-8 lg:left-16 lg:right-16">
+        <div className="absolute bottom-3 sm:bottom-6 lg:bottom-8 xl:bottom-12 left-2 right-2 sm:left-4 sm:right-4 lg:left-8 lg:right-8 xl:left-16 xl:right-16">
           <div className="flex items-center justify-between gap-2 sm:gap-4">
             <motion.button
               onClick={prevSlide}
-              className="w-8 h-8 sm:w-10 sm:h-10 bg-black dark:bg-white text-white dark:text-black flex items-center justify-center hover:scale-110 transition-transform rounded-full sm:rounded-none flex-shrink-0"
+              className="w-8 h-8 sm:w-9 sm:h-9 lg:w-10 lg:h-10 bg-black dark:bg-white text-white dark:text-black flex items-center justify-center hover:scale-110 transition-transform rounded-full flex-shrink-0"
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.9 }}
             >
-              <ChevronLeft className="h-4 w-4 sm:h-5 sm:w-5" />
+              <ChevronLeft className="h-3 w-3 sm:h-4 sm:w-4 lg:h-5 lg:w-5" />
             </motion.button>
             
-            <div className="flex gap-1.5 sm:gap-2">
+            <div className="flex gap-1 sm:gap-1.5 lg:gap-2 px-2">
               {products.map((_, index) => (
                 <motion.button
                   key={index}
                   onClick={() => goToSlide(index)}
                   className={`h-1.5 sm:h-2 transition-all duration-300 ${
                     index === currentIndex 
-                      ? 'w-6 sm:w-8 bg-black dark:bg-white' 
+                      ? 'w-4 sm:w-6 lg:w-8 bg-black dark:bg-white' 
                       : 'w-1.5 sm:w-2 bg-gray-300 dark:bg-gray-600 hover:bg-gray-400 dark:hover:bg-gray-500'
                   } rounded-full`}
                   whileHover={{ scale: 1.2 }}
@@ -363,11 +365,11 @@ const ProductCarousel = ({ featuredProducts }: { featuredProducts: any[] }) => {
             
             <motion.button
               onClick={nextSlide}
-              className="w-8 h-8 sm:w-10 sm:h-10 bg-black dark:bg-white text-white dark:text-black flex items-center justify-center hover:scale-110 transition-transform rounded-full sm:rounded-none flex-shrink-0"
+              className="w-8 h-8 sm:w-9 sm:h-9 lg:w-10 lg:h-10 bg-black dark:bg-white text-white dark:text-black flex items-center justify-center hover:scale-110 transition-transform rounded-full flex-shrink-0"
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.9 }}
             >
-              <ChevronRight className="h-4 w-4 sm:h-5 sm:w-5" />
+              <ChevronRight className="h-3 w-3 sm:h-4 sm:w-4 lg:h-5 lg:w-5" />
             </motion.button>
           </div>
         </div>
@@ -410,8 +412,8 @@ const AnimatedStats = ({ stats }: { stats: SiteConfiguration['stats'] }) => {
   }, [stats])
   
   return (
-    <div className="relative w-full py-6 sm:py-8 lg:py-12">
-      <div className="flex flex-col sm:grid sm:grid-cols-3 gap-6 sm:gap-4 lg:gap-8 max-w-5xl mx-auto px-4">
+    <div className="relative w-full py-4 sm:py-6 lg:py-8 xl:py-12">
+      <div className="flex flex-col sm:grid sm:grid-cols-3 gap-4 sm:gap-3 lg:gap-6 xl:gap-8 max-w-5xl mx-auto px-3 sm:px-4">
         {stats.map((stat, index) => (
           <motion.div
             key={stat.id}
@@ -424,18 +426,18 @@ const AnimatedStats = ({ stats }: { stats: SiteConfiguration['stats'] }) => {
               ease: "easeOut"
             }}
           >
-            <div className="relative p-4 sm:p-4 lg:p-6 text-center">
-              <div className="hidden sm:flex justify-center mb-3 lg:mb-4">
-                <div className={`w-2 h-2 rounded-full ${
+            <div className="relative p-3 sm:p-4 lg:p-5 xl:p-6 text-center">
+              <div className="hidden sm:flex justify-center mb-2 sm:mb-3 lg:mb-4">
+                <div className={`w-1.5 sm:w-2 h-1.5 sm:h-2 rounded-full ${
                   index === 0 ? 'bg-brand-green' : 
                   index === 1 ? 'bg-brand-yellow' : 
                   'bg-brand-red'
                 }`} />
               </div>
               
-              <div className="flex items-baseline justify-center mb-2">
+              <div className="flex items-baseline justify-center mb-1 sm:mb-2">
                 <motion.span 
-                  className="text-4xl sm:text-4xl lg:text-5xl xl:text-6xl font-black tracking-tight text-gray-900 dark:text-white"
+                  className="text-2xl sm:text-3xl lg:text-4xl xl:text-5xl 2xl:text-6xl font-black tracking-tight text-gray-900 dark:text-white"
                   animate={{ 
                     scale: counts[index] === stat.value ? [1, 1.05, 1] : 1 
                   }}
@@ -444,17 +446,17 @@ const AnimatedStats = ({ stats }: { stats: SiteConfiguration['stats'] }) => {
                   {counts[index].toLocaleString()}
                 </motion.span>
                 {stat.suffix && (
-                  <span className="text-xl sm:text-xl lg:text-2xl xl:text-3xl font-bold ml-1 text-gray-700 dark:text-gray-300">
+                  <span className="text-sm sm:text-lg lg:text-xl xl:text-2xl 2xl:text-3xl font-bold ml-0.5 sm:ml-1 text-gray-700 dark:text-gray-300">
                     {stat.suffix}
                   </span>
                 )}
               </div>
               
-              <p className="text-sm sm:text-xs lg:text-sm font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+              <p className="text-xs sm:text-xs lg:text-sm font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 px-2">
                 {stat.label}
               </p>
               
-              <div className="hidden sm:block absolute bottom-0 left-1/2 transform -translate-x-1/2 w-16 h-0.5 bg-gradient-to-r from-transparent via-gray-300 to-transparent dark:via-gray-600 opacity-50" />
+              <div className="hidden sm:block absolute bottom-0 left-1/2 transform -translate-x-1/2 w-12 sm:w-16 h-0.5 bg-gradient-to-r from-transparent via-gray-300 to-transparent dark:via-gray-600 opacity-50" />
             </div>
           </motion.div>
         ))}
@@ -686,21 +688,21 @@ export default function DynamicHomepage() {
 
       {/* Hero Section */}
       <section className="relative overflow-hidden">
-        <div className="relative max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 pt-8 pb-8">
+        <div className="relative max-w-[1600px] mx-auto px-2 sm:px-4 lg:px-6 xl:px-8 pt-4 sm:pt-6 lg:pt-8 pb-4 sm:pb-6 lg:pb-8">
           <motion.div 
-            className="bg-white dark:bg-gray-900 rounded-3xl shadow-2xl overflow-hidden border-2 border-gray-100 dark:border-gray-800"
+            className="bg-white dark:bg-gray-900 rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden border-2 border-gray-100 dark:border-gray-800"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
           >
-            <div className="px-8 pt-8">
+            <div className="px-3 sm:px-6 lg:px-8 pt-4 sm:pt-6 lg:pt-8">
               <CategoryShowcase />
             </div>
             
             <div className="grid lg:grid-cols-2">
-              <motion.div className="p-12 lg:p-16">
+              <motion.div className="p-4 sm:p-6 lg:p-10 xl:p-12 2xl:p-16">
                 <motion.h1 
-                  className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight text-black dark:text-white mb-6 uppercase"
+                  className="text-2xl xs:text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-black tracking-tight text-black dark:text-white mb-4 sm:mb-6 uppercase leading-tight"
                   initial="hidden"
                   animate="visible"
                   variants={fadeInUp}
@@ -709,7 +711,7 @@ export default function DynamicHomepage() {
                   <span className="block relative">
                     <span>{config.heroHeadline.line2}</span>
                     <motion.div 
-                      className="absolute -bottom-2 left-0 right-0 h-2 bg-gradient-to-r from-brand-green via-brand-lime via-brand-yellow via-brand-orange to-brand-red"
+                      className="absolute -bottom-1 sm:-bottom-2 left-0 right-0 h-1 sm:h-2 bg-gradient-to-r from-brand-green via-brand-lime via-brand-yellow via-brand-orange to-brand-red"
                       initial={{ scaleX: 0 }}
                       animate={{ scaleX: 1 }}
                       transition={{ delay: 0.5, duration: 0.8 }}
@@ -719,7 +721,7 @@ export default function DynamicHomepage() {
                 </motion.h1>
                 
                 <motion.p 
-                  className="text-lg sm:text-xl text-gray-700 dark:text-gray-300 mb-10 font-medium"
+                  className="text-sm sm:text-base lg:text-lg xl:text-xl text-gray-700 dark:text-gray-300 mb-6 sm:mb-8 lg:mb-10 font-medium leading-relaxed"
                   initial="hidden"
                   animate="visible"
                   variants={fadeInUp}
@@ -727,26 +729,26 @@ export default function DynamicHomepage() {
                 />
                 
                 <motion.div 
-                  className="flex flex-col sm:flex-row gap-4 mb-16"
+                  className="flex flex-col sm:flex-row gap-3 sm:gap-4 mb-8 sm:mb-12 lg:mb-16"
                   initial="hidden"
                   animate="visible"
                   variants={staggerContainer}
                 >
-                  <motion.div variants={fadeInUp}>
-                    <Button size="lg" asChild className="bg-black hover:bg-gray-900 text-white shadow-lg hover:shadow-xl transform hover:scale-105 transition-all relative overflow-hidden group">
-                      <Link href="/design-tool" className="flex items-center relative z-10">
+                  <motion.div variants={fadeInUp} className="flex-1">
+                    <Button size="lg" asChild className="w-full sm:w-auto bg-black hover:bg-gray-900 text-white shadow-lg hover:shadow-xl transform hover:scale-105 transition-all relative overflow-hidden group min-h-[48px] text-sm sm:text-base px-4 sm:px-6">
+                      <Link href="/design-tool" className="flex items-center justify-center relative z-10">
                         <div className="absolute inset-0 bg-gradient-to-r from-brand-green via-brand-yellow via-brand-orange to-brand-red opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                        <Palette className="mr-2 h-5 w-5 relative z-10" />
-                        <span className="relative z-10">Start Designing</span>
-                        <ArrowRight className="ml-2 h-4 w-4 relative z-10" />
+                        <Palette className="mr-1.5 sm:mr-2 h-4 w-4 sm:h-5 sm:w-5 relative z-10" />
+                        <span className="relative z-10 font-bold">Start Designing</span>
+                        <ArrowRight className="ml-1.5 sm:ml-2 h-3 w-3 sm:h-4 sm:w-4 relative z-10" />
                       </Link>
                     </Button>
                   </motion.div>
-                  <motion.div variants={fadeInUp}>
-                    <Button size="lg" variant="outline" asChild className="border-2 border-black dark:border-white hover:bg-gray-50 dark:hover:bg-gray-800 text-black dark:text-white">
-                      <Link href="/products" className="flex items-center">
-                        <Package className="mr-2 h-5 w-5" />
-                        Browse Products
+                  <motion.div variants={fadeInUp} className="flex-1">
+                    <Button size="lg" variant="outline" asChild className="w-full sm:w-auto border-2 border-black dark:border-white hover:bg-gray-50 dark:hover:bg-gray-800 text-black dark:text-white min-h-[48px] text-sm sm:text-base px-4 sm:px-6">
+                      <Link href="/products" className="flex items-center justify-center">
+                        <Package className="mr-1.5 sm:mr-2 h-4 w-4 sm:h-5 sm:w-5" />
+                        <span className="font-bold">Browse Products</span>
                       </Link>
                     </Button>
                   </motion.div>
@@ -756,7 +758,7 @@ export default function DynamicHomepage() {
               </motion.div>
 
               <motion.div 
-                className="relative hidden lg:block border-l-4 border-black dark:border-white bg-gray-50 dark:bg-gray-900"
+                className="relative hidden lg:block border-l-2 lg:border-l-4 border-black dark:border-white bg-gray-50 dark:bg-gray-900"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ duration: 0.8, delay: 0.3 }}
@@ -771,19 +773,19 @@ export default function DynamicHomepage() {
       {/* Best Sellers Section */}
       {displayBestSellers.length > 0 && (
         <section className="relative overflow-hidden">
-          <div className="relative max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="relative max-w-[1600px] mx-auto px-2 sm:px-4 lg:px-6 xl:px-8 py-4 sm:py-6 lg:py-8">
             <motion.div 
-              className="bg-white dark:bg-gray-900 rounded-3xl shadow-2xl overflow-hidden border-2 border-gray-100 dark:border-gray-800"
+              className="bg-white dark:bg-gray-900 rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden border-2 border-gray-100 dark:border-gray-800"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6 }}
             >
-              <div className="text-center py-12 px-4">
-                <h2 className="text-4xl sm:text-5xl font-black text-black dark:text-white mb-4 uppercase tracking-wider">
+              <div className="text-center py-6 sm:py-8 lg:py-12 px-3 sm:px-4">
+                <h2 className="text-2xl sm:text-3xl lg:text-4xl xl:text-5xl font-black text-black dark:text-white mb-3 sm:mb-4 uppercase tracking-wider">
                   {config.bestSellersTitle}
                 </h2>
-                <div className="h-1 w-24 bg-gradient-to-r from-brand-green via-brand-yellow via-brand-orange to-brand-red mx-auto mb-4" />
-                <p className="text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
+                <div className="h-0.5 sm:h-1 w-16 sm:w-20 lg:w-24 bg-gradient-to-r from-brand-green via-brand-yellow via-brand-orange to-brand-red mx-auto mb-3 sm:mb-4" />
+                <p className="text-sm sm:text-base lg:text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto px-2">
                   {config.bestSellersSubtitle}
                 </p>
               </div>
@@ -817,58 +819,58 @@ export default function DynamicHomepage() {
 
                 <div 
                   id="bestsellers-scroll"
-                  className="flex gap-3 sm:gap-4 lg:gap-6 overflow-x-auto scroll-smooth px-4 sm:px-8 pb-2 sm:pb-4"
+                  className="flex gap-2 sm:gap-3 lg:gap-4 xl:gap-6 overflow-x-auto scroll-smooth px-3 sm:px-6 lg:px-8 pb-2 sm:pb-4"
                   style={{ scrollbarWidth: 'none' as any, msOverflowStyle: 'none' }}
                 >
                   {displayBestSellers.map((product: any) => (
-                    <Link key={product.id} href={`/product/${product.id}`} className="flex-shrink-0 w-48 sm:w-64 lg:w-80">
+                    <Link key={product._id || product.id} href={`/product/${product._id || product.id}`} className="flex-shrink-0 w-40 sm:w-52 lg:w-64 xl:w-80">
                       <Card className="border-2 border-black h-full hover:shadow-xl transition-shadow cursor-pointer">
-                        <div className="relative h-40 sm:h-52 lg:h-64 bg-white">
+                        <div className="relative h-32 sm:h-44 lg:h-52 xl:h-64 bg-white">
                           <Image 
                             src={getOptimizedImageUrl(getProductImage(product))} 
                             alt={product.name} 
                             fill 
                             sizes={generateImageSizes('card')}
-                            className="object-contain p-3" 
+                            className="object-contain p-2 sm:p-3" 
                             loading="lazy"
                             quality={75}
                           />
                           {product.featured && (
-                            <div className="absolute top-4 left-4 bg-black text-white px-3 py-1 text-xs font-bold uppercase">
+                            <div className="absolute top-2 left-2 sm:top-3 sm:left-3 lg:top-4 lg:left-4 bg-black text-white px-2 py-1 sm:px-3 sm:py-1 text-xs font-bold uppercase">
                               Featured
                             </div>
                           )}
                           {product.colors && product.colors.length > 0 && (
-                            <div className="absolute bottom-2 left-2 sm:bottom-4 sm:left-4 flex gap-1">
+                            <div className="absolute bottom-1 left-1 sm:bottom-2 sm:left-2 lg:bottom-3 lg:left-3 xl:bottom-4 xl:left-4 flex gap-0.5 sm:gap-1">
                               {product.colors.slice(0, 3).map((colorObj: any, idx: number) => {
                                 const colorValue = typeof colorObj === 'string' ? colorObj : (colorObj.color || colorObj.name || 'gray');
                                 return (
                                   <div 
                                     key={idx}
-                                    className="w-4 h-4 sm:w-6 sm:h-6 rounded-full border-2 border-white shadow-md"
+                                    className="w-3 h-3 sm:w-4 sm:h-4 lg:w-5 lg:h-5 xl:w-6 xl:h-6 rounded-full border border-white sm:border-2 shadow-md"
                                     style={{ backgroundColor: colorValue.toLowerCase() }}
                                     title={typeof colorObj === 'string' ? colorObj : colorObj.name}
                                   />
                                 );
                               })}
                               {product.colors.length > 3 && (
-                                <div className="w-4 h-4 sm:w-6 sm:h-6 rounded-full bg-gray-200 border-2 border-white shadow-md flex items-center justify-center text-[8px] sm:text-xs font-bold">
+                                <div className="w-3 h-3 sm:w-4 sm:h-4 lg:w-5 lg:h-5 xl:w-6 xl:h-6 rounded-full bg-gray-200 border border-white sm:border-2 shadow-md flex items-center justify-center text-[8px] sm:text-[10px] lg:text-xs font-bold">
                                   +{product.colors.length - 3}
                                 </div>
                               )}
                             </div>
                           )}
                         </div>
-                        <div className="p-3 sm:p-5 lg:p-6">
-                          <h3 className="text-sm sm:text-base lg:text-lg font-black text-black mb-2 sm:mb-3 line-clamp-2">
+                        <div className="p-2 sm:p-3 lg:p-4 xl:p-5">
+                          <h3 className="text-xs sm:text-sm lg:text-base xl:text-lg font-black text-black mb-2 sm:mb-3 line-clamp-2 leading-tight">
                             {product.name}
                           </h3>
-                          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                            <span className="text-lg sm:text-xl lg:text-2xl font-black text-black">
+                          <div className="flex flex-col gap-1.5 sm:gap-2">
+                            <span className="text-sm sm:text-base lg:text-lg xl:text-xl font-black text-black">
                               {product.basePrice || product.price || '0.00'} SEK
                             </span>
                             <Button 
-                              className="bg-black hover:bg-gray-800 text-white font-bold uppercase text-xs sm:text-sm w-full sm:w-auto" 
+                              className="bg-black hover:bg-gray-800 text-white font-bold uppercase text-xs w-full min-h-[36px] sm:min-h-[40px]" 
                               size="sm" 
                               onClick={(e) => {
                                 e.preventDefault()
@@ -955,7 +957,7 @@ export default function DynamicHomepage() {
                 >
                   {section.products && section.products.length > 0 ? (
                     section.products.map((product: any) => (
-                      <Link key={product.id} href={`/product/${product.id}`} className="flex-shrink-0 w-48 sm:w-64 lg:w-80">
+                      <Link key={product._id || product.id} href={`/product/${product._id || product.id}`} className="flex-shrink-0 w-48 sm:w-64 lg:w-80">
                         <Card className="border-2 border-black h-full hover:shadow-xl transition-shadow cursor-pointer">
                           <div className="relative h-40 sm:h-52 lg:h-64 bg-gray-50">
                             <Image 
@@ -1006,7 +1008,7 @@ export default function DynamicHomepage() {
                                 size="sm" 
                                 onClick={(e) => {
                                   e.preventDefault()
-                                  window.location.href = `/design-tool?productId=${product.id}`
+                                  window.location.href = `/design-tool?productId=${product._id || product.id}`
                                 }}
                               >
                                 Customize
@@ -1040,40 +1042,40 @@ export default function DynamicHomepage() {
 
       {/* Features Section */}
       <section className="relative overflow-hidden">
-        <div className="relative max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="relative max-w-[1600px] mx-auto px-2 sm:px-4 lg:px-6 xl:px-8 py-4 sm:py-6 lg:py-8">
           <motion.div 
-            className="bg-white dark:bg-gray-900 rounded-3xl shadow-2xl overflow-hidden border-2 border-gray-100 dark:border-gray-800"
+            className="bg-white dark:bg-gray-900 rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden border-2 border-gray-100 dark:border-gray-800"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
           >
-            <div className="p-12">
-              <div className="text-center mb-12">
-                <h2 className="text-3xl sm:text-4xl font-black text-black dark:text-white mb-4 uppercase tracking-wider">
+            <div className="p-4 sm:p-6 lg:p-8 xl:p-12">
+              <div className="text-center mb-6 sm:mb-8 lg:mb-12">
+                <h2 className="text-xl sm:text-2xl lg:text-3xl xl:text-4xl font-black text-black dark:text-white mb-3 sm:mb-4 uppercase tracking-wider">
                   {config.featuresTitle}
                 </h2>
-                <div className="h-1 w-24 bg-gradient-to-r from-brand-green via-brand-yellow via-brand-orange to-brand-red mx-auto" />
+                <div className="h-0.5 sm:h-1 w-16 sm:w-20 lg:w-24 bg-gradient-to-r from-brand-green via-brand-yellow via-brand-orange to-brand-red mx-auto" />
               </div>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 lg:gap-8">
                 {config.features.map((feature, index) => {
                   const IconComponent = iconMap[feature.iconType] || Zap
                   return (
                     <motion.div 
                       key={feature.id} 
-                      className="text-center"
+                      className="text-center p-2 sm:p-3"
                       initial={{ opacity: 0, y: 20 }}
                       whileInView={{ opacity: 1, y: 0 }}
                       viewport={{ once: true }}
                       transition={{ delay: index * 0.1 }}
                     >
-                      <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-black dark:bg-white mb-4">
-                        <IconComponent className="w-8 h-8 text-white dark:text-black" />
+                      <div className="inline-flex items-center justify-center w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 rounded-full bg-black dark:bg-white mb-3 sm:mb-4">
+                        <IconComponent className="w-6 h-6 sm:w-7 sm:h-7 lg:w-8 lg:h-8 text-white dark:text-black" />
                       </div>
-                      <h3 className="text-lg font-black text-black dark:text-white mb-2 uppercase">
+                      <h3 className="text-sm sm:text-base lg:text-lg font-black text-black dark:text-white mb-2 uppercase leading-tight">
                         {feature.title}
                       </h3>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                      <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 leading-relaxed px-1">
                         {feature.description}
                       </p>
                     </motion.div>
@@ -1086,40 +1088,40 @@ export default function DynamicHomepage() {
       </section>
 
       {/* CTA Section */}
-      <section className="relative overflow-hidden py-8">
-        <div className="relative max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
+      <section className="relative overflow-hidden py-4 sm:py-6 lg:py-8">
+        <div className="relative max-w-[1600px] mx-auto px-2 sm:px-4 lg:px-6 xl:px-8">
           <motion.div 
-            className="bg-gradient-to-r from-brand-green via-brand-yellow via-brand-orange to-brand-red p-1 rounded-3xl shadow-2xl"
+            className="bg-gradient-to-r from-brand-green via-brand-yellow via-brand-orange to-brand-red p-1 rounded-2xl sm:rounded-3xl shadow-2xl"
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
           >
-            <div className="bg-black rounded-3xl p-16 text-center">
-              <h2 className="text-4xl sm:text-5xl font-black text-white mb-6 uppercase tracking-wider">
+            <div className="bg-black rounded-2xl sm:rounded-3xl p-6 sm:p-8 lg:p-12 xl:p-16 text-center">
+              <h2 className="text-xl sm:text-2xl lg:text-3xl xl:text-4xl 2xl:text-5xl font-black text-white mb-4 sm:mb-6 uppercase tracking-wider leading-tight">
                 {config.ctaSection.headline}
               </h2>
-              <p className="text-xl text-gray-300 mb-8 max-w-2xl mx-auto">
+              <p className="text-sm sm:text-base lg:text-lg xl:text-xl text-gray-300 mb-6 sm:mb-8 max-w-2xl mx-auto leading-relaxed px-2">
                 {config.ctaSection.subtitle}
               </p>
-              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center max-w-md sm:max-w-none mx-auto">
                 <Button 
                   size="lg" 
-                  className="bg-white text-black hover:bg-gray-200 font-black uppercase px-8" 
+                  className="bg-white text-black hover:bg-gray-200 font-black uppercase px-4 sm:px-6 lg:px-8 min-h-[48px] text-sm sm:text-base" 
                   asChild
                 >
-                  <Link href={config.ctaSection.primaryButtonLink} className="flex items-center">
-                    <Palette className="mr-2 h-5 w-5" />
-                    {config.ctaSection.primaryButtonText}
+                  <Link href={config.ctaSection.primaryButtonLink} className="flex items-center justify-center">
+                    <Palette className="mr-1.5 sm:mr-2 h-4 w-4 sm:h-5 sm:w-5" />
+                    <span>{config.ctaSection.primaryButtonText}</span>
                   </Link>
                 </Button>
                 <Button 
                   size="lg" 
-                  className="bg-transparent border-2 border-white text-white hover:bg-white hover:text-black font-black uppercase px-8 transition-all" 
+                  className="bg-transparent border-2 border-white text-white hover:bg-white hover:text-black font-black uppercase px-4 sm:px-6 lg:px-8 transition-all min-h-[48px] text-sm sm:text-base" 
                   asChild
                 >
-                  <Link href={config.ctaSection.secondaryButtonLink} className="flex items-center">
-                    {config.ctaSection.secondaryButtonText}
+                  <Link href={config.ctaSection.secondaryButtonLink} className="flex items-center justify-center">
+                    <span>{config.ctaSection.secondaryButtonText}</span>
                   </Link>
                 </Button>
               </div>

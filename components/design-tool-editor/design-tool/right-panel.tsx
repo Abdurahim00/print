@@ -89,7 +89,7 @@ export function RightPanel({ isMobile = false }: { isMobile?: boolean }) {
     const getProductImageUrl = () => {
       if (!product) return null
       if (product.hasVariations && product.variations) {
-        const currentVariation = product.variations.find((v: any) => v.color.hex_code === productColor)
+        const currentVariation = product.variations.find((v: any) => v.color && v.color.hex_code === productColor)
         if (currentVariation) {
           const imageForAngle = currentVariation.images?.find((img: any) => img.angle === viewMode && img.url)
           if (imageForAngle) return imageForAngle.url
@@ -148,14 +148,14 @@ export function RightPanel({ isMobile = false }: { isMobile?: boolean }) {
         }
         
         const selectedVariation = selectedProduct.variations.find((v: any) => 
-          v.color.hex_code === productColor
+          v.color && v.color.hex_code === productColor
         )
         
         return selectedVariation ? {
           variationId: selectedVariation.id,
-          colorName: selectedVariation.color.name,
-          colorHexCode: selectedVariation.color.hex_code,
-          colorSwatchImage: selectedVariation.color.swatch_image,
+          colorName: selectedVariation.color?.name,
+          colorHexCode: selectedVariation.color?.hex_code,
+          colorSwatchImage: selectedVariation.color?.swatch_image,
           variationPrice: selectedVariation.price,
           variationImages: selectedVariation.images,
         } : null

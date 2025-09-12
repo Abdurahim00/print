@@ -307,23 +307,23 @@ export function CategoryShowcase() {
             {showArrows && (
               <button
                 onClick={() => scroll('left')}
-                className="absolute left-0 sm:left-2 top-[40px] sm:top-[48px] -translate-y-1/2 z-10 w-8 h-8 sm:w-10 sm:h-10 bg-black dark:bg-white text-white dark:text-black flex items-center justify-center hover:scale-110 active:scale-95 transition-all duration-200 opacity-70 sm:opacity-0 sm:group-hover:opacity-100 shadow-xl rounded-full sm:rounded-none"
+                className="absolute left-0 sm:left-1 lg:left-2 top-[32px] sm:top-[36px] lg:top-[44px] -translate-y-1/2 z-10 w-6 h-6 sm:w-8 sm:h-8 lg:w-10 lg:h-10 bg-black dark:bg-white text-white dark:text-black flex items-center justify-center hover:scale-110 active:scale-95 transition-all duration-200 opacity-80 sm:opacity-0 sm:group-hover:opacity-100 shadow-xl rounded-full"
               >
-                <ChevronLeft className="h-4 w-4 sm:h-5 sm:w-5" />
+                <ChevronLeft className="h-3 w-3 sm:h-4 sm:w-4 lg:h-5 lg:w-5" />
               </button>
             )}
 
             {/* Scrollable container with padding for expansion */}
             <motion.div 
               ref={scrollContainerRef}
-              className="flex gap-3 sm:gap-4 lg:gap-6 overflow-x-auto scrollbar-hide scroll-smooth py-2"
+              className="flex gap-2 sm:gap-3 lg:gap-4 xl:gap-6 overflow-x-auto scrollbar-hide scroll-smooth py-1 sm:py-2"
               style={{ 
                 scrollbarWidth: 'none' as any, 
                 msOverflowStyle: 'none',
-                marginTop: '8px',
-                marginBottom: '8px',
-                paddingLeft: activeCategories.length <= 5 ? '0' : '20px',
-                paddingRight: activeCategories.length <= 5 ? '0' : '20px',
+                marginTop: '4px',
+                marginBottom: '4px',
+                paddingLeft: activeCategories.length <= 5 ? '0' : window.innerWidth < 640 ? '12px' : '20px',
+                paddingRight: activeCategories.length <= 5 ? '0' : window.innerWidth < 640 ? '12px' : '20px',
                 justifyContent: activeCategories.length <= 5 ? 'center' : 'flex-start',
                 width: '100%'
               }}
@@ -339,27 +339,29 @@ export function CategoryShowcase() {
                   <motion.div 
                     key={category.id}
                     variants={itemVariants}
+                    className="flex-shrink-0"
                   >
                     <Link
                       href={`/products?category=${category.slug}`}
-                      className="group flex flex-col items-center gap-3 cursor-pointer"
+                      className="group flex flex-col items-center gap-1.5 sm:gap-2 lg:gap-3 cursor-pointer relative z-10 min-w-0"
+                      style={{ pointerEvents: 'auto' }}
                     >
                       <motion.div 
                         className="relative"
-                        whileHover={{ scale: 1.1 }}
+                        whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
                         transition={{ type: "spring", stiffness: 400, damping: 17 }}
                       >
-                        <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-white border-2 border-black dark:border-white flex items-center justify-center shadow-md group-hover:shadow-xl transition-all duration-300 flex-shrink-0">
+                        <div className="w-10 h-10 sm:w-12 sm:h-12 lg:w-14 lg:h-14 xl:w-16 xl:h-16 rounded-full bg-white border border-black sm:border-2 dark:border-white flex items-center justify-center shadow-md group-hover:shadow-xl transition-all duration-300 flex-shrink-0">
                           <img 
                             src={style.iconUrl} 
                             alt={category.name}
-                            className="w-6 h-6 sm:w-8 sm:h-8 filter transition-all"
+                            className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 xl:w-8 xl:h-8 filter transition-all"
                             style={{ filter: 'grayscale(100%) contrast(1.5) brightness(0)' }}
                           />
                         </div>
                       </motion.div>
-                      <span className="text-[10px] sm:text-xs font-bold text-black dark:text-white transition-colors text-center max-w-[60px] sm:max-w-[80px] uppercase line-clamp-2">
+                      <span className="text-[8px] sm:text-[10px] lg:text-xs font-bold text-black dark:text-white transition-colors text-center max-w-[48px] sm:max-w-[60px] lg:max-w-[80px] uppercase line-clamp-2 leading-tight">
                         {category.name}
                       </span>
                     </Link>
@@ -372,9 +374,9 @@ export function CategoryShowcase() {
             {showArrows && (
               <button
                 onClick={() => scroll('right')}
-                className="absolute right-0 sm:right-2 top-[40px] sm:top-[48px] -translate-y-1/2 z-10 w-8 h-8 sm:w-10 sm:h-10 bg-black dark:bg-white text-white dark:text-black flex items-center justify-center hover:scale-110 active:scale-95 transition-all duration-200 opacity-70 sm:opacity-0 sm:group-hover:opacity-100 shadow-xl rounded-full sm:rounded-none"
+                className="absolute right-0 sm:right-1 lg:right-2 top-[32px] sm:top-[36px] lg:top-[44px] -translate-y-1/2 z-10 w-6 h-6 sm:w-8 sm:h-8 lg:w-10 lg:h-10 bg-black dark:bg-white text-white dark:text-black flex items-center justify-center hover:scale-110 active:scale-95 transition-all duration-200 opacity-80 sm:opacity-0 sm:group-hover:opacity-100 shadow-xl rounded-full"
               >
-                <ChevronRight className="h-4 w-4 sm:h-5 sm:w-5" />
+                <ChevronRight className="h-3 w-3 sm:h-4 sm:w-4 lg:h-5 lg:w-5" />
               </button>
             )}
           </div>

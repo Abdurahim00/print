@@ -15,6 +15,8 @@ interface VariationDesign {
   canvasJSON: any;
   lastModified: number;
   isShared: boolean; // Track if this design was shared from another variation
+  designAreaCm2?: number; // Track design area for this specific view
+  designAreaPercentage?: number; // Track design area percentage for this view
 }
 
 interface DesignState {
@@ -81,7 +83,7 @@ const designSlice = createSlice({
         // Otherwise use baseColor
         if (action.payload.hasVariations && action.payload.variations?.length > 0) {
           // Try to keep current color if it exists in the new product's variations
-          const currentColorExists = action.payload.variations.some((v: any) => 
+          const currentColorExists = state.productColor && action.payload.variations.some((v: any) => 
             v.color?.hex_code === state.productColor
           )
           
@@ -89,8 +91,27 @@ const designSlice = createSlice({
             // Keep the current color if it exists in the new product
             // This prevents unwanted variant switching
           } else {
-            // Set to first variation's color
-            state.productColor = action.payload.variations[0].color?.hex_code || ""
+            // CRITICAL: Always set to first variation's color for products with variations
+            // Never leave it empty as this causes all variations to use the same ID
+            const firstVariation = action.payload.variations[0]
+            const firstVariationColor = firstVariation?.color?.hex_code
+            
+            if (!firstVariationColor) {
+              console.error('⚠️ [DesignSlice] First variation has no color! This will cause design sync issues.', {
+                variation: firstVariation,
+                product: action.payload.name
+              })
+              // Don't use #000000 as fallback - it causes all variations to share the same ID
+              // Generate a unique color based on the variation index or properties
+              const variationIndex = action.payload.variations.indexOf(firstVariation)
+              const fallbackColor = firstVariation?.id || 
+                                   firstVariation?.sku || 
+                                   `var${variationIndex}_${action.payload.id?.slice(-6) || Math.random().toString(36).slice(2, 8)}`
+              state.productColor = fallbackColor
+              console.warn('⚠️ [DesignSlice] Using fallback color for variation:', fallbackColor)
+            } else {
+              state.productColor = firstVariationColor
+            }
           }
         } else {
           // For products without variations, use baseColor
@@ -164,7 +185,7 @@ const designSlice = createSlice({
     },
     // New reducers for variation design persistence
     saveVariationDesign: (state, action) => {
-      const { variationId, viewMode, canvasJSON, isShared = false } = action.payload
+      const { variationId, viewMode, canvasJSON, isShared = false, designAreaCm2, designAreaPercentage } = action.payload
       
       // Find existing design for this variation+view combination
       const existingIndex = state.variationDesigns.findIndex(
@@ -176,7 +197,9 @@ const designSlice = createSlice({
         viewMode,
         canvasJSON,
         lastModified: Date.now(),
-        isShared
+        isShared,
+        designAreaCm2: designAreaCm2 || state.designAreaCm2, // Use current area if not provided
+        designAreaPercentage: designAreaPercentage || state.designAreaPercentage
       }
       
       if (existingIndex !== -1) {
@@ -194,6 +217,8 @@ const designSlice = createSlice({
         variationId,
         viewMode,
         isShared,
+        designAreaCm2: designData.designAreaCm2,
+        designAreaPercentage: designData.designAreaPercentage,
         totalDesigns: state.variationDesigns.length
       })
     },
@@ -272,6 +297,10 @@ const designSlice = createSlice({
       state.currentDesignId = null
       console.log('🗑️ [DesignSlice] Cleared all designs')
     },
+    setVariationDesigns: (state, action) => {
+      state.variationDesigns = action.payload
+      console.log('📝 [DesignSlice] Set variation designs:', action.payload.length)
+    },
     // New action to set product with specific variant (without changing color)
     setProductWithVariant: (state, action) => {
       const { product, variantId } = action.payload
@@ -316,6 +345,7 @@ export const {
   clearVariationDesign,
   setAutoSaveEnabled,
   clearAllDesigns,
+  setVariationDesigns,
   setProductWithVariant,
 } = designSlice.actions
 

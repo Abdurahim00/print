@@ -95,21 +95,27 @@ export function ProductModal({ isOpen, onClose, products, loading = false }: Pro
       description: product.description,
       inStock: product.inStock,
       hasVariations: product.hasVariations,
-      variations: product.variations || [],
+      variations: product.variations?.map((v: any) => ({
+        ...v,
+        // Ensure each variation includes its design frames
+        designFrames: v.designFrames || []
+      })) || [],
       purchaseLimit: product.purchaseLimit, // Add purchase limit data
-      // Include individual angle images for single products
-      ...(product.hasVariations ? {} : {
-        frontImage: (product as any).frontImage,
-        backImage: (product as any).backImage,
-        leftImage: (product as any).leftImage,
-        rightImage: (product as any).rightImage,
-        materialImage: (product as any).materialImage,
-        frontAltText: (product as any).frontAltText,
-        backAltText: (product as any).backAltText,
-        leftAltText: (product as any).leftAltText,
-        rightAltText: (product as any).rightAltText,
-        materialAltText: (product as any).materialAltText,
-      })
+      // Include design-related fields
+      isDesignable: (product as any).isDesignable || false,
+      designFrames: (product as any).designFrames || [],
+      designCostPerCm2: (product as any).designCostPerCm2 || 0.5,
+      // Include individual angle images (always include them, not just for non-variation products)
+      frontImage: (product as any).frontImage,
+      backImage: (product as any).backImage,
+      leftImage: (product as any).leftImage,
+      rightImage: (product as any).rightImage,
+      materialImage: (product as any).materialImage,
+      frontAltText: (product as any).frontAltText,
+      backAltText: (product as any).backAltText,
+      leftAltText: (product as any).leftAltText,
+      rightAltText: (product as any).rightAltText,
+      materialAltText: (product as any).materialAltText
     }
 
     console.log('🔥 [ProductModal] Select product with real data only', {
@@ -119,6 +125,8 @@ export function ProductModal({ isOpen, onClose, products, loading = false }: Pro
       realAngles,
       realColors,
       initialColor,
+      designFrames: (product as any).designFrames,
+      isDesignable: (product as any).isDesignable,
       variations: product.variations?.map(v => ({
         color: v.color?.hex_code,
         imagesCount: v.images?.length,

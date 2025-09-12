@@ -1,10 +1,20 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createCategory, getCategories } from "@/lib/services/categoryService"
+import { getLocalizedCategory } from "@/lib/utils/translations"
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
+    const { searchParams } = new URL(request.url)
+    const locale = searchParams.get('locale') || 'en'
+    
     const categories = await getCategories()
-    return NextResponse.json(categories)
+    
+    // Localize categories if locale is provided
+    const localizedCategories = categories.map(category => 
+      locale !== 'en' ? getLocalizedCategory(category, locale) : category
+    )
+    
+    return NextResponse.json(localizedCategories)
   } catch (e) {
     return NextResponse.json({ error: "Failed to fetch categories" }, { status: 500 })
   }

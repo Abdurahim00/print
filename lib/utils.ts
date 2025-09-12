@@ -15,15 +15,15 @@ export function coerceNumber(value: unknown): number | null {
   return null
 }
 
-// Formatters with stable output matching existing UI conventions
+// Legacy formatters - use currency utils instead for new code
 export function formatSEK(value: unknown): string {
   const num = coerceNumber(value)
   if (num === null) return "N/A"
-  return num.toFixed(2)
+  return `${num.toFixed(2)} kr`
 }
 
 export function formatUSD(value: unknown): string {
   const num = coerceNumber(value)
-  if (num === null) return "Kr0.00"
-  return `${num.toFixed(2)} Kr`
+  if (num === null) return "$0.00"
+  return `$${num.toFixed(2)}`
 }

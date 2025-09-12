@@ -59,7 +59,12 @@ export const ProductTable: React.FC<ProductTableProps> = ({ products, loading, t
             <TableRow key={product.id} className={index % 2 === 0 ? "bg-white dark:bg-slate-900" : "bg-slate-50/50 dark:bg-slate-800/20"}>
               <TableCell>
                 <div className="relative w-12 h-12 rounded-lg overflow-hidden bg-slate-100 dark:bg-slate-800">
-                  <Image src={product.image || "/placeholder.svg"} alt={product.name} fill className="object-cover" />
+                  <Image 
+                    src={product.image || product.imageUrl || (product.images && product.images[0]) || "/placeholder.svg"} 
+                    alt={product.name} 
+                    fill 
+                    className="object-cover" 
+                  />
                 </div>
               </TableCell>
               <TableCell className="font-medium text-slate-900 dark:text-slate-100">{product.name}</TableCell>
@@ -82,14 +87,22 @@ export const ProductTable: React.FC<ProductTableProps> = ({ products, loading, t
                 )}
               </TableCell>
               <TableCell>
-                {product.hasVariations && product.variations && product.variations.length > 0 ? (
+                {(product.hasVariations || product.variations || product.variants) && (product.variations?.length > 0 || product.variants?.length > 0) ? (
                   <div className="flex flex-col gap-1">
                     <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 mb-1">{t.hasVariations || "Has Variations"}</Badge>
                     <div className="flex flex-wrap gap-1">
-                      {product.variations.map((v) => (
-                        <span key={v.id} className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded bg-slate-200 dark:bg-slate-700">
-                          <span style={{ background: v.color.hex_code, width: 12, height: 12, borderRadius: "50%", display: "inline-block" }} />
-                          {v.color.name}
+                      {(product.variations || product.variants || []).map((v: any, idx: number) => (
+                        <span key={v.id || v.variant_name || idx} className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded bg-slate-200 dark:bg-slate-700">
+                          {v.color && v.color.hex_code ? (
+                            <>
+                              <span style={{ background: v.color.hex_code, width: 12, height: 12, borderRadius: "50%", display: "inline-block" }} />
+                              {v.color.name || 'Color'}
+                            </>
+                          ) : v.variant_name ? (
+                            <>{v.variant_name}</>
+                          ) : (
+                            <>Variant {idx + 1}</>
+                          )}
                         </span>
                       ))}
                     </div>

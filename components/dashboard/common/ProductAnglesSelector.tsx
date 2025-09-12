@@ -26,14 +26,11 @@ export const ProductAnglesSelector: React.FC<ProductAnglesSelectorProps> = ({
   variationImages = [],
   productImage,
 }) => {
-  // Only show if we have angles and variation images
-  // No fallbacks - only show what admins actually uploaded
-  if (!angles || angles.length <= 1) return null
+  // Show if we have angles
+  if (!angles || angles.length === 0) return null
   
-  // Check if we have valid variation images to display
-  const hasValidImages = variationImages.some(img => img.url && img.url.trim() !== '')
-  
-  if (!hasValidImages) return null
+  // Don't require variation images to be present - angles alone are enough
+  // The component will handle missing images gracefully
 
   // Helper to get image for a specific angle
   const getImageForAngle = (angle: string) => {
@@ -55,6 +52,12 @@ export const ProductAnglesSelector: React.FC<ProductAnglesSelectorProps> = ({
     return null
   }
 
+  // Check if we have valid images for any angle
+  const hasValidImages = angles.some(angle => {
+    const img = getImageForAngle(angle)
+    return img !== null && img.trim() !== ''
+  })
+  
   // Debug logging
   console.log('ProductAnglesSelector Debug:', {
     angles,
@@ -85,11 +88,6 @@ export const ProductAnglesSelector: React.FC<ProductAnglesSelectorProps> = ({
             const isSelected = selectedAngle === angle
             const imageUrl = getImageForAngle(angle)
             
-            // Skip angles that don't have images
-            if (!imageUrl) {
-              return null
-            }
-            
             return (
               <div 
                 key={angle}
@@ -101,19 +99,27 @@ export const ProductAnglesSelector: React.FC<ProductAnglesSelectorProps> = ({
                 onClick={() => onSelect(angle)}
                 title={getAngleDisplayName(angle)}
               >
-                <Image
-                  src={imageUrl}
-                  alt={`${getAngleDisplayName(angle)} view`}
-                  fill
-                  className="object-cover"
-                />
+                {imageUrl ? (
+                  <Image
+                    src={imageUrl}
+                    alt={`${getAngleDisplayName(angle)} view`}
+                    fill
+                    className="object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full bg-gray-100 flex items-center justify-center">
+                    <span className="text-xs font-medium text-gray-600">
+                      {getAngleDisplayName(angle).substring(0, 1)}
+                    </span>
+                  </div>
+                )}
                 {isSelected && (
                   <div className="absolute inset-0 bg-blue-500 bg-opacity-20 flex items-center justify-center">
                     <div className="w-3 h-3 bg-blue-500 rounded-full border border-white"></div>
                   </div>
                 )}
                 {/* Label overlay on hover or mobile */}
-                <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-60 text-white text-xs py-1 px-1 text-center opacity-0 hover:opacity-100 transition-opacity duration-200 lg:hidden">
+                <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-60 text-white text-xs py-1 px-1 text-center opacity-0 hover:opacity-100 transition-opacity duration-200">
                   {getAngleDisplayName(angle)}
                 </div>
               </div>

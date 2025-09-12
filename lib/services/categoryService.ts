@@ -29,6 +29,7 @@ function toSubcategory(doc: SubcategoryDocument): Subcategory {
     id: doc._id!.toString(),
     categoryId: doc.categoryId.toString(),
     name: doc.name,
+    swedishName: doc.swedishName,
     slug: doc.slug,
     isActive: doc.isActive,
     isDesignable: doc.isDesignable || false,

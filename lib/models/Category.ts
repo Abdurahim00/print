@@ -3,8 +3,16 @@ import type { ObjectId } from "mongodb"
 export interface CategoryDocument {
   _id?: ObjectId
   name: string
+  nameTranslations?: {
+    en?: string
+    sv?: string
+  }
   slug: string
   description?: string
+  descriptionTranslations?: {
+    en?: string
+    sv?: string
+  }
   isActive: boolean
   createdAt: Date
   updatedAt: Date
@@ -22,6 +30,10 @@ export interface SubcategoryDocument {
   _id?: ObjectId
   categoryId: ObjectId
   name: string
+  nameTranslations?: {
+    en?: string
+    sv?: string
+  }
   slug: string
   isActive: boolean
   createdAt: Date

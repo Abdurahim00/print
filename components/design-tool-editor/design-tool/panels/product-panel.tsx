@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { useSelector, useDispatch } from "react-redux"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
@@ -48,7 +48,7 @@ const DEFAULT_PRODUCT = {
 export function ProductPanel() {
   const dispatch = useDispatch()
   const router = useRouter()
-  const { selectedTool, selectedProduct, productColor, viewMode, hasDesignElements, designAreaPercentage, designAreaCm2 } = useSelector((state: RootState) => state.design)
+  const { selectedTool, selectedProduct, productColor, viewMode, hasDesignElements, designAreaPercentage, designAreaCm2, variationDesigns } = useSelector((state: RootState) => state.design)
   const categories = useSelector((state: RootState) => (state as any).categories.categories)
   const [isSizeModalOpen, setIsSizeModalOpen] = useState(false)
   const [selectedSizes, setSelectedSizes] = useState<SelectedSizeQuantity[]>([])
@@ -64,6 +64,17 @@ export function ProductPanel() {
     // Always fetch categories to get latest design upcharge data (force refresh)
     dispatch(fetchCategories(true) as any)
   }, [selectedProduct, dispatch])
+  
+  // Auto-set productColor if it's empty and we have variations
+  useEffect(() => {
+    if (selectedProduct?.hasVariations && selectedProduct?.variations?.length > 0 && !productColor) {
+      const firstVariationColor = selectedProduct.variations[0]?.color?.hex_code
+      if (firstVariationColor) {
+        console.log('🎨 [ProductPanel] Auto-setting productColor to first variation:', firstVariationColor)
+        dispatch(setProductColor(firstVariationColor))
+      }
+    }
+  }, [selectedProduct, productColor, dispatch])
 
   // If no product is selected, show a message to select a product first
   if (!selectedProduct) {
@@ -90,6 +101,8 @@ export function ProductPanel() {
   const product = selectedProduct as Product;
 
   const handleColorChange = (color: string) => {
+    // When color changes, the variation ID will change
+    // The useVariationDesignPersistence hook will handle loading the correct design
     dispatch(setProductColor(color))
   }
 
@@ -109,6 +122,12 @@ export function ProductPanel() {
   const getCurrentVariation = () => {
     const variations = getVariations()
     if (variations.length === 0) return null
+    
+    // If productColor is empty, use the first variation
+    if (!productColor && variations[0]) {
+      return variations[0]
+    }
+    
     return variations.find((v: any) => v.color?.hex_code === productColor) || variations[0]
   }
 
@@ -146,62 +165,237 @@ export function ProductPanel() {
     return `${Math.round(amount)} kr`
   }
 
-  // Calculate price with design upcharge based on area coverage
+  // Calculate TOTAL design area across ALL angles for the current product
+  const calculateTotalDesignArea = () => {
+    if (!selectedProduct || !variationDesigns) {
+      console.log('⚠️ No product or designs, returning current area:', designAreaCm2)
+      return designAreaCm2 // Return current if no saved designs
+    }
+    
+    // Get all views that could have designs (front, back, left, right, etc.)
+    const possibleViews = ['front', 'back', 'left', 'right', 'material']
+    let totalAreaCm2 = 0
+    const viewAreasMap: { [key: string]: number } = {}
+    let currentViewAreaIncluded = false
+    
+    console.log('🔍 Starting area calculation:', {
+      currentView: viewMode,
+      currentViewArea: designAreaCm2,
+      hasDesignElements,
+      productColor,
+      savedDesignsCount: variationDesigns.length
+    })
+    
+    // For products with variations (colors)
+    if (selectedProduct.hasVariations) {
+      // CRITICAL FIX: Don't calculate area if no color is selected
+      if (!productColor || productColor === '') {
+        console.warn('⚠️ [calculateTotalDesignArea] No color selected for variation product - returning 0')
+        // For current view only, use live area if available
+        if (viewMode === viewMode && hasDesignElements && designAreaCm2 > 0) {
+          return designAreaCm2
+        }
+        return 0
+      }
+      
+      // Use the actual selected color
+      const colorSuffix = productColor.replace('#', '')
+      
+      possibleViews.forEach(view => {
+        const variationId = `${selectedProduct.id}_${colorSuffix}_${view}`
+        const design = variationDesigns.find(
+          d => d.variationId === variationId && d.viewMode === view
+        )
+        
+        if (view === viewMode) {
+          // For current view, ALWAYS use the live area
+          if (hasDesignElements && designAreaCm2 > 0) {
+            console.log(`  ✅ Current view [${view}]: Using LIVE area = ${designAreaCm2}`)
+            totalAreaCm2 += designAreaCm2
+            viewAreasMap[view] = designAreaCm2
+            currentViewAreaIncluded = true
+          } else {
+            console.log(`  ⏭️ Current view [${view}]: No design (hasDesignElements=${hasDesignElements}, area=${designAreaCm2})`)
+          }
+        } else if (design?.canvasJSON?.objects?.length > 0) {
+          // For other views, use stored area
+          const viewAreaCm2 = design.designAreaCm2 || 0
+          if (viewAreaCm2 > 0) {
+            console.log(`  ✅ Other view [${view}]: Using SAVED area = ${viewAreaCm2}`)
+            totalAreaCm2 += viewAreaCm2
+            viewAreasMap[view] = viewAreaCm2
+          } else {
+            console.log(`  ⏭️ Other view [${view}]: Has objects but no saved area`)
+          }
+        } else {
+          console.log(`  ⏭️ View [${view}]: No design found`)
+        }
+      })
+    } else {
+      // For single products without variations
+      possibleViews.forEach(view => {
+        const variationId = `single_${selectedProduct.id}_${view}`
+        const design = variationDesigns.find(
+          d => d.variationId === variationId && d.viewMode === view
+        )
+        
+        if (view === viewMode) {
+          // For current view, ALWAYS use the live area
+          if (hasDesignElements && designAreaCm2 > 0) {
+            console.log(`  ✅ Current view [${view}]: Using LIVE area = ${designAreaCm2}`)
+            totalAreaCm2 += designAreaCm2
+            viewAreasMap[view] = designAreaCm2
+            currentViewAreaIncluded = true
+          } else {
+            console.log(`  ⏭️ Current view [${view}]: No design (hasDesignElements=${hasDesignElements}, area=${designAreaCm2})`)
+          }
+        } else if (design?.canvasJSON?.objects?.length > 0) {
+          // For other views, use stored area
+          const viewAreaCm2 = design.designAreaCm2 || 0
+          if (viewAreaCm2 > 0) {
+            console.log(`  ✅ Other view [${view}]: Using SAVED area = ${viewAreaCm2}`)
+            totalAreaCm2 += viewAreaCm2
+            viewAreasMap[view] = viewAreaCm2
+          } else {
+            console.log(`  ⏭️ Other view [${view}]: Has objects but no saved area`)
+          }
+        } else {
+          console.log(`  ⏭️ View [${view}]: No design found`)
+        }
+      })
+    }
+    
+    // This edge case handler is removed as it could cause double-counting
+    // The current view is already handled in the main logic above
+    
+    console.log('📊 FINAL Total design area:', {
+      totalAreaCm2: totalAreaCm2.toFixed(2),
+      breakdown: viewAreasMap,
+      currentView: viewMode,
+      currentViewIncluded: currentViewAreaIncluded,
+      priceAt50krPerCm2: (totalAreaCm2 * 50).toFixed(0) + ' kr'
+    })
+    
+    return totalAreaCm2
+  }
+
+
+  // Check if there are designs on ANY angle of the current product
+  const checkIfHasAnyDesigns = () => {
+    // First check if current view has designs
+    if (hasDesignElements && designAreaCm2 > 0) return true
+    
+    if (!selectedProduct || !variationDesigns) return false
+    
+    const possibleViews = ['front', 'back', 'left', 'right', 'material']
+    const colorSuffix = productColor ? productColor.replace('#', '') : 'default'
+    
+    return possibleViews.some(view => {
+      const variationId = selectedProduct.hasVariations 
+        ? `${selectedProduct.id}_${colorSuffix}_${view}`
+        : `single_${selectedProduct.id}_${view}`
+      
+      const design = variationDesigns.find(
+        d => d.variationId === variationId && d.viewMode === view
+      )
+      
+      // For current view, check live state; for others, check saved state
+      if (view === viewMode) {
+        return hasDesignElements && designAreaCm2 > 0
+      }
+      
+      return design?.canvasJSON?.objects?.length > 0
+    })
+  }
+
+
+  // Memoize the total design area to prevent recalculation on every render
+  const totalDesignAreaCm2 = useMemo(() => {
+    return calculateTotalDesignArea()
+  }, [selectedProduct?.id, productColor, viewMode, designAreaCm2, hasDesignElements, variationDesigns])
+  
+  // Calculate price with design upcharge based on TOTAL area across ALL angles
   const calculatePriceWithDesign = () => {
     const basePrice = parsePriceToNumber(getCurrentPrice())
     
+    // Check if there are ANY designs on ANY angle
+    const hasAnyDesigns = checkIfHasAnyDesigns()
+    
     console.log('💰 Price calculation:', {
       hasDesignElements,
-      designAreaPercentage,
-      designAreaCm2,
+      hasAnyDesigns,
+      currentViewAreaCm2: designAreaCm2,
+      totalDesignAreaCm2,
       categoryId: product.categoryId,
       basePrice,
-      categories: categories,
-      categoriesLength: categories?.length
+      productDesignCostPerCm2: product.designCostPerCm2,
+      productIsDesignable: product.isDesignable
     })
     
-    if (hasDesignElements && product.categoryId) {
-      // Find the category to get the design upcharge settings
-      const category = categories?.find((c: any) => c.id === product.categoryId)
-      
-      if (!category) {
-        return { 
-          basePrice, 
-          designUpcharge: 0, 
-          totalPrice: basePrice, 
-          upchargePercent: 0,
-          areaPercent: 0,
-          areaCm2: 0,
-          pricePerCm2: 0
+    if (hasAnyDesigns && totalDesignAreaCm2 > 0) {
+      // First check if product has its own design pricing
+      if (product.isDesignable && product.designCostPerCm2 && product.designCostPerCm2 > 0) {
+        // Use product-specific pricing with TOTAL area
+        const upchargeAmount = totalDesignAreaCm2 * product.designCostPerCm2
+        
+        console.log('📦 Using product-specific design pricing:', {
+          designCostPerCm2: product.designCostPerCm2,
+          totalAreaCm2: totalDesignAreaCm2.toFixed(2),
+          upcharge: upchargeAmount.toFixed(2)
+        })
+        
+        return {
+          basePrice,
+          designUpcharge: upchargeAmount,
+          totalPrice: basePrice + upchargeAmount,
+          areaCm2: totalDesignAreaCm2,
+          pricePerCm2: product.designCostPerCm2,
+          method: 'product-metric'
         }
       }
       
-      const useMetricPricing = category.useMetricPricing || false
-      const designUpchargePerCm2 = category.designUpchargePerCm2 || 0
-      const maxUpchargePercent = category.designUpchargePercent || 0
+      // Fall back to category pricing if available
+      if (product.categoryId) {
+        const category = categories?.find((c: any) => c.id === product.categoryId)
+        
+        if (!category) {
+          return { 
+            basePrice, 
+            designUpcharge: 0, 
+            totalPrice: basePrice, 
+            upchargePercent: 0,
+            areaPercent: 0,
+            areaCm2: 0,
+            pricePerCm2: 0
+          }
+        }
+        
+        const useMetricPricing = category.useMetricPricing || false
+        const designUpchargePerCm2 = category.designUpchargePerCm2 || 0
+        const maxUpchargePercent = category.designUpchargePercent || 0
       
       console.log('🏷️ Category pricing:', {
         categoryName: category.name,
         useMetricPricing,
         designUpchargePerCm2,
         maxUpchargePercent,
-        designAreaCm2: designAreaCm2.toFixed(2)
+        totalDesignAreaCm2: totalDesignAreaCm2.toFixed(2)
       })
       
       let upchargeAmount = 0
       let upchargeDetails = {}
       
       if (useMetricPricing) {
-        // Metric-based pricing: charge per square centimeter
-        upchargeAmount = designAreaCm2 * designUpchargePerCm2
+        // Metric-based pricing: charge per square centimeter using TOTAL area
+        upchargeAmount = totalDesignAreaCm2 * designUpchargePerCm2
         upchargeDetails = {
-          areaCm2: designAreaCm2,
+          areaCm2: totalDesignAreaCm2,
           pricePerCm2: designUpchargePerCm2,
           method: 'metric'
         }
         
         console.log('📏 Metric pricing calculation:', {
-          areaCm2: designAreaCm2.toFixed(2),
+          totalAreaCm2: totalDesignAreaCm2.toFixed(2),
           pricePerCm2: designUpchargePerCm2,
           upcharge: upchargeAmount.toFixed(2)
         })
@@ -222,13 +416,14 @@ export function ProductPanel() {
           scaledUpchargePercent: scaledUpchargePercent.toFixed(2),
           upcharge: upchargeAmount.toFixed(2)
         })
-      }
-      
-      return { 
-        basePrice, 
-        designUpcharge: upchargeAmount, 
-        totalPrice: basePrice + upchargeAmount,
-        ...upchargeDetails
+        }
+        
+        return { 
+          basePrice, 
+          designUpcharge: upchargeAmount, 
+          totalPrice: basePrice + upchargeAmount,
+          ...upchargeDetails
+        }
       }
     }
     
@@ -418,132 +613,86 @@ export function ProductPanel() {
             </Badge>
           </div>
           {/* Price Display with Design Breakdown */}
-          {hasDesignElements && priceData.designUpcharge > 0 ? (
-            <div className="space-y-2 p-3 bg-gray-50 rounded-lg">
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-600">Base Price:</span>
-                <span className="font-medium">{formatPrice(priceData.basePrice)}</span>
-              </div>
-              {priceData.method === 'metric' ? (
-                <>
+          {(() => {
+            // Check if ANY view has designs (not just current view)
+            const hasAnyDesigns = checkIfHasAnyDesigns()
+            const totalDesignAreaCm2 = calculateTotalDesignArea()
+            
+            // Get list of views with designs for display
+            const possibleViews = ['front', 'back', 'left', 'right', 'material']
+            const colorSuffix = productColor ? productColor.replace('#', '') : 'default'
+            const viewsWithDesigns = possibleViews.filter(view => {
+              const variationId = selectedProduct?.hasVariations 
+                ? `${selectedProduct.id}_${colorSuffix}_${view}`
+                : `single_${selectedProduct?.id}_${view}`
+              const design = variationDesigns.find(
+                d => d.variationId === variationId && d.viewMode === view
+              )
+              return design?.canvasJSON?.objects?.length > 0
+            })
+            
+            if (hasAnyDesigns && priceData.designUpcharge > 0) {
+              return (
+                <div className="space-y-2 p-3 bg-gray-50 rounded-lg">
                   <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">Design Area:</span>
-                    <span className="font-medium">{priceData.areaCm2?.toFixed(1)} cm²</span>
+                    <span className="text-gray-600">Base Price:</span>
+                    <span className="font-medium">{formatPrice(priceData.basePrice)}</span>
                   </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">✓ Design Charge ({priceData.pricePerCm2} kr/cm²):</span>
-                    <span className="font-medium text-green-600">+{formatPrice(priceData.designUpcharge)}</span>
-                  </div>
-                </>
-              ) : (
-                <>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">Design Area:</span>
-                    <span className="font-medium">{priceData.areaPercent?.toFixed(1)}% of product</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">✓ Design Charge ({priceData.upchargePercent?.toFixed(1)}%):</span>
-                    <span className="font-medium text-green-600">+{formatPrice(priceData.designUpcharge)}</span>
-                  </div>
-                </>
-              )}
-              {priceData.method === 'metric' ? (
-                <div className="text-xs text-gray-500 italic">
-                  Charged per square centimeter of design
-                </div>
-              ) : (
-                <div className="text-xs text-gray-500 italic">
-                  Max {priceData.maxUpchargePercent}% for full coverage
-                </div>
-              )}
-              <div className="flex justify-between pt-2 border-t border-gray-200">
-                <span className="font-semibold">Total:</span>
-                <span className="text-xl font-bold text-gray-900">{displayPrice}</span>
-              </div>
-            </div>
-          ) : (
-            <div className="text-2xl font-bold text-gray-900">{displayPrice}</div>
-          )}
-        </div>
-
-        {/* Color Variations - show only if real variations exist */}
-        {variations.length > 0 && (
-          <div className="space-y-4">
-            <div className="border-2 border-black rounded-lg p-4 bg-gray-50">
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center space-x-2">
-                  <Palette className="w-5 h-5 text-black" />
-                  <span className="font-bold uppercase">Select Variant</span>
-                </div>
-                {(() => {
-                  const variation = getCurrentVariation()
-                  if (!variation) return null
-                  const colorName = typeof variation.color === 'object' && variation.color?.name 
-                    ? variation.color.name 
-                    : typeof variation.color === 'string' 
-                    ? variation.color 
-                    : "Selected"
-                  return (
-                    <Badge className="bg-black text-white">
-                      {String(colorName)}
-                    </Badge>
-                  )
-                })()}
-              </div>
-              
-              <div className="grid grid-cols-5 gap-3">
-                {variations.map((variation: any, index: number) => {
-                  const isSelected = productColor === variation.color.hex_code
-                  
-                  return (
-                    <div key={variation.id} className="flex flex-col items-center gap-1">
-                      <button
-                        className={`w-14 h-14 rounded-lg border-2 transition-all duration-200 relative ${
-                          isSelected 
-                            ? "border-black ring-2 ring-gray-400 scale-110 shadow-lg" 
-                            : "border-gray-300 hover:border-gray-500"
-                        }`}
-                        style={{ backgroundColor: variation.color.hex_code }}
-                        onClick={() => handleColorChange(variation.color.hex_code)}
-                        title={variation.color.name || `Color ${index + 1}`}
-                      >
-                        {isSelected && (
-                          <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30 rounded-lg">
-                            <svg className="w-8 h-8 text-white drop-shadow-lg" fill="currentColor" viewBox="0 0 20 20">
-                              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                            </svg>
-                          </div>
-                        )}
-                        {variation.inStock === false && (
-                          <div className="absolute inset-0 bg-gray-900 bg-opacity-50 rounded-lg flex items-center justify-center">
-                            <span className="text-white text-xs font-bold">OUT</span>
-                          </div>
-                        )}
-                      </button>
-                      <span className="text-xs text-center text-gray-600 max-w-[56px] truncate">
-                        {variation.color.name || `Var ${index + 1}`}
-                      </span>
+                  {priceData.method === 'metric' || priceData.method === 'product-metric' ? (
+                    <>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-600">Total Design Area:</span>
+                        <span className="font-medium">{totalDesignAreaCm2.toFixed(1)} cm²</span>
+                      </div>
+                      {viewsWithDesigns.length > 1 && (
+                        <div className="text-xs text-gray-500 pl-4">
+                          ({viewsWithDesigns.map(v => v.charAt(0).toUpperCase() + v.slice(1)).join(', ')})
+                        </div>
+                      )}
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-600">✓ Design Charge ({priceData.pricePerCm2} kr/cm²):</span>
+                        <span className="font-medium text-green-600">+{formatPrice(priceData.designUpcharge)}</span>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-600">Design Area:</span>
+                        <span className="font-medium">{priceData.areaPercent?.toFixed(1)}% of product</span>
+                      </div>
+                      {viewsWithDesigns.length > 1 && (
+                        <div className="text-xs text-gray-500 pl-4">
+                          ({viewsWithDesigns.map(v => v.charAt(0).toUpperCase() + v.slice(1)).join(', ')})
+                        </div>
+                      )}
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-600">✓ Design Charge ({priceData.upchargePercent?.toFixed(1)}%):</span>
+                        <span className="font-medium text-green-600">+{formatPrice(priceData.designUpcharge)}</span>
+                      </div>
+                    </>
+                  )}
+                  {priceData.method === 'metric' || priceData.method === 'product-metric' ? (
+                    <div className="text-xs text-gray-500 italic">
+                      Charged per square centimeter across all angles
                     </div>
-                  )
-                })}
-              </div>
-              
-              {getCurrentVariation() && (
-                <div className="mt-3 pt-3 border-t border-gray-300">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-600">Variant Price:</span>
-                    <span className="font-bold">{formatPrice(parsePriceToNumber(getCurrentVariation().price))}</span>
-                  </div>
-                  {getCurrentVariation().inStock === false && (
-                    <div className="mt-2 text-red-600 text-sm font-medium">
-                      ⚠️ This variant is out of stock
+                  ) : (
+                    <div className="text-xs text-gray-500 italic">
+                      Max {priceData.maxUpchargePercent}% for full coverage
                     </div>
                   )}
+                  <div className="flex justify-between pt-2 border-t border-gray-200">
+                    <span className="font-semibold">Total:</span>
+                    <span className="text-xl font-bold text-gray-900">{displayPrice}</span>
+                  </div>
                 </div>
-              )}
-            </div>
-          </div>
-        )}
+              )
+            } else {
+              return <div className="text-2xl font-bold text-gray-900">{displayPrice}</div>
+            }
+          })()}
+        </div>
+
+        {/* Color Variations - REMOVED per user request */}
 
         {/* View Angle Selector - Show available views for current variant/product */}
         {(getCurrentVariation() || product) && (

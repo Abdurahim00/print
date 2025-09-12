@@ -54,7 +54,7 @@ export function SizeQuantityModal({ open, onOpenChange, onAddToCart }: SizeQuant
       const variations = (selectedProduct as any).variations
       
       // First try to find variation by exact color match
-      let variation = variations.find((v: any) => v.color.hex_code === productColor)
+      let variation = variations.find((v: any) => v.color && v.color.hex_code === productColor)
       
       // If no exact match, try to find by color name
       if (!variation) {
@@ -425,7 +425,7 @@ export function SizeQuantityModal({ open, onOpenChange, onAddToCart }: SizeQuant
       
       if (product.hasVariations && product.variations) {
         // For variation products, use the existing logic
-        const currentVariation = product.variations.find((v: any) => v.color.hex_code === productColor)
+        const currentVariation = product.variations.find((v: any) => v.color && v.color.hex_code === productColor)
         if (currentVariation) {
           const imageForAngle = currentVariation.images?.find((img: any) => img.angle === viewMode && img.url)
           if (imageForAngle) return imageForAngle.url
@@ -493,11 +493,14 @@ export function SizeQuantityModal({ open, onOpenChange, onAddToCart }: SizeQuant
     const getAllDesignedAngles = () => {
       if (!selectedProduct) return []
       
-      // Get the current variation ID
+      // Get the current variation ID (must match format: productId_colorSuffix_viewMode)
       let currentVariationId: string
       if ((selectedProduct as any).hasVariations && (selectedProduct as any).variations) {
-        const variation = (selectedProduct as any).variations.find((v: any) => v.color.hex_code === productColor)
-        currentVariationId = variation?.id || null
+        const variation = (selectedProduct as any).variations.find((v: any) => v.color && v.color.hex_code === productColor)
+        // Use consistent format: productId_colorSuffix_viewMode
+        const colorSuffix = variation?.color?.hex_code ? variation.color.hex_code.replace('#', '') : 'default'
+        // Note: We're not using viewMode here because we're checking all angles, not just current view
+        currentVariationId = variation ? `${selectedProduct.id}_${colorSuffix}` : null
       } else {
         // For single products, create virtual variation ID
         currentVariationId = `single_${selectedProduct.id}_${viewMode}`
@@ -560,13 +563,16 @@ export function SizeQuantityModal({ open, onOpenChange, onAddToCart }: SizeQuant
               // Check if there's a design for this specific angle
               const angleDesign = designs.find((d: any) => {
                 if ((selectedProduct as any).hasVariations && (selectedProduct as any).variations) {
-                  // For variation products, check variation ID and angle
-                  const variation = (selectedProduct as any).variations.find((v: any) => v.color.hex_code === productColor)
-                  return d.variationId === variation?.id && d.viewMode === angle
+                  // For variation products, check with full format: productId_colorSuffix_viewMode
+                  const variation = (selectedProduct as any).variations.find((v: any) => v.color && v.color.hex_code === productColor)
+                  // CRITICAL: Don't use 'default' for empty colors - use NO_COLOR_SELECTED
+                  const colorSuffix = variation?.color?.hex_code ? variation.color.hex_code.replace('#', '') : (productColor ? 'NO_COLOR_SELECTED' : 'NO_COLOR_SELECTED')
+                  const fullVariationId = variation ? `${selectedProduct.id}_${colorSuffix}_${angle}` : null
+                  return d.variationId === fullVariationId && d.viewMode === angle
                 } else {
                   // For single products, check virtual variation ID and angle
                   const virtualVariationId = `single_${selectedProduct.id}_${angle}`
-                  return d.variationId === virtualVariationId
+                  return d.variationId === virtualVariationId && d.viewMode === angle
                 }
               })
               

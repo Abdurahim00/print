@@ -38,12 +38,18 @@ export function DesignManagementPanel({
   const { variationDesigns } = useSelector((state: RootState) => state.design)
   const { toast } = useToast()
   
-  // Get current variation ID
+  // Get current variation ID (includes color and viewMode for independence)
   const getCurrentVariationId = () => {
-    if (!selectedProduct?.hasVariations || !selectedProduct?.variations) return null
+    if (!selectedProduct) return null
     
-    const variation = selectedProduct.variations.find((v: any) => v.color.hex_code === productColor)
-    return variation?.id || null
+    if (selectedProduct.hasVariations && selectedProduct.variations) {
+      // Include product ID, color, and viewMode to make designs completely independent
+      const colorSuffix = productColor ? productColor.replace('#', '') : 'default'
+      return `${selectedProduct.id}_${colorSuffix}_${viewMode}`
+    }
+    
+    // For single products
+    return `single_${selectedProduct.id}_${viewMode}`
   }
   
   // Get all variations that have the current view mode
@@ -57,7 +63,10 @@ export function DesignManagementPanel({
       .map((v: any) => ({
         id: v.id,
         color: v.color,
-        hasDesign: variationDesigns.some(d => d.variationId === v.id && d.viewMode === viewMode),
+        hasDesign: variationDesigns.some(d => {
+          const colorSuffix = v.color?.hex_code ? v.color.hex_code.replace('#', '') : 'default'
+          return d.variationId === `${selectedProduct.id}_${colorSuffix}_${viewMode}` && d.viewMode === viewMode
+        }),
         availableViews: v.images?.map((img: any) => img.angle).filter(Boolean) || []
       }))
   }
@@ -71,13 +80,21 @@ export function DesignManagementPanel({
       color: v.color,
       availableViews: v.images?.map((img: any) => img.angle).filter(Boolean) || [],
       hasCurrentView: v.images?.some((img: any) => img.angle === viewMode && img.url && img.url.trim() !== ''),
-      hasDesign: variationDesigns.some(d => d.variationId === v.id && d.viewMode === viewMode)
+      hasDesign: variationDesigns.some(d => {
+        const colorSuffix = v.color?.hex_code ? v.color.hex_code.replace('#', '') : 'default'
+        return d.variationId === `${selectedProduct.id}_${colorSuffix}_${viewMode}` && d.viewMode === viewMode
+      })
     }))
   }
   
   // Get design for a specific variation and view
   const getDesignForVariation = (variationId: string, view: string) => {
-    return variationDesigns.find(d => d.variationId === variationId && d.viewMode === view)
+    // For this function, variationId should be the base variation ID from the product
+    // We need to reconstruct the full ID with product, color, and view
+    const variation = selectedProduct?.variations?.find((v: any) => v.id === variationId)
+    const colorSuffix = variation?.color?.hex_code ? variation.color.hex_code.replace('#', '') : 'default'
+    const fullVariationId = `${selectedProduct?.id}_${colorSuffix}_${view}`
+    return variationDesigns.find(d => d.variationId === fullVariationId && d.viewMode === view)
   }
   
   // Share current design to other variations
@@ -95,7 +112,10 @@ export function DesignManagementPanel({
     const variationsWithoutDesign = variationsWithView.filter((variation: any) => {
       const design = getDesignForVariation(variation.id, viewMode)
       return !design
-    }).map((variation: any) => variation.id)
+    }).map((variation: any) => {
+      const colorSuffix = variation.color?.hex_code ? variation.color.hex_code.replace('#', '') : 'default'
+      return `${selectedProduct.id}_${colorSuffix}_${viewMode}`
+    })
 
     if (variationsWithoutDesign.length === 0) {
       toast({
@@ -107,6 +127,7 @@ export function DesignManagementPanel({
     }
 
     // Share the current design to other variations
+    // Note: targetVariationIds already include the viewMode suffix
     dispatch(shareDesignAcrossVariations({
       sourceVariationId: currentVariationId!,
       viewMode,
@@ -123,7 +144,11 @@ export function DesignManagementPanel({
   
   // Clear design for a specific variation
   const handleClearDesign = (variationId: string) => {
-    dispatch(clearVariationDesign({ variationId, viewMode }))
+    // Reconstruct the full ID with product, color, and view
+    const variation = selectedProduct?.variations?.find((v: any) => v.id === variationId)
+    const colorSuffix = variation?.color?.hex_code ? variation.color.hex_code.replace('#', '') : 'default'
+    const fullVariationId = `${selectedProduct?.id}_${colorSuffix}_${viewMode}`
+    dispatch(clearVariationDesign({ variationId: fullVariationId, viewMode }))
   }
   
   // Clear all designs for current view
@@ -131,7 +156,8 @@ export function DesignManagementPanel({
     const variationsWithView = getVariationsWithCurrentView()
     variationsWithView.forEach((v: any) => {
       if (v.hasDesign) {
-        dispatch(clearVariationDesign({ variationId: v.id, viewMode }))
+        const colorSuffix = v.color?.hex_code ? v.color.hex_code.replace('#', '') : 'default'
+        dispatch(clearVariationDesign({ variationId: `${selectedProduct.id}_${colorSuffix}_${viewMode}`, viewMode }))
       }
     })
   }
@@ -178,7 +204,8 @@ export function DesignManagementPanel({
   
   const currentVariationId = getCurrentVariationId()
   const variationsWithView = getVariationsWithCurrentView()
-  const currentDesign = getDesignForVariation(currentVariationId || '', viewMode)
+  // For current design, we can just look it up directly since currentVariationId already includes viewMode
+  const currentDesign = currentVariationId ? variationDesigns.find(d => d.variationId === currentVariationId && d.viewMode === viewMode) : null
   
   // Get design statistics
   const getDesignStats = () => {

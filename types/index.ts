@@ -49,6 +49,36 @@ export interface Color {
   swatch_image?: string;
 }
 
+export interface DesignFrame {
+  id: string;
+  position: string; // e.g., "front", "back", "left", "right"
+  x: number; // X coordinate in pixels (for editor)
+  y: number; // Y coordinate in pixels (for editor)
+  width: number; // Width in cm
+  height: number; // Height in cm
+  widthPx: number; // Width in pixels for canvas
+  heightPx: number; // Height in pixels for canvas
+  xPercent?: number; // X position as percentage of container width
+  yPercent?: number; // Y position as percentage of container height
+  widthPercent?: number; // Width as percentage of container width
+  heightPercent?: number; // Height as percentage of container height
+  costPerCm2?: number; // Cost per square centimeter for this frame
+  variationId?: string; // Optional: specific to a variation
+  angle?: string; // Optional: specific to an angle within a variation
+}
+
+export interface VariationAngleFrames {
+  variationId: string;
+  angle: string;
+  frames: DesignFrame[];
+}
+
+export interface VariantPositionMapping {
+  variantId: string;
+  position: string; // "front", "back", "left", "right", etc.
+  designFrameId?: string; // Reference to specific design frame
+}
+
 export interface Variation {
   id: string;
   color: Color;
@@ -56,6 +86,8 @@ export interface Variation {
   inStock: boolean;
   stockQuantity: number;
   images: VariationImage[];
+  positionMapping?: string; // Which position this variant represents (front/back/side)
+  designFrames?: DesignFrame[]; // Variation-specific design frames per angle
 }
 
 export interface Product {
@@ -73,6 +105,12 @@ export interface Product {
   eligibleForCoupons?: boolean;
   /** If true, product can be customized in the design tool */
   isDesignable?: boolean;
+  /** Design frames with positions and dimensions */
+  designFrames?: DesignFrame[];
+  /** Default cost per square centimeter for design */
+  designCostPerCm2?: number;
+  /** Maps variants to positions for multi-position products */
+  variantPositionMappings?: VariantPositionMapping[];
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -289,6 +327,7 @@ export interface Subcategory {
   id: string
   categoryId: string
   name: string
+  swedishName?: string
   slug: string
   isActive: boolean
   createdAt?: Date

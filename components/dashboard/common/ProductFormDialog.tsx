@@ -11,9 +11,12 @@ import { useFormik } from "formik"
 import * as Yup from "yup"
 import { Product, Variation, Color, VariationImage } from "@/types"
 import { ProductAnglesSelector } from "./ProductAnglesSelector"
+import { DesignFrameEditor } from "./DesignFrameEditor"
+import { ImageAngleAssignment } from "./ImageAngleAssignment"
 import { useState } from "react"
 import { useAppSelector } from "@/lib/redux/hooks"
 import { Badge } from "@/components/ui/badge"
+import { Switch } from "@/components/ui/switch"
 
 // Extend Window interface for color picker
 declare global {
@@ -149,6 +152,7 @@ export const ProductFormDialog: React.FC<ProductFormDialogProps> = ({
   isEdit = false,
 }) => {
   const [showVariations, setShowVariations] = useState(initialValues.hasVariations || false)
+  const [selectedVariationAngles, setSelectedVariationAngles] = useState<{ [key: string]: string }>({})
   const { categories, subcategories } = useAppSelector((s: any) => s.categories)
   
   const formik = useFormik({
@@ -162,6 +166,11 @@ export const ProductFormDialog: React.FC<ProductFormDialogProps> = ({
         maxQuantityPerOrder: 5,
         message: ""
       },
+      // Design capabilities
+      isDesignable: initialValues.isDesignable || false,
+      designFrames: initialValues.designFrames || [],
+      designCostPerCm2: initialValues.designCostPerCm2 || 0.5,
+      variantPositionMappings: initialValues.variantPositionMappings || [],
       // Add angle image fields for products without variations
       frontImage: initialValues.frontImage || "",
       backImage: initialValues.backImage || "",
@@ -283,6 +292,7 @@ export const ProductFormDialog: React.FC<ProductFormDialogProps> = ({
       inStock: true,
       stockQuantity: 0,
       images: [],
+      designFrames: [],
     }
     formik.setFieldValue("variations", [...formik.values.variations, newVariation])
   }
@@ -334,7 +344,7 @@ export const ProductFormDialog: React.FC<ProductFormDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto bg-white dark:bg-slate-900 border-0 shadow-2xl">
+      <DialogContent className="max-w-[95vw] sm:max-w-2xl lg:max-w-4xl max-h-[90vh] overflow-y-auto bg-white dark:bg-slate-900 border-0 shadow-2xl p-3 sm:p-6">
         <DialogHeader className="border-b border-slate-100 dark:border-slate-800 pb-4">
           <DialogTitle className="text-xl font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-2">
             {isEdit ? t.editProduct : t.addProduct}
@@ -342,7 +352,7 @@ export const ProductFormDialog: React.FC<ProductFormDialogProps> = ({
         </DialogHeader>
         <form onSubmit={formik.handleSubmit} className="space-y-6 pt-4">
           {/* Basic product fields */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-6">
             <div className="space-y-2">
               <Label htmlFor="name" className="text-sm font-medium text-slate-700 dark:text-slate-300">
                 {t.productName} <span className="text-red-500">*</span>
@@ -401,7 +411,7 @@ export const ProductFormDialog: React.FC<ProductFormDialogProps> = ({
           </div>
           
           {/* Purchase Limits Section */}
-          <div className="space-y-4 border rounded-lg p-4 bg-slate-50 dark:bg-slate-800/30">
+          <div className="space-y-4 border rounded-lg p-3 sm:p-4 bg-slate-50 dark:bg-slate-800/30">
             <div className="flex items-center gap-2">
               <input
                 type="checkbox"
@@ -465,7 +475,7 @@ export const ProductFormDialog: React.FC<ProductFormDialogProps> = ({
               {t.category} <span className="text-red-500">*</span>
             </Label>
             <Select
-              value={formik.values.categoryId}
+              value={formik.values.categoryId || undefined}
               onValueChange={(value) => formik.setFieldValue("categoryId", value)}
             >
               <SelectTrigger
@@ -478,11 +488,13 @@ export const ProductFormDialog: React.FC<ProductFormDialogProps> = ({
                 <SelectValue placeholder={t.selectCategory} />
               </SelectTrigger>
               <SelectContent>
-                {categories.map((cat: any) => (
-                  <SelectItem key={cat.id} value={cat.id}>
-                    {cat.name}
-                  </SelectItem>
-                ))}
+                {categories
+                  .filter((cat: any) => cat.id && cat.id !== '') // Filter out categories with empty or no ID
+                  .map((cat: any) => (
+                    <SelectItem key={cat.id} value={cat.id}>
+                      {cat.name}
+                    </SelectItem>
+                  ))}
               </SelectContent>
             </Select>
             {formik.touched.categoryId && formik.errors.categoryId && (
@@ -494,7 +506,7 @@ export const ProductFormDialog: React.FC<ProductFormDialogProps> = ({
           {formik.values.categoryId && (
             <div className="space-y-2">
               <Label className="text-sm font-medium text-slate-700 dark:text-slate-300">Subcategories</Label>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 max-h-48 overflow-y-auto p-2 border rounded">
                 {subcategories
                   .filter((s: any) => s.categoryId === formik.values.categoryId)
                   .map((s: any) => {
@@ -540,38 +552,52 @@ export const ProductFormDialog: React.FC<ProductFormDialogProps> = ({
             error={formik.touched.image && formik.errors.image ? String(formik.errors.image) : undefined}
           />
           
-          {/* Angle Views Section - for products without variations */}
-          {!showVariations && (
-            <div className="space-y-4 border rounded-lg p-4 bg-slate-50 dark:bg-slate-800/30">
-              <div className="flex justify-between items-center">
-                <h4 className="font-semibold text-slate-900 dark:text-slate-100">Product Angle Views</h4>
-                <span className="text-sm text-slate-600">Upload images for different product angles</span>
+          {/* Design Capabilities Section */}
+          <div className="space-y-4 border rounded-lg p-3 sm:p-4 bg-slate-50 dark:bg-slate-800/30">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Switch
+                  id="isDesignable"
+                  checked={formik.values.isDesignable}
+                  onCheckedChange={(checked) => formik.setFieldValue("isDesignable", checked)}
+                />
+                <Label htmlFor="isDesignable" className="font-medium cursor-pointer">
+                  Enable Design Customization
+                </Label>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {defaultAngles.map((angle) => (
-                  <div key={angle} className="border rounded-md p-3 bg-white dark:bg-slate-900/50">
-                    <div className="flex items-center justify-between mb-2">
-                      <Label className="text-sm font-medium capitalize">{angle} View</Label>
-                      {angle === 'front' && (
-                        <Badge variant="secondary" className="text-xs">Primary</Badge>
-                      )}
-                    </div>
-                    <FileUpload
-                      value={formik.values[`${angle}Image`] || ""}
-                      onChange={(value) => formik.setFieldValue(`${angle}Image`, value)}
-                      label={`${angle} Image`}
-                    />
-                    <Input
-                      value={formik.values[`${angle}AltText`] || ""}
-                      onChange={(e) => formik.setFieldValue(`${angle}AltText`, e.target.value)}
-                      placeholder={`Alt text for ${angle} view`}
-                      className="mt-2"
-                    />
-                  </div>
-                ))}
-              </div>
+              {formik.values.isDesignable && (
+                <Badge variant="secondary" className="text-xs">
+                  Designable Product
+                </Badge>
+              )}
             </div>
-          )}
+            
+            {formik.values.isDesignable && (
+              <DesignFrameEditor
+                productImage={formik.values.image}
+                frontImage={formik.values.frontImage || formik.values.image}
+                backImage={formik.values.backImage}
+                leftImage={formik.values.leftImage}
+                rightImage={formik.values.rightImage}
+                frames={formik.values.designFrames}
+                onChange={(frames) => formik.setFieldValue("designFrames", frames)}
+                designCostPerCm2={formik.values.designCostPerCm2}
+                onCostChange={(cost) => formik.setFieldValue("designCostPerCm2", cost)}
+              />
+            )}
+          </div>
+          
+          {/* Image Angle Assignment Section */}
+          <div className="space-y-4 border rounded-lg p-3 sm:p-4 bg-slate-50 dark:bg-slate-800/30">
+            <ImageAngleAssignment 
+              product={{
+                ...initialValues,
+                ...formik.values
+              }}
+              formik={formik}
+              t={t}
+            />
+          </div>
           
           <div className="flex items-center gap-2">
             <input
@@ -586,18 +612,18 @@ export const ProductFormDialog: React.FC<ProductFormDialogProps> = ({
             <Label htmlFor="hasVariations">{t.hasVariations || "Has Variations (e.g. color, size)"}</Label>
           </div>
           {showVariations && (
-            <div className="space-y-4 border rounded-lg p-4 bg-slate-50 dark:bg-slate-800/30">
+            <div className="space-y-4 border rounded-lg p-3 sm:p-4 bg-slate-50 dark:bg-slate-800/30">
               <div className="flex justify-between items-center">
                 <h4 className="font-semibold text-slate-900 dark:text-slate-100">{t.variations || "Product Variations"}</h4>
                 <Button type="button" onClick={addVariation} size="sm">{t.addVariation || "Add Variation"}</Button>
               </div>
               {formik.values.variations.map((variation: Variation, varIdx: number) => (
-                <div key={variation.id} className="border rounded-md p-3 bg-white dark:bg-slate-900/50 mb-2">
+                <div key={variation.id} className="border rounded-md p-2 sm:p-3 bg-white dark:bg-slate-900/50 mb-2">
                   <div className="flex justify-between items-center mb-2">
-                    <span className="font-medium">{t.variation} #{varIdx + 1}</span>
+                    <span className="font-medium text-sm sm:text-base">{t.variation} #{varIdx + 1}</span>
                     <Button type="button" variant="destructive" size="sm" onClick={() => removeVariation(variation.id)}>{t.remove || "Remove"}</Button>
                   </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
                     <div>
                       <Label>{t.colorName || "Color Name"}</Label>
                       <Input
@@ -606,6 +632,27 @@ export const ProductFormDialog: React.FC<ProductFormDialogProps> = ({
                         placeholder={t.colorName || "Color Name"}
                       />
                     </div>
+                    {formik.values.isDesignable && (
+                      <div>
+                        <Label>Position Mapping</Label>
+                        <Select
+                          value={variation.positionMapping || undefined}
+                          onValueChange={(value) => updateVariation(varIdx, { positionMapping: value })}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select position" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="front">Front</SelectItem>
+                            <SelectItem value="back">Back</SelectItem>
+                            <SelectItem value="left">Left Side</SelectItem>
+                            <SelectItem value="right">Right Side</SelectItem>
+                            <SelectItem value="top">Top</SelectItem>
+                            <SelectItem value="bottom">Bottom</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
                     <div>
                       <Label>{t.colorHex || "Color Hex"}</Label>
                       <div className="flex gap-2">
@@ -691,24 +738,82 @@ export const ProductFormDialog: React.FC<ProductFormDialogProps> = ({
                   </div>
                   <div className="mt-4">
                     <h5 className="font-medium mb-2">{t.variationImages || "Variation Images"}</h5>
-                    <ProductAnglesSelector
-                      angles={defaultAngles}
-                      selectedAngle={variation.images[0]?.angle || defaultAngles[0]}
-                      onSelect={angle => addVariationImage(varIdx, angle)}
-                      variationImages={variation.images}
-                      productImage={formik.values.image}
-                    />
+                    <div className="mb-3 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <Label>Select Angle to Edit</Label>
+                        {variation.images && variation.images.length > 0 && (
+                          <span className="text-xs text-gray-500">
+                            {variation.images.length} image{variation.images.length !== 1 ? 's' : ''} configured
+                          </span>
+                        )}
+                      </div>
+                      <Select
+                        value={selectedVariationAngles[variation.id] || "none"}
+                        onValueChange={(value) => {
+                          if (value === "none") {
+                            // Remove the angle selection
+                            setSelectedVariationAngles(prev => {
+                              const newAngles = { ...prev }
+                              delete newAngles[variation.id]
+                              return newAngles
+                            })
+                          } else {
+                            // Update the selected angle for this variation
+                            setSelectedVariationAngles(prev => ({
+                              ...prev,
+                              [variation.id]: value
+                            }))
+                            // Only add image if it doesn't exist for this angle
+                            const hasImageForAngle = variation.images.some((img: any) => img.angle === value)
+                            if (!hasImageForAngle) {
+                              addVariationImage(varIdx, value)
+                            }
+                          }
+                        }}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select angle" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">None (No images)</SelectItem>
+                          <SelectItem value="front">Front</SelectItem>
+                          <SelectItem value="back">Back</SelectItem>
+                          <SelectItem value="left">Left</SelectItem>
+                          <SelectItem value="right">Right</SelectItem>
+                          <SelectItem value="material">Material</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      {/* Show available angles for this variation */}
+                      {variation.images && variation.images.length > 0 && (
+                        <div className="flex flex-wrap gap-2">
+                          {defaultAngles.map(angle => {
+                            const hasImage = variation.images.some((img: any) => img.angle === angle)
+                            return hasImage ? (
+                              <Badge key={angle} variant="secondary" className="text-xs">
+                                {angle}
+                              </Badge>
+                            ) : null
+                          })}
+                        </div>
+                      )}
+                    </div>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-2">
-                      {variation.images.map((img, imgIdx) => (
+                      {selectedVariationAngles[variation.id] && selectedVariationAngles[variation.id] !== "none" ? (
+                        variation.images
+                          .filter((img: any) => img.angle === selectedVariationAngles[variation.id])
+                          .map((img, imgIdx) => {
+                          // Get the actual index in the full images array
+                          const actualIdx = variation.images.findIndex((i: any) => i.id === img.id)
+                          return (
                         <div key={img.id} className="border rounded-md p-2 bg-slate-50 dark:bg-slate-800/30 relative">
                           <FileUpload
                             value={img.url}
-                            onChange={url => updateVariationImage(varIdx, imgIdx, { url })}
+                            onChange={url => updateVariationImage(varIdx, actualIdx, { url })}
                             label={t.variationImage || "Image"}
                           />
                           <Input
                             value={img.alt_text}
-                            onChange={e => updateVariationImage(varIdx, imgIdx, { alt_text: e.target.value })}
+                            onChange={e => updateVariationImage(varIdx, actualIdx, { alt_text: e.target.value })}
                             placeholder={t.altText || "Alt text"}
                           />
                           <div className="flex items-center gap-2 mt-1">
@@ -726,9 +831,33 @@ export const ProductFormDialog: React.FC<ProductFormDialogProps> = ({
                           </div>
                           <Button type="button" variant="destructive" size="sm" className="absolute top-1 right-1" onClick={() => removeVariationImage(varIdx, img.id)}>{t.remove || "Remove"}</Button>
                         </div>
-                      ))}
+                      )
+                      })
+                      ) : (
+                        <div className="col-span-3 text-center text-gray-500 py-8 border-2 border-dashed rounded-lg">
+                          <p className="text-sm">Select an angle above to add images</p>
+                        </div>
+                      )}
                     </div>
                   </div>
+                  {/* Variation-specific Design Frames */}
+                  {formik.values.isDesignable && (
+                    <div className="mt-4 border-t pt-4">
+                      <h5 className="font-medium mb-2">Design Frames for this Variation</h5>
+                      <DesignFrameEditor
+                        productImage={formik.values.image}
+                        frontImage={variation.images?.find((img: any) => img.angle === 'front')?.url || formik.values.frontImage || formik.values.image}
+                        backImage={variation.images?.find((img: any) => img.angle === 'back')?.url || formik.values.backImage}
+                        leftImage={variation.images?.find((img: any) => img.angle === 'left')?.url || formik.values.leftImage}
+                        rightImage={variation.images?.find((img: any) => img.angle === 'right')?.url || formik.values.rightImage}
+                        frames={variation.designFrames || []}
+                        onChange={(frames) => updateVariation(varIdx, { designFrames: frames })}
+                        designCostPerCm2={formik.values.designCostPerCm2}
+                        onCostChange={(cost) => formik.setFieldValue("designCostPerCm2", cost)}
+                        variationId={variation.id}
+                      />
+                    </div>
+                  )}
                 </div>
               ))}
             </div>

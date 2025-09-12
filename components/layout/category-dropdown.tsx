@@ -206,7 +206,7 @@ export function CategoryDropdown() {
                               {categorySubcategories.slice(0, 5).map((sub: any) => (
                                 <li key={sub.id}>
                                   <Link
-                                    href={`/products?category=${category.slug}&subcategory=${sub.slug}`}
+                                    href={`/products/${category.slug}/${sub.slug}`}
                                     className="text-xs text-gray-600 dark:text-gray-400 hover:text-black dark:hover:text-white hover:font-bold transition-all block py-1"
                                   >
                                     {sub.name}

@@ -111,9 +111,14 @@ function extractSizes(product) {
 function processImages(product) {
   const images = [];
   
-  // Primary images
-  if (product.image_urls && Array.isArray(product.image_urls)) {
-    images.push(...product.image_urls);
+  // Primary images - handle both string and array formats
+  if (product.image_urls) {
+    if (Array.isArray(product.image_urls)) {
+      images.push(...product.image_urls);
+    } else if (typeof product.image_urls === 'string' && product.image_urls.trim() !== '') {
+      // Handle case where image_urls is a string
+      images.push(product.image_urls);
+    }
   }
   
   // Variant images as fallback or additional
@@ -141,6 +146,23 @@ function createDesignAreas(product) {
   const title = product.Title?.toLowerCase() || '';
   const category = determineCategory(product);
   
+  // Get first image URL, handling both string and array formats
+  const getFirstImageUrl = (imageUrls) => {
+    if (!imageUrls) return '';
+    if (typeof imageUrls === 'string') return imageUrls;
+    if (Array.isArray(imageUrls) && imageUrls.length > 0) return imageUrls[0];
+    return '';
+  };
+  
+  const getSecondImageUrl = (imageUrls) => {
+    if (!imageUrls) return '';
+    if (Array.isArray(imageUrls) && imageUrls.length > 1) return imageUrls[1];
+    return '';
+  };
+  
+  const firstImage = getFirstImageUrl(product.image_urls) || product.variants_dict?.[0]?.variant_image || '';
+  const secondImage = getSecondImageUrl(product.image_urls) || product.variants_dict?.[1]?.variant_image || '';
+  
   // Default design areas for different product types
   if (category === 'Apparel' || title.includes('shirt') || title.includes('hoodie')) {
     return [
@@ -150,7 +172,7 @@ function createDesignAreas(product) {
         height: 16,
         left: 50,
         top: 20,
-        mockupUrl: product.image_urls?.[0] || product.variants_dict?.[0]?.variant_image || ''
+        mockupUrl: firstImage
       },
       {
         name: 'back',
@@ -158,7 +180,7 @@ function createDesignAreas(product) {
         height: 16,
         left: 50,
         top: 20,
-        mockupUrl: product.image_urls?.[1] || product.variants_dict?.[1]?.variant_image || ''
+        mockupUrl: secondImage
       }
     ];
   } else if (category === 'Drinkware' || title.includes('mugg') || title.includes('mug')) {
@@ -169,7 +191,7 @@ function createDesignAreas(product) {
         height: 4,
         left: 50,
         top: 40,
-        mockupUrl: product.image_urls?.[0] || product.variants_dict?.[0]?.variant_image || ''
+        mockupUrl: firstImage
       }
     ];
   } else if (category === 'Bags') {
@@ -180,7 +202,7 @@ function createDesignAreas(product) {
         height: 12,
         left: 50,
         top: 30,
-        mockupUrl: product.image_urls?.[0] || product.variants_dict?.[0]?.variant_image || ''
+        mockupUrl: firstImage
       }
     ];
   }
@@ -193,7 +215,7 @@ function createDesignAreas(product) {
       height: 10,
       left: 50,
       top: 35,
-      mockupUrl: product.image_urls?.[0] || product.variants_dict?.[0]?.variant_image || ''
+      mockupUrl: firstImage
     }
   ];
 }

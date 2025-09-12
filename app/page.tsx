@@ -1,7 +1,6 @@
-"use client"
+import { redirect } from 'next/navigation'
+import { defaultLocale } from '@/i18n'
 
-import DynamicHomepage from "@/components/home/dynamic-homepage"
-
-export default function HomePage() {
-  return <DynamicHomepage />
+export default function RootPage() {
+  redirect(`/${defaultLocale}`)
 }

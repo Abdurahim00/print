@@ -7,10 +7,11 @@ import { addToHistory, undo, redo } from "../lib/redux/designToolSlices/canvasSl
 import { setSelectedTool, setHasDesignElements, setDesignAreaPercentage, setDesignAreaCm2 } from "../lib/redux/designToolSlices/designSlice"
 import { RootState } from "../lib/redux/store"
 
-export const useFabricCanvas = (canvasId: string) => {
+export const useFabricCanvas = (canvasId: string, scaleOptions?: { isMobile?: boolean; canvasScale?: number }) => {
   const dispatch = useDispatch()
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const fabricCanvasRef = useRef<fabric.Canvas | null>(null)
+  const designBoundariesRef = useRef<{ x: number; y: number; width: number; height: number }[]>([])
   const { selectedObject, history, historyIndex } = useSelector((state: RootState) => state.canvas)
   const userId = useSelector((state: RootState) => (state as any).auth.user?.id) as string | undefined
   const { selectedTool } = useSelector((state: RootState) => state.design)
@@ -72,12 +73,13 @@ export const useFabricCanvas = (canvasId: string) => {
         backgroundColor: "transparent",
         selection: true,
         preserveObjectStacking: true,
-        enableRetinaScaling: true,
+        enableRetinaScaling: false, // Disable retina scaling to maintain consistent coordinates
         imageSmoothingEnabled: true,
         renderOnAddRemove: true,
         stopContextMenu: true,
         fireRightClick: false,
         controlsAboveOverlay: true,
+        viewportTransform: [1, 0, 0, 1, 0, 0], // Ensure no viewport transformation
       })
 
       // Ensure canvas has proper internal contexts
@@ -91,12 +93,13 @@ export const useFabricCanvas = (canvasId: string) => {
           backgroundColor: "transparent",
           selection: true,
           preserveObjectStacking: true,
-          enableRetinaScaling: true,
+          enableRetinaScaling: false, // Disable retina scaling to maintain consistent coordinates
           imageSmoothingEnabled: true,
           renderOnAddRemove: true,
           stopContextMenu: true,
           fireRightClick: false,
           controlsAboveOverlay: true,
+          viewportTransform: [1, 0, 0, 1, 0, 0], // Ensure no viewport transformation
         })
       }
     } catch (error) {
@@ -545,8 +548,73 @@ export const useFabricCanvas = (canvasId: string) => {
       }
     }
 
-    canvas.on("object:added", () => {
+    canvas.on("object:added", (e) => {
       console.log('🎨 Object added event')
+      
+      // Check if the added object is within boundaries
+      if (designBoundariesRef.current.length > 0 && e.target && !(e.target as any).isBoundaryIndicator) {
+        const obj = e.target
+        const objBoundingRect = obj.getBoundingRect()
+        const boundary = designBoundariesRef.current[0]
+        
+        if (boundary) {
+          let needsRepositioning = false
+          let newLeft = obj.left || 0
+          let newTop = obj.top || 0
+          
+          // Check if object is outside boundary
+          const minX = boundary.x
+          const minY = boundary.y
+          const maxX = boundary.x + boundary.width - objBoundingRect.width
+          const maxY = boundary.y + boundary.height - objBoundingRect.height
+          
+          // Constrain position
+          if (objBoundingRect.left < minX) {
+            newLeft = minX + (newLeft - objBoundingRect.left)
+            needsRepositioning = true
+          } else if (objBoundingRect.left > maxX && maxX > minX) {
+            newLeft = maxX + (newLeft - objBoundingRect.left)
+            needsRepositioning = true
+          }
+          
+          if (objBoundingRect.top < minY) {
+            newTop = minY + (newTop - objBoundingRect.top)
+            needsRepositioning = true
+          } else if (objBoundingRect.top > maxY && maxY > minY) {
+            newTop = maxY + (newTop - objBoundingRect.top)
+            needsRepositioning = true
+          }
+          
+          // If object is too large for boundary, scale it down
+          if (objBoundingRect.width > boundary.width || objBoundingRect.height > boundary.height) {
+            const scaleX = (boundary.width * 0.9) / objBoundingRect.width // 90% to leave margin
+            const scaleY = (boundary.height * 0.9) / objBoundingRect.height
+            const scale = Math.min(scaleX, scaleY, 1) // Don't scale up, only down
+            
+            if (scale < 1) {
+              obj.scale(obj.scaleX * scale)
+              
+              // Recenter after scaling
+              newLeft = boundary.x + (boundary.width - objBoundingRect.width * scale) / 2
+              newTop = boundary.y + (boundary.height - objBoundingRect.height * scale) / 2
+              needsRepositioning = true
+            }
+          }
+          
+          // Apply repositioning if needed
+          if (needsRepositioning) {
+            setTimeout(() => {
+              obj.set({
+                left: newLeft,
+                top: newTop
+              })
+              obj.setCoords()
+              canvas.requestRenderAll()
+            }, 10)
+          }
+        }
+      }
+      
       checkDesignElements()
     })
 
@@ -555,19 +623,156 @@ export const useFabricCanvas = (canvasId: string) => {
       checkDesignElements()
     })
 
-    canvas.on("object:modified", () => {
+    canvas.on("object:modified", (e) => {
       console.log('✏️ Object modified event')
+      
+      // Final check to ensure object is within boundaries after modification
+      if (designBoundariesRef.current.length > 0 && e.target) {
+        const obj = e.target
+        const objBoundingRect = obj.getBoundingRect()
+        const boundary = designBoundariesRef.current[0]
+        
+        if (boundary) {
+          let needsUpdate = false
+          let newLeft = obj.left || 0
+          let newTop = obj.top || 0
+          
+          // Check and constrain position
+          const minX = boundary.x
+          const minY = boundary.y
+          const maxX = boundary.x + boundary.width - objBoundingRect.width
+          const maxY = boundary.y + boundary.height - objBoundingRect.height
+          
+          if (objBoundingRect.left < minX) {
+            newLeft = minX + (newLeft - objBoundingRect.left)
+            needsUpdate = true
+          } else if (objBoundingRect.left > maxX) {
+            newLeft = maxX + (newLeft - objBoundingRect.left)
+            needsUpdate = true
+          }
+          
+          if (objBoundingRect.top < minY) {
+            newTop = minY + (newTop - objBoundingRect.top)
+            needsUpdate = true
+          } else if (objBoundingRect.top > maxY) {
+            newTop = maxY + (newTop - objBoundingRect.top)
+            needsUpdate = true
+          }
+          
+          if (needsUpdate) {
+            obj.set({
+              left: newLeft,
+              top: newTop
+            })
+            obj.setCoords()
+            canvas.requestRenderAll()
+          }
+        }
+      }
+      
       setTimeout(() => saveState(canvas), 50)
       checkDesignElements()
     })
     
-    canvas.on("object:scaling", () => {
+    canvas.on("object:scaling", (e) => {
       console.log('📏 Object scaling event')
+      
+      // Restrict object scaling to design boundaries if they exist
+      if (designBoundariesRef.current.length > 0 && e.target) {
+        const obj = e.target
+        const boundary = designBoundariesRef.current[0]
+        
+        if (boundary) {
+          // Get current bounding rect
+          const objBoundingRect = obj.getBoundingRect()
+          
+          // Calculate the maximum allowed dimensions
+          const maxWidth = boundary.width
+          const maxHeight = boundary.height
+          
+          // Check if object exceeds boundary width
+          if (objBoundingRect.width > maxWidth) {
+            const newScaleX = (maxWidth / obj.width!) * 0.95 // 95% to ensure it fits
+            obj.scaleX = newScaleX
+          }
+          
+          // Check if object exceeds boundary height
+          if (objBoundingRect.height > maxHeight) {
+            const newScaleY = (maxHeight / obj.height!) * 0.95
+            obj.scaleY = newScaleY
+          }
+          
+          // Get updated bounding rect after scale adjustment
+          const updatedRect = obj.getBoundingRect()
+          
+          // Ensure object position is within boundaries
+          let newLeft = obj.left || 0
+          let newTop = obj.top || 0
+          
+          if (updatedRect.left < boundary.x) {
+            newLeft = boundary.x + (newLeft - updatedRect.left)
+          } else if (updatedRect.left + updatedRect.width > boundary.x + boundary.width) {
+            newLeft = (boundary.x + boundary.width - updatedRect.width) + (newLeft - updatedRect.left)
+          }
+          
+          if (updatedRect.top < boundary.y) {
+            newTop = boundary.y + (newTop - updatedRect.top)
+          } else if (updatedRect.top + updatedRect.height > boundary.y + boundary.height) {
+            newTop = (boundary.y + boundary.height - updatedRect.height) + (newTop - updatedRect.top)
+          }
+          
+          obj.set({
+            left: newLeft,
+            top: newTop
+          })
+        }
+      }
+      
       checkDesignElements()
     })
     
-    canvas.on("object:moving", () => {
-      console.log('🚶 Object moving event')
+    canvas.on("object:moving", (e) => {
+      // Restrict object movement to design boundaries if they exist
+      if (designBoundariesRef.current.length > 0 && e.target) {
+        const obj = e.target
+        const objBoundingRect = obj.getBoundingRect()
+        const boundary = designBoundariesRef.current[0] // Use first boundary
+        
+        if (boundary) {
+          // Calculate boundaries
+          const minX = boundary.x
+          const minY = boundary.y
+          const maxX = boundary.x + boundary.width - objBoundingRect.width
+          const maxY = boundary.y + boundary.height - objBoundingRect.height
+          
+          // Get the object's current position
+          let newLeft = obj.left || 0
+          let newTop = obj.top || 0
+          
+          // Apply constraints smoothly
+          if (objBoundingRect.left < minX) {
+            newLeft = minX + (newLeft - objBoundingRect.left)
+          } else if (objBoundingRect.left > maxX) {
+            newLeft = maxX + (newLeft - objBoundingRect.left)
+          }
+          
+          if (objBoundingRect.top < minY) {
+            newTop = minY + (newTop - objBoundingRect.top)
+          } else if (objBoundingRect.top > maxY) {
+            newTop = maxY + (newTop - objBoundingRect.top)
+          }
+          
+          // Set the constrained position
+          obj.set({
+            left: newLeft,
+            top: newTop
+          })
+          
+          // Don't call setCoords during moving to prevent shaking
+          // obj.setCoords() will be called automatically after movement ends
+        }
+      }
+      
       checkDesignElements()
     })
 
@@ -587,14 +792,32 @@ export const useFabricCanvas = (canvasId: string) => {
 
     fabricCanvasRef.current = canvas
     
+    // Lock the viewport to prevent any zoom or pan transformations
+    canvas.setViewportTransform([1, 0, 0, 1, 0, 0])
+    canvas.setZoom(1)
+    
+    // Disable mouse wheel zoom to maintain consistent coordinates
+    canvas.on('mouse:wheel', (e) => {
+      e.e.preventDefault()
+      e.e.stopPropagation()
+      return false
+    })
+    
     // Set the fabric canvas in Redux
     dispatch({ type: 'canvas/setFabricCanvas', payload: canvas });
     
     // Make the canvas instance globally available for other functions
     (window as any).fabricCanvas = canvas
+    console.log('Canvas initialized with locked viewport (zoom=1, pan=0,0)')
+    
+    // Dispatch custom event to notify canvas is ready
+    window.dispatchEvent(new CustomEvent('fabricCanvasReady', { detail: { canvas } }))
 
     // Save initial state
     setTimeout(() => saveState(canvas), 100)
+    
+    // Trigger a re-render to ensure boundaries are applied
+    canvas.requestRenderAll()
 
     return canvas
   }, [dispatch, saveState])
@@ -602,9 +825,20 @@ export const useFabricCanvas = (canvasId: string) => {
   // addText now accepts the canvas instance as its first argument
   const addText = useCallback(
     (canvasInstance: fabric.Canvas, text = "Your text here", options: any = {}) => {
+      // Calculate initial position within boundaries if they exist
+      let initialLeft = 150
+      let initialTop = 150
+      
+      if (designBoundariesRef.current.length > 0) {
+        const boundary = designBoundariesRef.current[0]
+        // Place text in the center of the first boundary
+        initialLeft = boundary.x + boundary.width / 2
+        initialTop = boundary.y + boundary.height / 2
+      }
+      
       const textObj = new fabric.IText(text, {
-        left: 150,
-        top: 150,
+        left: initialLeft,
+        top: initialTop,
         fontFamily: "Arial",
         fontSize: 24,
         fill: "#000000",
@@ -837,6 +1071,128 @@ export const useFabricCanvas = (canvasId: string) => {
     [],
   )
 
+  // Set design boundaries based on frames
+  const setDesignBoundaries = useCallback((frames: any[], options?: { isMobile?: boolean; canvasScale?: number }) => {
+    // Check both the ref and the global window object
+    const canvas = fabricCanvasRef.current || (window as any).fabricCanvas
+    if (!canvas) {
+      console.warn('⚠️ [setDesignBoundaries] Canvas not available yet')
+      return
+    }
+    
+    // Update the ref if we got it from window
+    if (!fabricCanvasRef.current && canvas) {
+      fabricCanvasRef.current = canvas
+    }
+    // Fixed canvas dimensions - but account for mobile scaling
+    const baseCanvasSize = 600
+    const scale = (options?.isMobile && options?.canvasScale) ? options.canvasScale : 1
+    const canvasWidth = baseCanvasSize
+    const canvasHeight = baseCanvasSize
+    
+    // Clear existing boundaries
+    designBoundariesRef.current = []
+    
+    // Remove any existing clip path
+    canvas.clipPath = undefined
+    
+    // Convert frame percentages to fixed canvas coordinates
+    frames.forEach(frame => {
+      if (frame.xPercent !== undefined && frame.yPercent !== undefined) {
+        // Use percentage-based positioning relative to fixed 600x600 canvas
+        const boundary = {
+          x: (frame.xPercent / 100) * canvasWidth,
+          y: (frame.yPercent / 100) * canvasHeight,
+          width: (frame.widthPercent / 100) * canvasWidth,
+          height: (frame.heightPercent / 100) * canvasHeight
+        }
+        designBoundariesRef.current.push(boundary)
+      } else if (frame.widthPx !== undefined && frame.heightPx !== undefined) {
+        // Use pixel values directly if provided
+        const boundary = {
+          x: frame.x || 0,
+          y: frame.y || 0,
+          width: frame.widthPx,
+          height: frame.heightPx
+        }
+        designBoundariesRef.current.push(boundary)
+      } else {
+        // Fallback: convert cm to pixels (1cm ≈ 37.795 pixels at 96 DPI)
+        const pixelsPerCm = 37.795
+        const boundary = {
+          x: frame.x || 0,
+          y: frame.y || 0,
+          width: frame.width * pixelsPerCm,
+          height: frame.height * pixelsPerCm
+        }
+        designBoundariesRef.current.push(boundary)
+      }
+    })
+    
+    console.log('🎯 Design boundaries set:', designBoundariesRef.current)
+    
+    // Add visual indicators and clipping for boundaries
+    if (designBoundariesRef.current.length > 0) {
+      // Remove existing boundary indicators
+      const existingBoundaries = canvas.getObjects().filter((obj: any) => obj.isBoundaryIndicator)
+      existingBoundaries.forEach(obj => canvas.remove(obj))
+      
+      // Create a clipping path for the first boundary (main design area)
+      const mainBoundary = designBoundariesRef.current[0]
+      const clipRect = new fabric.Rect({
+        left: mainBoundary.x,
+        top: mainBoundary.y,
+        width: mainBoundary.width,
+        height: mainBoundary.height,
+        absolutePositioned: true
+      })
+      
+      // Apply clipping to the canvas to prevent anything outside the boundary
+      canvas.clipPath = clipRect
+      
+      // Add visual boundary indicators
+      designBoundariesRef.current.forEach(boundary => {
+        try {
+          const rect = new fabric.Rect({
+            left: boundary.x,
+            top: boundary.y,
+            width: boundary.width,
+            height: boundary.height,
+            fill: 'transparent',
+            stroke: 'rgba(59, 130, 246, 0.5)', // Blue with opacity
+            strokeWidth: 2,
+            strokeDashArray: [5, 5],
+            selectable: false,
+            evented: false,
+            excludeFromExport: true,
+            isBoundaryIndicator: true // Custom property to identify boundary indicators
+          } as any)
+          
+          canvas.add(rect)
+          
+          // Try different methods to move to back
+          try {
+            if (canvas.moveTo) {
+              canvas.moveTo(rect, 0) // Move to index 0 (back)
+            } else if ((canvas as any).sendToBack) {
+              (canvas as any).sendToBack(rect)
+            }
+          } catch (moveError) {
+            console.log('Could not move boundary to back, continuing...')
+          }
+        } catch (error) {
+          console.error('Error adding boundary indicator:', error)
+        }
+      })
+      
+      canvas.requestRenderAll()
+    } else {
+      // Clear clip path if no boundaries
+      canvas.clipPath = undefined
+      canvas.requestRenderAll()
+    }
+  }, [])
+
   // handleUndo now accepts the canvas instance as its first argument
   const handleUndo = useCallback(
     (canvasInstance: fabric.Canvas) => {
@@ -886,6 +1242,23 @@ export const useFabricCanvas = (canvasId: string) => {
 
   // exportCanvas now accepts the canvas instance as its first argument
   const exportCanvas = useCallback((canvasInstance: fabric.Canvas, format: any = "png") => {
+    // If we have boundaries, export only the boundary area
+    if (designBoundariesRef.current.length > 0) {
+      const boundary = designBoundariesRef.current[0]
+      
+      // Export only the area within the boundary
+      return canvasInstance.toDataURL({
+        format,
+        quality: 1,
+        multiplier: 2,
+        left: boundary.x,
+        top: boundary.y,
+        width: boundary.width,
+        height: boundary.height
+      })
+    }
+    
+    // Default export if no boundaries
     return canvasInstance.toDataURL({
       format,
       quality: 1,
@@ -937,6 +1310,16 @@ export const useFabricCanvas = (canvasId: string) => {
     // Delay canvas initialization to ensure DOM is ready
     const timer = setTimeout(() => {
       const canvas = initCanvas()
+      fabricCanvasRef.current = canvas
+      
+      // If we have boundaries already set, apply them immediately
+      if (designBoundariesRef.current.length > 0) {
+        console.log('🎯 Applying design boundaries after canvas init:', designBoundariesRef.current)
+        // Force a re-render to show boundaries
+        if (canvas) {
+          canvas.requestRenderAll()
+        }
+      }
     }, 100)
 
     return () => {
@@ -1120,10 +1503,21 @@ export const useFabricCanvas = (canvasId: string) => {
       
       img.onload = function() {
         try {
+          // Calculate initial position within boundaries if they exist
+          let initialLeft = 150
+          let initialTop = 150
+          
+          if (designBoundariesRef.current.length > 0) {
+            const boundary = designBoundariesRef.current[0]
+            // Place image in the center of the first boundary
+            initialLeft = boundary.x + boundary.width / 2
+            initialTop = boundary.y + boundary.height / 2
+          }
+          
           // Create fabric image from the loaded JS image
           const fabricImage = new fabric.Image(img, {
-            left: 150,
-            top: 150,
+            left: initialLeft,
+            top: initialTop,
             originX: "center",
             originY: "center",
             ...options
@@ -1184,6 +1578,7 @@ export const useFabricCanvas = (canvasId: string) => {
     exportCanvas,
     bendText,
     getTextBendAmount,
-    loadFromJSON
+    loadFromJSON,
+    setDesignBoundaries
   }
 }

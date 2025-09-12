@@ -144,12 +144,23 @@ export class ProductService {
       query.categoryId = filter.categoryId
     }
     
-    // Subcategory filter - use string matching
+    // Subcategory filter - convert to ObjectId for proper matching
     if (filter.subcategoryId) {
-      query.$or = [
-        { subcategoryId: filter.subcategoryId },
-        { subcategoryIds: filter.subcategoryId }
-      ]
+      try {
+        const subcategoryObjectId = new ObjectId(filter.subcategoryId)
+        query.$or = [
+          { subcategoryId: subcategoryObjectId },
+          { subcategoryId: filter.subcategoryId }, // fallback for string IDs
+          { subcategoryIds: subcategoryObjectId },
+          { subcategoryIds: filter.subcategoryId }
+        ]
+      } catch (e) {
+        // If not a valid ObjectId, try string matching
+        query.$or = [
+          { subcategoryId: filter.subcategoryId },
+          { subcategoryIds: filter.subcategoryId }
+        ]
+      }
     }
     
     // Price range filter
@@ -190,22 +201,26 @@ export class ProductService {
     // Debug query
     console.log('[ProductService] MongoDB query:', JSON.stringify(query, null, 2))
     
-    // Sort options
+    // Sort options - skip sorting for very large fetches to avoid memory issues
     let sort: any = {}
-    switch (sortBy) {
-      case 'price-asc':
-        sort = { price: 1 }
-        break
-      case 'price-desc':
-        sort = { price: -1 }
-        break
-      case 'newest':
-        sort = { createdAt: -1 }
-        break
-      case 'featured':
-      default:
-        sort = { featured: -1, inStock: -1, createdAt: -1 }
-        break
+    const skipSort = limit > 5000 // Skip sorting for large fetches
+    
+    if (!skipSort) {
+      switch (sortBy) {
+        case 'price-asc':
+          sort = { price: 1 }
+          break
+        case 'price-desc':
+          sort = { price: -1 }
+          break
+        case 'newest':
+          sort = { createdAt: -1 }
+          break
+        case 'featured':
+        default:
+          sort = { featured: -1, inStock: -1, createdAt: -1 }
+          break
+      }
     }
     
     // Build projection for selected fields (optimize payload)
@@ -219,14 +234,28 @@ export class ProductService {
     }
     
     // Execute query with all filters including category
+    // For large queries that need sorting, use allowDiskUse option
+    const findOptions: any = {
+      projection: Object.keys(projection).length === 0 ? undefined : projection
+    }
+    
+    // Create cursor with proper options
+    const cursor = collection.find(query, findOptions)
+    
+    // Apply sort only if we have sort criteria and skip sorting for huge fetches
+    if (Object.keys(sort).length > 0 && !skipSort) {
+      cursor.sort(sort)
+      // Enable disk use for large sorted queries
+      if (limit > 1000) {
+        cursor.allowDiskUse(true)
+      }
+    }
+    
+    // Apply pagination
+    cursor.skip(skip).limit(limit)
+    
     const [products, total] = await Promise.all([
-      collection
-        .find(query, { projection: Object.keys(projection).length === 0 ? undefined : projection })
-        .sort(sort)
-        .skip(skip)
-        .limit(limit)
-        .allowDiskUse(true)
-        .toArray(),
+      cursor.toArray(),
       collection.countDocuments(query)
     ])
     
@@ -240,15 +269,61 @@ export class ProductService {
   }
   
   private static mapProductToResponse(product: ProductDocument): Product {
+    // Map images array to angle-specific fields if not already set
+    const images = product.images || [];
+    const mainImage = product.imageUrl || product.image || (images && images[0]) || '/placeholder.jpg';
+    
+    // If product doesn't have angle-specific images but has an images array, map them
+    const frontImage = product.frontImage || (images.length > 0 ? images[0] : undefined);
+    const backImage = product.backImage || (images.length > 1 ? images[1] : undefined);
+    const leftImage = product.leftImage || (images.length > 2 ? images[2] : undefined);
+    const rightImage = product.rightImage || (images.length > 3 ? images[3] : undefined);
+    const materialImage = product.materialImage || (images.length > 4 ? images[4] : undefined);
+    
+    // CRITICAL FIX: Properly handle variations vs variants
+    // Some products have both fields but only 'variations' has proper color data
+    let finalVariations = null;
+    
+    if (product.variations && Array.isArray(product.variations) && product.variations.length > 0) {
+      // Check if variations have valid color data
+      const hasValidColors = product.variations.some((v: any) => v.color?.hex_code);
+      if (hasValidColors) {
+        finalVariations = product.variations;
+        console.log(`✅ [ProductService] Using 'variations' field for ${product.name} (${product.variations.length} items with colors)`);
+      } else {
+        // If variations exist but have no colors, check variants
+        if (product.variants && Array.isArray(product.variants) && product.variants.length > 0) {
+          const variantsHaveColors = product.variants.some((v: any) => v.color?.hex_code);
+          if (variantsHaveColors) {
+            finalVariations = product.variants;
+            console.log(`🔄 [ProductService] Using 'variants' field for ${product.name} (variations had no colors)`);
+          } else {
+            // Neither has colors, use variations anyway
+            finalVariations = product.variations;
+            console.warn(`⚠️ [ProductService] No valid colors in either variations or variants for ${product.name}`);
+          }
+        } else {
+          finalVariations = product.variations;
+        }
+      }
+    } else if (product.variants && Array.isArray(product.variants) && product.variants.length > 0) {
+      // No variations field, use variants
+      finalVariations = product.variants;
+      console.log(`🔄 [ProductService] Using 'variants' field for ${product.name} (no variations field)`);
+    }
+    
+    // Determine hasVariations based on actual data
+    const hasValidVariations = finalVariations && Array.isArray(finalVariations) && finalVariations.length > 0;
+    
     return {
       _id: product._id!.toString(),
       id: product._id!.toString(),
       name: product.name,
       price: product.price || product.basePrice,
       basePrice: product.basePrice || product.price,
-      image: product.image,
-      imageUrl: product.imageUrl || (product.images && product.images[0]) || product.image,
-      images: product.images,
+      image: mainImage,
+      imageUrl: mainImage,
+      images: images,
       categoryId: product.categoryId ? product.categoryId.toString() : product.categoryId,
       subcategoryIds: product.subcategoryIds,
       subcategoryId: product.subcategoryId ? product.subcategoryId.toString() : product.subcategoryId,
@@ -256,13 +331,13 @@ export class ProductService {
       inStock: product.inStock,
       createdAt: product.createdAt,
       updatedAt: product.updatedAt,
-      hasVariations: product.hasVariations,
-      variations: product.variations,
-      variants: product.variants,
+      hasVariations: hasValidVariations,
+      variations: finalVariations,
+      variants: finalVariations, // Keep both for compatibility
       eligibleForCoupons: product.eligibleForCoupons,
       type: product.type,
       baseColor: product.baseColor,
-      angles: product.angles,
+      angles: product.angles || (images.length > 1 ? ['front', 'back', 'left', 'right'] : ['front']),
       colors: product.colors,
       sizes: product.sizes,
       sizePrices: product.sizePrices,
@@ -272,20 +347,23 @@ export class ProductService {
       isActive: product.isActive,
       tags: product.tags,
       isDesignable: product.isDesignable,
+      designFrames: product.designFrames,
+      designCostPerCm2: product.designCostPerCm2,
+      variantPositionMappings: product.variantPositionMappings,
       specifications: product.specifications,
       source: product.source,
       originalData: product.originalData,
       purchaseLimit: product.purchaseLimit,
-      frontImage: product.frontImage,
-      backImage: product.backImage,
-      leftImage: product.leftImage,
-      rightImage: product.rightImage,
-      materialImage: product.materialImage,
-      frontAltText: product.frontAltText,
-      backAltText: product.backAltText,
-      leftAltText: product.leftAltText,
-      rightAltText: product.rightAltText,
-      materialAltText: product.materialAltText
+      frontImage: frontImage,
+      backImage: backImage,
+      leftImage: leftImage,
+      rightImage: rightImage,
+      materialImage: materialImage,
+      frontAltText: product.frontAltText || 'Front view',
+      backAltText: product.backAltText || 'Back view',
+      leftAltText: product.leftAltText || 'Left view',
+      rightAltText: product.rightAltText || 'Right view',
+      materialAltText: product.materialAltText || 'Material view'
     }
   }
 
@@ -353,6 +431,40 @@ export class ProductService {
       hasVariations: product.hasVariations
     })
 
+    // CRITICAL FIX: Properly handle variations vs variants (same logic as mapProductToResponse)
+    let finalVariations = null;
+    
+    if (product.variations && Array.isArray(product.variations) && product.variations.length > 0) {
+      // Check if variations have valid color data
+      const hasValidColors = product.variations.some((v: any) => v.color?.hex_code);
+      if (hasValidColors) {
+        finalVariations = product.variations;
+        console.log(`✅ [ProductService.getProductById] Using 'variations' field for ${product.name} (${product.variations.length} items with colors)`);
+      } else {
+        // If variations exist but have no colors, check variants
+        if (product.variants && Array.isArray(product.variants) && product.variants.length > 0) {
+          const variantsHaveColors = product.variants.some((v: any) => v.color?.hex_code);
+          if (variantsHaveColors) {
+            finalVariations = product.variants;
+            console.log(`🔄 [ProductService.getProductById] Using 'variants' field for ${product.name} (variations had no colors)`);
+          } else {
+            // Neither has colors, use variations anyway
+            finalVariations = product.variations;
+            console.warn(`⚠️ [ProductService.getProductById] No valid colors in either variations or variants for ${product.name}`);
+          }
+        } else {
+          finalVariations = product.variations;
+        }
+      }
+    } else if (product.variants && Array.isArray(product.variants) && product.variants.length > 0) {
+      // No variations field, use variants
+      finalVariations = product.variants;
+      console.log(`🔄 [ProductService.getProductById] Using 'variants' field for ${product.name} (no variations field)`);
+    }
+    
+    // Determine hasVariations based on actual data
+    const hasValidVariations = finalVariations && Array.isArray(finalVariations) && finalVariations.length > 0;
+
     return {
       _id: product._id!.toString(),
       id: product._id!.toString(),
@@ -367,8 +479,8 @@ export class ProductService {
       inStock: product.inStock,
       createdAt: product.createdAt,
       updatedAt: product.updatedAt,
-      hasVariations: product.hasVariations,
-      variations: product.variations,
+      hasVariations: hasValidVariations,
+      variations: finalVariations,
       eligibleForCoupons: product.eligibleForCoupons,
       type: product.type,
       baseColor: product.baseColor,
@@ -396,10 +508,13 @@ export class ProductService {
       isActive: product.isActive,
       tags: product.tags,
       isDesignable: product.isDesignable,
+      designFrames: product.designFrames,
+      designCostPerCm2: product.designCostPerCm2,
+      variantPositionMappings: product.variantPositionMappings,
       specifications: product.specifications,
       source: product.source,
       originalData: product.originalData,
-      variants: product.variants
+      variants: finalVariations // Use the properly selected variations/variants data
     }
   }
 
@@ -409,11 +524,14 @@ export class ProductService {
   ): Promise<Product | null> {
     const collection = await this.getCollection()
 
+    // Remove _id and id fields to prevent MongoDB immutable field error
+    const { _id, id: productId, ...cleanData } = productData as any
+
     const res = await collection.findOneAndUpdate(
       { _id: new ObjectId(id) },
       {
         $set: {
-          ...productData,
+          ...cleanData,
           updatedAt: new Date(),
         },
       },
@@ -432,6 +550,34 @@ export class ProductService {
     return result.deletedCount > 0
   }
 
+  static async getProductCount(filter: any = {}): Promise<number> {
+    const collection = await this.getCollection()
+    
+    // Build query from filter
+    const query: any = {}
+    
+    if (filter.categoryId) {
+      query.categoryId = filter.categoryId
+    }
+    
+    if (filter.subcategoryId) {
+      query.subcategoryId = filter.subcategoryId
+    }
+    
+    if (filter.search) {
+      query.$or = [
+        { name: { $regex: filter.search, $options: 'i' } },
+        { description: { $regex: filter.search, $options: 'i' } }
+      ]
+    }
+    
+    if (filter.isDesignable !== undefined) {
+      query.isDesignable = filter.isDesignable
+    }
+    
+    return await collection.countDocuments(query)
+  }
+
   static async getCategoryCounts(baseFilter: any = {}): Promise<{ categoryId: string; count: number; subcategories?: { subcategoryId: string; count: number }[] }[]> {
     const collection = await this.getCollection()
     
@@ -447,25 +593,61 @@ export class ProductService {
       baseMatch.price = baseFilter.price
     }
     
-    // Use MongoDB aggregation for efficient counting
+    // Use MongoDB aggregation to get both category and subcategory counts
     const pipeline = [
       { $match: baseMatch },
       {
         $group: {
-          _id: "$categoryId",
+          _id: {
+            categoryId: "$categoryId",
+            subcategoryId: "$subcategoryId"
+          },
           count: { $sum: 1 }
+        }
+      },
+      {
+        $group: {
+          _id: "$_id.categoryId",
+          totalCount: { $sum: "$count" },
+          subcategories: {
+            $push: {
+              $cond: [
+                { $ne: ["$_id.subcategoryId", null] },
+                {
+                  subcategoryId: "$_id.subcategoryId",
+                  count: "$count"
+                },
+                "$$REMOVE"
+              ]
+            }
+          }
         }
       },
       {
         $project: {
           categoryId: "$_id",
-          count: 1,
+          count: "$totalCount",
+          subcategories: {
+            $filter: {
+              input: "$subcategories",
+              cond: { $ne: ["$$this", null] }
+            }
+          },
           _id: 0
         }
-      }
+      },
+      { $sort: { count: -1 } }
     ]
     
     const result = await collection.aggregate(pipeline).toArray()
-    return result
+    
+    // Convert ObjectIds to strings for subcategories
+    return result.map(item => ({
+      ...item,
+      subcategories: item.subcategories?.map((sub: any) => ({
+        subcategoryId: sub.subcategoryId?.toString() || sub.subcategoryId,
+        count: sub.count
+      }))
+    }))
   }
 }

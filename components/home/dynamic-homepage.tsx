@@ -228,19 +228,19 @@ const ProductCarousel = ({ featuredProducts }: { featuredProducts: any[] }) => {
   if (!currentProduct) return null
   
   return (
-    <div className="relative w-full h-full min-h-[400px] sm:min-h-[500px] lg:min-h-[600px] overflow-hidden bg-white dark:bg-gray-900">
-      <div className="relative h-full flex flex-col p-3 sm:p-4 lg:p-8 xl:p-12">
+    <div className="relative w-full h-full min-h-[350px] sm:min-h-[500px] lg:min-h-[600px] overflow-hidden bg-white dark:bg-gray-900">
+      <div className="relative h-full flex flex-col p-4 sm:p-4 lg:p-8 xl:p-12">
         <div className="mb-4 sm:mb-6 lg:mb-8">
-          <motion.h3 
-            className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white mb-2"
+          <motion.h3
+            className="text-lg sm:text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white mb-1 sm:mb-2"
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.5 }}
           >
             Featured Products
           </motion.h3>
-          <motion.p 
-            className="text-gray-600 dark:text-gray-300 text-sm sm:text-base lg:text-lg"
+          <motion.p
+            className="text-gray-600 dark:text-gray-300 text-xs sm:text-base lg:text-lg"
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.6 }}
@@ -259,7 +259,7 @@ const ProductCarousel = ({ featuredProducts }: { featuredProducts: any[] }) => {
               exit={{ opacity: 0, x: -100 }}
               transition={{ duration: 0.5, ease: "easeInOut" }}
             >
-              <Link href={`/product/${currentProduct._id || currentProduct.id}`} className="block relative h-48 sm:h-64 lg:h-80 xl:h-96 mb-3 sm:mb-4 lg:mb-6 overflow-hidden bg-black dark:bg-white cursor-pointer group">
+              <Link href={`/product/${currentProduct._id || currentProduct.id}`} className="block relative h-40 sm:h-64 lg:h-80 xl:h-96 mb-3 sm:mb-4 lg:mb-6 overflow-hidden bg-black dark:bg-white cursor-pointer group">
                 <Image
                   src={getOptimizedImageUrl(getProductImage(currentProduct))}
                   alt={currentProduct.name}
@@ -276,7 +276,7 @@ const ProductCarousel = ({ featuredProducts }: { featuredProducts: any[] }) => {
                 
                 <div className="absolute bottom-2 left-2 sm:bottom-4 sm:left-4 lg:bottom-6 lg:left-6">
                   <div className="bg-white text-black px-2 py-1 sm:px-3 sm:py-1.5 lg:px-4 lg:py-2">
-                    <span className="text-base sm:text-xl lg:text-2xl xl:text-3xl font-black">
+                    <span className="text-sm sm:text-xl lg:text-2xl xl:text-3xl font-black">
                       {typeof currentProduct.price === 'number' ? currentProduct.price.toFixed(2) : (currentProduct.basePrice || 0).toFixed(2)} SEK
                     </span>
                   </div>
@@ -296,7 +296,7 @@ const ProductCarousel = ({ featuredProducts }: { featuredProducts: any[] }) => {
               
               <div className="text-center px-2">
                 <Link href={`/product/${currentProduct._id || currentProduct.id}`} className="hover:underline">
-                  <h4 className="text-lg sm:text-xl lg:text-2xl font-semibold text-gray-900 dark:text-white mb-3 sm:mb-4 lg:mb-6 cursor-pointer line-clamp-2">
+                  <h4 className="text-base sm:text-xl lg:text-2xl font-semibold text-gray-900 dark:text-white mb-2 sm:mb-4 lg:mb-6 cursor-pointer line-clamp-2">
                     {currentProduct.name}
                   </h4>
                 </Link>
@@ -307,28 +307,26 @@ const ProductCarousel = ({ featuredProducts }: { featuredProducts: any[] }) => {
                   transition={{ delay: 1 }}
                   className="flex flex-col sm:flex-row gap-2 sm:gap-3"
                 >
-                  <Button 
-                    size="lg" 
-                    className="flex-1 bg-black hover:bg-gray-900 text-white dark:bg-white dark:text-black dark:hover:bg-gray-100 min-h-[44px] touch-manipulation text-xs sm:text-sm lg:text-base px-3 sm:px-4"
+                  <Button
+                    size="lg"
+                    className="flex-1 bg-black hover:bg-gray-900 text-white dark:bg-white dark:text-black dark:hover:bg-gray-100 min-h-[40px] sm:min-h-[44px] touch-manipulation text-xs sm:text-sm lg:text-base px-2 sm:px-4"
                     asChild
                   >
                     <Link href={`/product/${currentProduct._id || currentProduct.id}`} className="flex items-center justify-center">
-                      <span className="font-black uppercase hidden sm:inline">View Details</span>
-                      <span className="font-black uppercase sm:hidden">View</span>
-                      <ArrowRight className="ml-1 sm:ml-2 h-3 w-3 sm:h-4 sm:w-4" />
+                      <span className="font-black uppercase">View</span>
+                      <ArrowRight className="ml-1 h-3 w-3 sm:h-4 sm:w-4" />
                     </Link>
                   </Button>
-                  <Button 
-                    size="lg" 
-                    className="flex-1 border-2 border-black dark:border-white bg-transparent text-black dark:text-white hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black transition-colors min-h-[44px] text-xs sm:text-sm lg:text-base px-3 sm:px-4"
+                  <Button
+                    size="lg"
+                    className="flex-1 border-2 border-black dark:border-white bg-transparent text-black dark:text-white hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black transition-colors min-h-[40px] sm:min-h-[44px] text-xs sm:text-sm lg:text-base px-2 sm:px-4"
                     onClick={() => {
                       dispatch(addToCart(currentProduct))
                       toast.success('Added to cart!')
                     }}
                   >
-                    <ShoppingCart className="mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4 lg:h-5 lg:w-5" />
-                    <span className="font-black uppercase hidden sm:inline">Add to Cart</span>
-                    <span className="font-black uppercase sm:hidden">Add</span>
+                    <ShoppingCart className="mr-1 h-3 w-3 sm:h-4 sm:w-4 lg:h-5 lg:w-5" />
+                    <span className="font-black uppercase">Add</span>
                   </Button>
                 </motion.div>
               </div>
@@ -336,11 +334,11 @@ const ProductCarousel = ({ featuredProducts }: { featuredProducts: any[] }) => {
           </AnimatePresence>
         </div>
         
-        <div className="absolute bottom-3 sm:bottom-6 lg:bottom-8 xl:bottom-12 left-2 right-2 sm:left-4 sm:right-4 lg:left-8 lg:right-8 xl:left-16 xl:right-16">
+        <div className="absolute bottom-2 sm:bottom-6 lg:bottom-8 xl:bottom-12 left-3 right-3 sm:left-4 sm:right-4 lg:left-8 lg:right-8 xl:left-16 xl:right-16">
           <div className="flex items-center justify-between gap-2 sm:gap-4">
             <motion.button
               onClick={prevSlide}
-              className="w-8 h-8 sm:w-9 sm:h-9 lg:w-10 lg:h-10 bg-black dark:bg-white text-white dark:text-black flex items-center justify-center hover:scale-110 transition-transform rounded-full flex-shrink-0"
+              className="w-7 h-7 sm:w-9 sm:h-9 lg:w-10 lg:h-10 bg-black dark:bg-white text-white dark:text-black flex items-center justify-center hover:scale-110 transition-transform rounded-full flex-shrink-0"
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.9 }}
             >
@@ -365,7 +363,7 @@ const ProductCarousel = ({ featuredProducts }: { featuredProducts: any[] }) => {
             
             <motion.button
               onClick={nextSlide}
-              className="w-8 h-8 sm:w-9 sm:h-9 lg:w-10 lg:h-10 bg-black dark:bg-white text-white dark:text-black flex items-center justify-center hover:scale-110 transition-transform rounded-full flex-shrink-0"
+              className="w-7 h-7 sm:w-9 sm:h-9 lg:w-10 lg:h-10 bg-black dark:bg-white text-white dark:text-black flex items-center justify-center hover:scale-110 transition-transform rounded-full flex-shrink-0"
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.9 }}
             >
@@ -413,7 +411,7 @@ const AnimatedStats = ({ stats }: { stats: SiteConfiguration['stats'] }) => {
   
   return (
     <div className="relative w-full py-4 sm:py-6 lg:py-8 xl:py-12">
-      <div className="flex flex-col sm:grid sm:grid-cols-3 gap-4 sm:gap-3 lg:gap-6 xl:gap-8 max-w-5xl mx-auto px-3 sm:px-4">
+      <div className="grid grid-cols-3 gap-2 sm:gap-3 lg:gap-6 xl:gap-8 max-w-5xl mx-auto px-3 sm:px-4">
         {stats.map((stat, index) => (
           <motion.div
             key={stat.id}
@@ -426,33 +424,33 @@ const AnimatedStats = ({ stats }: { stats: SiteConfiguration['stats'] }) => {
               ease: "easeOut"
             }}
           >
-            <div className="relative p-3 sm:p-4 lg:p-5 xl:p-6 text-center">
+            <div className="relative p-2 sm:p-4 lg:p-5 xl:p-6 text-center">
               <div className="hidden sm:flex justify-center mb-2 sm:mb-3 lg:mb-4">
                 <div className={`w-1.5 sm:w-2 h-1.5 sm:h-2 rounded-full ${
-                  index === 0 ? 'bg-brand-green' : 
-                  index === 1 ? 'bg-brand-yellow' : 
+                  index === 0 ? 'bg-brand-green' :
+                  index === 1 ? 'bg-brand-yellow' :
                   'bg-brand-red'
                 }`} />
               </div>
-              
-              <div className="flex items-baseline justify-center mb-1 sm:mb-2">
-                <motion.span 
-                  className="text-2xl sm:text-3xl lg:text-4xl xl:text-5xl 2xl:text-6xl font-black tracking-tight text-gray-900 dark:text-white"
-                  animate={{ 
-                    scale: counts[index] === stat.value ? [1, 1.05, 1] : 1 
+
+              <div className="flex items-baseline justify-center mb-1">
+                <motion.span
+                  className="text-xl sm:text-3xl lg:text-4xl xl:text-5xl 2xl:text-6xl font-black tracking-tight text-gray-900 dark:text-white"
+                  animate={{
+                    scale: counts[index] === stat.value ? [1, 1.05, 1] : 1
                   }}
                   transition={{ duration: 0.3 }}
                 >
                   {counts[index].toLocaleString()}
                 </motion.span>
                 {stat.suffix && (
-                  <span className="text-sm sm:text-lg lg:text-xl xl:text-2xl 2xl:text-3xl font-bold ml-0.5 sm:ml-1 text-gray-700 dark:text-gray-300">
+                  <span className="text-xs sm:text-lg lg:text-xl xl:text-2xl 2xl:text-3xl font-bold ml-0.5 text-gray-700 dark:text-gray-300">
                     {stat.suffix}
                   </span>
                 )}
               </div>
-              
-              <p className="text-xs sm:text-xs lg:text-sm font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 px-2">
+
+              <p className="text-[10px] sm:text-xs lg:text-sm font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 px-1 sm:px-2">
                 {stat.label}
               </p>
               
@@ -688,7 +686,7 @@ export default function DynamicHomepage() {
 
       {/* Hero Section */}
       <section className="relative overflow-hidden">
-        <div className="relative max-w-[1600px] mx-auto px-2 sm:px-4 lg:px-6 xl:px-8 pt-4 sm:pt-6 lg:pt-8 pb-4 sm:pb-6 lg:pb-8">
+        <div className="relative max-w-[1600px] mx-auto px-4 sm:px-4 lg:px-6 xl:px-8 pt-6 sm:pt-6 lg:pt-8 pb-6 sm:pb-6 lg:pb-8">
           <motion.div 
             className="bg-white dark:bg-gray-900 rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden border-2 border-gray-100 dark:border-gray-800"
             initial={{ opacity: 0, y: 20 }}
@@ -699,10 +697,10 @@ export default function DynamicHomepage() {
               <CategoryShowcase />
             </div>
             
-            <div className="grid lg:grid-cols-2">
+            <div className="grid grid-cols-1 lg:grid-cols-2">
               <motion.div className="p-4 sm:p-6 lg:p-10 xl:p-12 2xl:p-16">
-                <motion.h1 
-                  className="text-2xl xs:text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-black tracking-tight text-black dark:text-white mb-4 sm:mb-6 uppercase leading-tight"
+                <motion.h1
+                  className="text-3xl xs:text-4xl sm:text-4xl lg:text-5xl xl:text-6xl font-black tracking-tight text-black dark:text-white mb-4 sm:mb-6 uppercase leading-tight"
                   initial="hidden"
                   animate="visible"
                   variants={fadeInUp}
@@ -757,8 +755,8 @@ export default function DynamicHomepage() {
                 <AnimatedStats stats={config.stats} />
               </motion.div>
 
-              <motion.div 
-                className="relative hidden lg:block border-l-2 lg:border-l-4 border-black dark:border-white bg-gray-50 dark:bg-gray-900"
+              <motion.div
+                className="relative border-t-2 lg:border-t-0 lg:border-l-2 lg:border-l-4 border-black dark:border-white bg-gray-50 dark:bg-gray-900"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ duration: 0.8, delay: 0.3 }}
@@ -773,7 +771,7 @@ export default function DynamicHomepage() {
       {/* Best Sellers Section */}
       {displayBestSellers.length > 0 && (
         <section className="relative overflow-hidden">
-          <div className="relative max-w-[1600px] mx-auto px-2 sm:px-4 lg:px-6 xl:px-8 py-4 sm:py-6 lg:py-8">
+          <div className="relative max-w-[1600px] mx-auto px-4 sm:px-4 lg:px-6 xl:px-8 py-6 sm:py-6 lg:py-8">
             <motion.div 
               className="bg-white dark:bg-gray-900 rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden border-2 border-gray-100 dark:border-gray-800"
               initial={{ opacity: 0, y: 20 }}
@@ -817,13 +815,13 @@ export default function DynamicHomepage() {
                   <ChevronRight className="h-4 w-4 sm:h-6 sm:w-6" />
                 </button>
 
-                <div 
+                <div
                   id="bestsellers-scroll"
-                  className="flex gap-2 sm:gap-3 lg:gap-4 xl:gap-6 overflow-x-auto scroll-smooth px-3 sm:px-6 lg:px-8 pb-2 sm:pb-4"
+                  className="flex gap-3 sm:gap-3 lg:gap-4 xl:gap-6 overflow-x-auto scroll-smooth px-4 sm:px-6 lg:px-8 pb-2 sm:pb-4"
                   style={{ scrollbarWidth: 'none' as any, msOverflowStyle: 'none' }}
                 >
                   {displayBestSellers.map((product: any) => (
-                    <Link key={product._id || product.id} href={`/product/${product._id || product.id}`} className="flex-shrink-0 w-40 sm:w-52 lg:w-64 xl:w-80">
+                    <Link key={product._id || product.id} href={`/product/${product._id || product.id}`} className="flex-shrink-0 w-44 sm:w-52 lg:w-64 xl:w-80">
                       <Card className="border-2 border-black h-full hover:shadow-xl transition-shadow cursor-pointer">
                         <div className="relative h-32 sm:h-44 lg:h-52 xl:h-64 bg-white">
                           <Image 
@@ -862,7 +860,7 @@ export default function DynamicHomepage() {
                           )}
                         </div>
                         <div className="p-2 sm:p-3 lg:p-4 xl:p-5">
-                          <h3 className="text-xs sm:text-sm lg:text-base xl:text-lg font-black text-black mb-2 sm:mb-3 line-clamp-2 leading-tight">
+                          <h3 className="text-sm sm:text-sm lg:text-base xl:text-lg font-black text-black mb-2 sm:mb-3 line-clamp-2 leading-tight">
                             {product.name}
                           </h3>
                           <div className="flex flex-col gap-1.5 sm:gap-2">
@@ -1042,7 +1040,7 @@ export default function DynamicHomepage() {
 
       {/* Features Section */}
       <section className="relative overflow-hidden">
-        <div className="relative max-w-[1600px] mx-auto px-2 sm:px-4 lg:px-6 xl:px-8 py-4 sm:py-6 lg:py-8">
+        <div className="relative max-w-[1600px] mx-auto px-4 sm:px-4 lg:px-6 xl:px-8 py-6 sm:py-6 lg:py-8">
           <motion.div 
             className="bg-white dark:bg-gray-900 rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden border-2 border-gray-100 dark:border-gray-800"
             initial={{ opacity: 0, y: 20 }}
@@ -1057,7 +1055,7 @@ export default function DynamicHomepage() {
                 <div className="h-0.5 sm:h-1 w-16 sm:w-20 lg:w-24 bg-gradient-to-r from-brand-green via-brand-yellow via-brand-orange to-brand-red mx-auto" />
               </div>
               
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 lg:gap-8">
+              <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6 lg:gap-8">
                 {config.features.map((feature, index) => {
                   const IconComponent = iconMap[feature.iconType] || Zap
                   return (
@@ -1069,13 +1067,13 @@ export default function DynamicHomepage() {
                       viewport={{ once: true }}
                       transition={{ delay: index * 0.1 }}
                     >
-                      <div className="inline-flex items-center justify-center w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 rounded-full bg-black dark:bg-white mb-3 sm:mb-4">
-                        <IconComponent className="w-6 h-6 sm:w-7 sm:h-7 lg:w-8 lg:h-8 text-white dark:text-black" />
+                      <div className="inline-flex items-center justify-center w-10 h-10 sm:w-14 sm:h-14 lg:w-16 lg:h-16 rounded-full bg-black dark:bg-white mb-2 sm:mb-4">
+                        <IconComponent className="w-5 h-5 sm:w-7 sm:h-7 lg:w-8 lg:h-8 text-white dark:text-black" />
                       </div>
-                      <h3 className="text-sm sm:text-base lg:text-lg font-black text-black dark:text-white mb-2 uppercase leading-tight">
+                      <h3 className="text-xs sm:text-base lg:text-lg font-black text-black dark:text-white mb-1 sm:mb-2 uppercase leading-tight">
                         {feature.title}
                       </h3>
-                      <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 leading-relaxed px-1">
+                      <p className="text-[10px] sm:text-sm text-gray-600 dark:text-gray-400 leading-relaxed px-1">
                         {feature.description}
                       </p>
                     </motion.div>
@@ -1088,8 +1086,8 @@ export default function DynamicHomepage() {
       </section>
 
       {/* CTA Section */}
-      <section className="relative overflow-hidden py-4 sm:py-6 lg:py-8">
-        <div className="relative max-w-[1600px] mx-auto px-2 sm:px-4 lg:px-6 xl:px-8">
+      <section className="relative overflow-hidden py-6 sm:py-6 lg:py-8">
+        <div className="relative max-w-[1600px] mx-auto px-4 sm:px-4 lg:px-6 xl:px-8">
           <motion.div 
             className="bg-gradient-to-r from-brand-green via-brand-yellow via-brand-orange to-brand-red p-1 rounded-2xl sm:rounded-3xl shadow-2xl"
             initial={{ opacity: 0, y: 20 }}
@@ -1098,13 +1096,13 @@ export default function DynamicHomepage() {
             transition={{ duration: 0.6 }}
           >
             <div className="bg-black rounded-2xl sm:rounded-3xl p-6 sm:p-8 lg:p-12 xl:p-16 text-center">
-              <h2 className="text-xl sm:text-2xl lg:text-3xl xl:text-4xl 2xl:text-5xl font-black text-white mb-4 sm:mb-6 uppercase tracking-wider leading-tight">
+              <h2 className="text-2xl sm:text-2xl lg:text-3xl xl:text-4xl 2xl:text-5xl font-black text-white mb-4 sm:mb-6 uppercase tracking-wider leading-tight">
                 {config.ctaSection.headline}
               </h2>
               <p className="text-sm sm:text-base lg:text-lg xl:text-xl text-gray-300 mb-6 sm:mb-8 max-w-2xl mx-auto leading-relaxed px-2">
                 {config.ctaSection.subtitle}
               </p>
-              <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center max-w-md sm:max-w-none mx-auto">
+              <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center max-w-sm sm:max-w-none mx-auto">
                 <Button 
                   size="lg" 
                   className="bg-white text-black hover:bg-gray-200 font-black uppercase px-4 sm:px-6 lg:px-8 min-h-[48px] text-sm sm:text-base" 

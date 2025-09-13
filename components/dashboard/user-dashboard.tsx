@@ -180,11 +180,6 @@ export function UserDashboard({ defaultTab = "orders" }: { defaultTab?: string }
     </div>
   )
 
-  // Calculate stats
-  const totalSpent = useMemo(() => 
-    userOrders.reduce((sum, order) => sum + order.total, 0),
-    [userOrders]
-  )
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-black">
@@ -206,7 +201,7 @@ export function UserDashboard({ defaultTab = "orders" }: { defaultTab?: string }
             </div>
             
             {/* Stats Cards */}
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-2 gap-4">
               <motion.div 
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -232,20 +227,6 @@ export function UserDashboard({ defaultTab = "orders" }: { defaultTab?: string }
                 <div className="text-3xl font-black">{userDesigns.length}</div>
               </motion.div>
               
-              <motion.div 
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2 }}
-                className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border-2 border-white/20"
-              >
-                <div className="flex items-center gap-2 mb-1">
-                  <TrendingUp className="h-4 w-4" />
-                  <span className="text-sm opacity-80">Total Spent</span>
-                </div>
-                <div className="text-2xl font-black">
-                  {totalSpent.toLocaleString()} SEK
-                </div>
-              </motion.div>
             </div>
           </div>
         </div>

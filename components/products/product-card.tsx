@@ -3,7 +3,7 @@
 import type { Product } from "@/types"
 import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks"
 import { translations, productCategories } from "@/lib/constants"
-import { getProductImage } from "@/lib/utils/product-image"
+import { getProductImage, getAllProductImages } from "@/lib/utils/product-image"
 import { Card, CardContent, CardFooter } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { ProductImage } from "@/components/ui/product-image"
@@ -11,7 +11,7 @@ import { Palette, ShoppingCart, Eye } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
 import { useRouter, useSearchParams } from "next/navigation"
-import { useMemo, memo, useState, useEffect } from "react"
+import { useMemo, memo, useState, useEffect, useCallback } from "react"
 import { composeProductAndDesign } from "@/lib/utils/imageCompose"
 import { useCurrency } from "@/contexts/CurrencyContext"
 import { addToCart } from "@/lib/redux/slices/cartSlice"
@@ -32,6 +32,8 @@ function ProductCardComponent({ product }: ProductCardProps) {
   const { toast } = useToast()
   const [sizeModalOpen, setSizeModalOpen] = useState(false)
   const [quantityModalOpen, setQuantityModalOpen] = useState(false)
+  const [currentImageIndex, setCurrentImageIndex] = useState(0)
+  const [isHovering, setIsHovering] = useState(false)
   const { language } = useAppSelector((state) => state.app)
   const t = translations[language]
   
@@ -43,6 +45,64 @@ function ProductCardComponent({ product }: ProductCardProps) {
   const activeCoupon = useAppSelector((s: any) => s.coupons.activeCoupon)
   const allCategories = useAppSelector((s: any) => s.categories.categories)
 
+  // Get all product images for hover effect
+  const productImages = useMemo(() => {
+    const images = getAllProductImages(product)
+    return images.length > 0 ? images : [getProductImage(product)]
+  }, [product])
+
+  // Get color variations from product data
+  const colorVariations = useMemo(() => {
+    const colors: { name: string; hex: string; image?: string }[] = []
+    
+    // Check for colors array
+    if (product.colors && Array.isArray(product.colors)) {
+      product.colors.forEach((color: any) => {
+        if (color.name && color.hex) {
+          colors.push({
+            name: color.name,
+            hex: color.hex,
+            image: color.images?.[0] || color.image
+          })
+        }
+      })
+    }
+    
+    // Check for variants/variations
+    const variants = product.variants_dict || product.variants || product.variations
+    if (variants && Array.isArray(variants)) {
+      variants.forEach((variant: any) => {
+        if (variant.color && !colors.find(c => c.name === variant.color)) {
+          // Try to map common color names to hex codes
+          const colorMap: { [key: string]: string } = {
+            'black': '#000000',
+            'white': '#FFFFFF',
+            'red': '#FF0000',
+            'blue': '#0000FF',
+            'green': '#008000',
+            'yellow': '#FFFF00',
+            'orange': '#FFA500',
+            'purple': '#800080',
+            'pink': '#FFC0CB',
+            'gray': '#808080',
+            'grey': '#808080',
+            'brown': '#A52A2A',
+            'navy': '#000080',
+            'beige': '#F5F5DC'
+          }
+          const colorName = variant.color.toLowerCase()
+          colors.push({
+            name: variant.color,
+            hex: variant.hex || colorMap[colorName] || '#808080',
+            image: variant.variant_image || variant.image || variant.images?.[0]
+          })
+        }
+      })
+    }
+    
+    return colors.slice(0, 5) // Limit to 5 colors max
+  }, [product])
+
   // Ensure categories are loaded
   useEffect(() => {
     if (allCategories.length === 0) {
@@ -50,9 +110,36 @@ function ProductCardComponent({ product }: ProductCardProps) {
     }
   }, [dispatch, allCategories.length])
 
+  // Handle mouse hover to cycle through images
+  const handleMouseEnter = useCallback(() => {
+    setIsHovering(true)
+    if (productImages.length > 1) {
+      setCurrentImageIndex(1) // Show second image on hover
+    }
+  }, [productImages.length])
+
+  const handleMouseLeave = useCallback(() => {
+    setIsHovering(false)
+    setCurrentImageIndex(0) // Back to first image
+  }, [])
+
+  // Cycle through images while hovering (optional enhancement)
+  useEffect(() => {
+    if (!isHovering || productImages.length <= 1) return
+    
+    const interval = setInterval(() => {
+      setCurrentImageIndex((prev) => (prev + 1) % productImages.length)
+    }, 1500) // Change image every 1.5 seconds
+    
+    return () => clearInterval(interval)
+  }, [isHovering, productImages.length])
+
   const handleDesignThisProduct = () => {
     const productId = (product as any)._id || product.id
-    router.push(`/design-tool?productId=${productId}`)
+    // Get current locale from pathname
+    const locale = window.location.pathname.split('/')[1] || 'en'
+    // Navigate to step-based design tool starting at step 1
+    router.push(`/${locale}/design-tool/${productId}/step/1`)
   }
 
   const handleAddToCart = () => {
@@ -128,13 +215,15 @@ function ProductCardComponent({ product }: ProductCardProps) {
       <Link 
         href={`/product/${(product as any)._id || product.id}${searchParams.toString() ? `?from=${encodeURIComponent(searchParams.toString())}` : ''}`} 
         className="relative w-full aspect-[4/3] overflow-hidden bg-gray-100 dark:bg-gray-800 flex-shrink-0 cursor-pointer"
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
       >
         <ProductImage
-          src={getProductImage(product)}
+          src={productImages[currentImageIndex]}
           alt={product.name}
           fill
           sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-          className="object-contain p-2 bg-gray-50 group-hover:scale-105 transition-transform duration-500"
+          className="object-contain p-2 bg-gray-50 group-hover:scale-105 transition-all duration-500"
           loading="lazy"
           quality={85}
         />
@@ -175,6 +264,38 @@ function ProductCardComponent({ product }: ProductCardProps) {
         <div>
           <h3 className="font-black text-xs sm:text-sm lg:text-base uppercase text-black dark:text-white line-clamp-2">{product.name}</h3>
           <p className="text-[10px] sm:text-xs font-bold uppercase text-gray-500 dark:text-gray-400 mt-1">{categoryName}</p>
+          {/* Color Variations */}
+          {colorVariations.length > 0 && (
+            <div className="flex gap-1 mt-2">
+              {colorVariations.map((color, index) => (
+                <div
+                  key={index}
+                  className="relative group/color"
+                  title={color.name}
+                >
+                  <div
+                    className="w-4 h-4 sm:w-5 sm:h-5 rounded-full border-2 border-gray-300 dark:border-gray-600 hover:border-black dark:hover:border-white transition-all cursor-pointer hover:scale-110"
+                    style={{ backgroundColor: color.hex }}
+                    onClick={(e) => {
+                      e.preventDefault()
+                      e.stopPropagation()
+                      // If color has an image, update the current image
+                      if (color.image) {
+                        const index = productImages.findIndex(img => img === color.image)
+                        if (index !== -1) {
+                          setCurrentImageIndex(index)
+                        }
+                      }
+                    }}
+                  />
+                  {/* Tooltip */}
+                  <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-2 py-1 bg-black dark:bg-white text-white dark:text-black text-xs rounded opacity-0 group-hover/color:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10">
+                    {color.name}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
         <div className="mt-3">
           {activeCoupon && activeCoupon.discountType === "percentage" && product.eligibleForCoupons ? (

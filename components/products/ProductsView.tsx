@@ -3,6 +3,7 @@
 import { Card, CardContent, CardFooter } from "@/components/ui/card"
 import { useEffect, useMemo, useState } from "react"
 import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks"
+import { useTranslations } from "next-intl"
 import { fetchProducts, fetchCategoryCounts } from "@/lib/redux/slices/productsSlice"
 import { fetchCategories, fetchSubcategories } from "@/lib/redux/slices/categoriesSlice"
 import { translations } from "@/lib/constants"
@@ -30,10 +31,10 @@ export function ProductsView({ categorySlug, subcategorySlug }: { categorySlug?:
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const { items: products, loading, error, pagination, filters, categoryCounts } = useAppSelector((state) => state.products)
-  const { language } = useAppSelector((state) => state.app)
   const sessionUser = useAppSelector((s: any) => s.auth.user)
-  const t = translations[language]
+  const t = useTranslations()
   const [loadTimeout, setLoadTimeout] = useState(false)
+  const [staticCategoryCounts, setStaticCategoryCounts] = useState<any[]>([])
   
   // Extract locale from pathname
   const locale = pathname.split('/')[1] === 'sv' ? 'sv' : 'en'
@@ -44,14 +45,13 @@ export function ProductsView({ categorySlug, subcategorySlug }: { categorySlug?:
       console.log('[ProductsView] Storing static category counts:', categoryCounts)
       setStaticCategoryCounts(categoryCounts)
     }
-  }, [categoryCounts]) // Only depend on categoryCounts to avoid initialization error
+  }, [categoryCounts, staticCategoryCounts.length]) // Only depend on categoryCounts to avoid initialization error
 
   const cats = useAppSelector((s: any) => s.categories.categories)
   const subs = useAppSelector((s: any) => s.categories.subcategories)
   
   // Track if counts have been fetched once AND store them locally
   const [countsFetched, setCountsFetched] = useState(false)
-  const [staticCategoryCounts, setStaticCategoryCounts] = useState<any[]>([])
   
   // Initialize state from URL parameters
   const [searchTerm, setSearchTerm] = useState(searchParams.get('search') || "")
@@ -255,7 +255,6 @@ export function ProductsView({ categorySlug, subcategorySlug }: { categorySlug?:
   // No need for client-side filtering since we're doing it server-side now
   const filteredAndSortedProducts = products
 
-
   const ProductCardSkeleton = () => (
     <Card className="overflow-hidden flex flex-col border-2 border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 rounded-xl animate-pulse">
       <div className="w-full aspect-[4/3] bg-gray-200 dark:bg-gray-800" />
@@ -277,13 +276,13 @@ export function ProductsView({ categorySlug, subcategorySlug }: { categorySlug?:
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-black">
       {/* Hero Section */}
       <div className="relative bg-black text-white py-8 sm:py-12 lg:py-16 px-4">
-        <div className="absolute inset-0 bg-gradient-to-r from-green-500 via-yellow-500 via-orange-500 to-red-500 opacity-20" />
+        <div className="absolute inset-0 bg-gradient-to-r from-green-500 via-yellow-500 to-red-500 opacity-20" />
         <div className="relative max-w-7xl mx-auto text-center">
           <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black uppercase tracking-wider mb-2 sm:mb-4">
-            {selectedCategory ? selectedCategory.name : t.products}
+            {selectedCategory ? selectedCategory.name : t("products.products")}
           </h1>
           <p className="text-sm sm:text-base md:text-lg lg:text-xl opacity-90">
-            {selectedSubcategory ? selectedSubcategory.name : t.viewProducts}
+            {selectedSubcategory ? selectedSubcategory.name : t("products.viewProducts")}
           </p>
         </div>
       </div>
@@ -295,7 +294,7 @@ export function ProductsView({ categorySlug, subcategorySlug }: { categorySlug?:
             <BreadcrumbItem>
               <BreadcrumbLink asChild>
                 <Link href="/" className="hover:text-black dark:hover:text-white transition-colors">
-                  Home
+                  {t("common.home")}
                 </Link>
               </BreadcrumbLink>
             </BreadcrumbItem>
@@ -305,12 +304,12 @@ export function ProductsView({ categorySlug, subcategorySlug }: { categorySlug?:
                 <>
                   <BreadcrumbLink asChild>
                     <Link href="/products" className="hover:text-black dark:hover:text-white transition-colors">
-                      Products
+                      {t("products.products")}
                     </Link>
                   </BreadcrumbLink>
                 </>
               ) : (
-                <BreadcrumbPage className="font-semibold">Products</BreadcrumbPage>
+                <BreadcrumbPage className="font-semibold">{t("products.products")}</BreadcrumbPage>
               )}
             </BreadcrumbItem>
             {selectedCategory && (
@@ -351,7 +350,7 @@ export function ProductsView({ categorySlug, subcategorySlug }: { categorySlug?:
               <Search className="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 h-4 sm:h-5 w-4 sm:w-5 text-gray-400" />
               <Input
                 type="search"
-                placeholder={t.searchProducts || "Search products..."}
+                placeholder={t("products.searchProducts")}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="h-10 sm:h-12 pl-10 sm:pl-12 pr-3 sm:pr-4 border-2 border-black dark:border-white rounded-lg sm:rounded-xl font-bold text-sm sm:text-base"
@@ -370,8 +369,8 @@ export function ProductsView({ categorySlug, subcategorySlug }: { categorySlug?:
                 }`}
               >
                 <Filter className="h-3 w-3 sm:h-4 sm:w-4 lg:h-5 lg:w-5 mr-1 sm:mr-2" />
-                <span className="hidden sm:inline">Filters</span>
-                <span className="sm:hidden">Filter</span>
+                <span className="hidden sm:inline">{t("products.filters")}</span>
+                <span className="sm:hidden">{t("products.filter")}</span>
                 {(selectedCategoryFilter || selectedSubcategoryFilter || showDesignableOnly) && (
                   <span className="ml-1 sm:ml-2 px-1 sm:px-1.5 lg:px-2 py-0.5 bg-white text-black dark:bg-black dark:text-white rounded-full text-[8px] sm:text-[10px] lg:text-xs">
                     {(selectedCategoryFilter ? 1 : 0) + (selectedSubcategoryFilter ? 1 : 0) + (showDesignableOnly ? 1 : 0)}
@@ -390,10 +389,10 @@ export function ProductsView({ categorySlug, subcategorySlug }: { categorySlug?:
                     ? 'bg-black text-white dark:bg-white dark:text-black border-black dark:border-white' 
                     : 'bg-transparent border-black text-black dark:border-white dark:text-white hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black'
                 }`}
-                title="Show only customizable products"
+                title={t("products.showOnlyCustomizable")}
               >
                 <Palette className="h-4 sm:h-5 w-4 sm:w-5" />
-                <span className="hidden lg:inline">Customizable</span>
+                <span className="hidden lg:inline">{t("products.customizable")}</span>
               </Button>
               
               {/* Sort Dropdown */}
@@ -402,10 +401,10 @@ export function ProductsView({ categorySlug, subcategorySlug }: { categorySlug?:
                 onChange={(e) => setSortBy(e.target.value)}
                 className="flex-1 sm:flex-none h-10 sm:h-12 px-2 sm:px-4 border-2 border-black dark:border-white bg-transparent rounded-lg sm:rounded-xl font-bold uppercase cursor-pointer text-xs sm:text-sm"
               >
-                <option value="featured">Featured</option>
-                <option value="price-asc">Low → High</option>
-                <option value="price-desc">High → Low</option>
-                <option value="newest">Newest</option>
+                <option value="featured">{t("products.featured")}</option>
+                <option value="price-asc">{t("products.priceLowToHigh")}</option>
+                <option value="price-desc">{t("products.priceHighToLow")}</option>
+                <option value="newest">{t("products.newest")}</option>
               </select>
             </div>
           </div>
@@ -413,7 +412,7 @@ export function ProductsView({ categorySlug, subcategorySlug }: { categorySlug?:
           {/* Active Filters */}
           {(selectedCategory || selectedSubcategory || selectedCategoryFilter || selectedSubcategoryFilter || showDesignableOnly) && (
             <div className="flex flex-wrap items-center gap-2 mt-4 pt-4 border-t-2 border-gray-200 dark:border-gray-700">
-              <span className="text-sm font-bold uppercase">Active Filters:</span>
+              <span className="text-sm font-bold uppercase">{t("products.activeFilters")}:</span>
               {showDesignableOnly && (
                 <button
                   onClick={() => {
@@ -423,7 +422,7 @@ export function ProductsView({ categorySlug, subcategorySlug }: { categorySlug?:
                   className="inline-flex items-center gap-1 px-3 py-1 bg-black text-white dark:bg-white dark:text-black rounded-full text-sm font-bold"
                 >
                   <Palette className="h-3 w-3" />
-                  Customizable
+                  {t("products.customizable")}
                   <X className="h-3 w-3" />
                 </button>
               )}
@@ -482,7 +481,7 @@ export function ProductsView({ categorySlug, subcategorySlug }: { categorySlug?:
               <div className="space-y-4">
                 {/* Categories Filter */}
                 <div>
-                  <h4 className="font-bold uppercase text-sm mb-2 text-black dark:text-white">Categories</h4>
+                  <h4 className="font-bold uppercase text-sm mb-2 text-black dark:text-white">{t("products.categories")}</h4>
                   <div className="space-y-2 max-h-60 overflow-y-auto">
                     {cats.filter((c: any) => c.isActive).map((category: any) => {
                       const categorySubcategories = subs.filter((s: any) => s.categoryId === category.id && s.isActive)
@@ -541,7 +540,7 @@ export function ProductsView({ categorySlug, subcategorySlug }: { categorySlug?:
                                     : 'border-gray-300 dark:border-gray-600 hover:border-gray-900 dark:hover:border-gray-100'
                                 }`}
                               >
-                                All {category.name}
+                                {t("products.allCategory", { category: category.name })}
                               </button>
                               {categorySubcategories.map((subcategory: any) => {
                                 const subCount = categoryCount?.subcategories?.find(sc => 
@@ -588,7 +587,7 @@ export function ProductsView({ categorySlug, subcategorySlug }: { categorySlug?:
                   }}
                   className="w-full border-2 border-black dark:border-white bg-white hover:bg-black text-black hover:text-white dark:bg-gray-800 dark:text-white dark:hover:bg-white dark:hover:text-black font-bold uppercase text-sm py-2 px-4 rounded-lg transition-all"
                 >
-                  Clear All Filters
+                  {t("products.clearAllFilters")}
                 </button>
               </div>
             </motion.div>
@@ -606,11 +605,11 @@ export function ProductsView({ categorySlug, subcategorySlug }: { categorySlug?:
                 className="hidden lg:block w-64 flex-shrink-0"
               >
                 <div className="bg-white dark:bg-gray-900 rounded-2xl border-2 border-black dark:border-white p-6 sticky top-4">
-                  <h3 className="text-lg font-black uppercase mb-6">Filter By</h3>
+                  <h3 className="text-lg font-black uppercase mb-6">{t("products.filterBy")}</h3>
                   
                   {/* Categories Filter */}
                   <div className="mb-6">
-                    <h4 className="font-bold uppercase text-sm mb-3">Categories</h4>
+                    <h4 className="font-bold uppercase text-sm mb-3">{t("products.categories")}</h4>
                     <div className="space-y-2">
                       {cats.filter((c: any) => c.isActive).map((category: any) => {
                         const categorySubcategories = subs.filter((s: any) => s.categoryId === category.id && s.isActive)
@@ -672,7 +671,7 @@ export function ProductsView({ categorySlug, subcategorySlug }: { categorySlug?:
                                   }`}
                                 >
                                   <div className="flex justify-between items-center">
-                                    <span className="font-bold">All {category.name}</span>
+                                    <span className="font-bold">{t("products.allCategory", { category: category.name })}</span>
                                     <span className="text-xs opacity-60">({count})</span>
                                   </div>
                                 </button>
@@ -715,10 +714,10 @@ export function ProductsView({ categorySlug, subcategorySlug }: { categorySlug?:
                   
                   {/* Price Range Filter */}
                   <div className="mb-6">
-                    <h4 className="font-bold uppercase text-sm mb-3">Price Range</h4>
+                    <h4 className="font-bold uppercase text-sm mb-3">{t("products.priceRange")}</h4>
                     <div className="space-y-3">
                       <div>
-                        <label className="text-xs uppercase font-bold">Min: {priceRange.min} SEK</label>
+                        <label className="text-xs uppercase font-bold">{t("products.min")}: {priceRange.min} SEK</label>
                         <input
                           type="range"
                           min="0"
@@ -729,7 +728,7 @@ export function ProductsView({ categorySlug, subcategorySlug }: { categorySlug?:
                         />
                       </div>
                       <div>
-                        <label className="text-xs uppercase font-bold">Max: {priceRange.max} SEK</label>
+                        <label className="text-xs uppercase font-bold">{t("products.max")}: {priceRange.max} SEK</label>
                         <input
                           type="range"
                           min="0"
@@ -753,7 +752,7 @@ export function ProductsView({ categorySlug, subcategorySlug }: { categorySlug?:
                     }}
                     className="w-full border-2 border-black dark:border-white bg-transparent hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black font-bold uppercase"
                   >
-                    Clear All Filters
+                    {t("products.clearAllFilters")}
                   </Button>
                 </div>
               </motion.div>
@@ -766,13 +765,13 @@ export function ProductsView({ categorySlug, subcategorySlug }: { categorySlug?:
             {loading && loadTimeout ? (
               <div className="text-center py-20">
                 <div className="bg-white dark:bg-gray-900 rounded-2xl border-2 border-black dark:border-white p-8 max-w-md mx-auto">
-                  <p className="text-red-500 font-bold text-lg mb-4">Products are taking too long to load</p>
-                  <p className="text-gray-600 dark:text-gray-400 mb-6">Please check your connection and refresh the page</p>
+                  <p className="text-red-500 font-bold text-lg mb-4">{t("products.loadingTooLong")}</p>
+                  <p className="text-gray-600 dark:text-gray-400 mb-6">{t("products.checkConnection")}</p>
                   <Button 
                     onClick={() => window.location.reload()} 
                     className="bg-black text-white dark:bg-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200 font-bold uppercase"
                   >
-                    Refresh Page
+                    {t("common.refreshPage")}
                   </Button>
                 </div>
               </div>
@@ -799,9 +798,9 @@ export function ProductsView({ categorySlug, subcategorySlug }: { categorySlug?:
             ) : (
               <div className="text-center py-20">
                 <div className="bg-white dark:bg-gray-900 rounded-2xl border-2 border-black dark:border-white p-8 max-w-md mx-auto">
-                  <p className="text-2xl font-black uppercase mb-4">No Products Found</p>
+                  <p className="text-2xl font-black uppercase mb-4">{t("products.noProductsFound")}</p>
                   <p className="text-gray-600 dark:text-gray-400 mb-6">
-                    Try adjusting your filters or search terms
+                    {t("products.tryAdjustingFilters")}
                   </p>
                   <Button
                     onClick={() => {
@@ -811,7 +810,7 @@ export function ProductsView({ categorySlug, subcategorySlug }: { categorySlug?:
                     }}
                     className="bg-black text-white dark:bg-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200 font-bold uppercase"
                   >
-                    Clear Filters
+                    {t("products.clearFilters")}
                   </Button>
                 </div>
               </div>
@@ -824,7 +823,11 @@ export function ProductsView({ categorySlug, subcategorySlug }: { categorySlug?:
           <div className="mt-6 sm:mt-8 space-y-3 sm:space-y-4">
             <div className="text-center">
               <p className="text-xs sm:text-sm font-bold uppercase text-gray-600 dark:text-gray-400">
-                Showing {Math.min(pagination.limit * (pagination.page - 1) + 1, pagination.total)}-{Math.min(pagination.limit * pagination.page, pagination.total)} of {pagination.total} products
+                {t("products.showingRange", {
+                  start: Math.min(pagination.limit * (pagination.page - 1) + 1, pagination.total),
+                  end: Math.min(pagination.limit * pagination.page, pagination.total),
+                  total: pagination.total
+                })}
               </p>
             </div>
             
@@ -839,8 +842,8 @@ export function ProductsView({ categorySlug, subcategorySlug }: { categorySlug?:
                   className="border-2 border-black dark:border-white font-bold text-xs sm:text-sm min-h-[36px] sm:min-h-[40px] touch-manipulation"
                 >
                   <ChevronLeft className="h-3 sm:h-4 w-3 sm:w-4" />
-                  <span className="hidden sm:inline">Previous</span>
-                  <span className="sm:hidden">Prev</span>
+                  <span className="hidden sm:inline">{t("common.previous")}</span>
+                  <span className="sm:hidden">{t("common.prev")}</span>
                 </Button>
                 
                 <div className="flex gap-1">
@@ -916,8 +919,8 @@ export function ProductsView({ categorySlug, subcategorySlug }: { categorySlug?:
                   disabled={currentPage === pagination.totalPages}
                   className="border-2 border-black dark:border-white font-bold text-xs sm:text-sm min-h-[36px] sm:min-h-[40px] touch-manipulation"
                 >
-                  <span className="hidden sm:inline">Next</span>
-                  <span className="sm:hidden">Next</span>
+                  <span className="hidden sm:inline">{t("common.next")}</span>
+                  <span className="sm:hidden">{t("common.next")}</span>
                   <ChevronRight className="h-3 sm:h-4 w-3 sm:w-4" />
                 </Button>
               </div>

@@ -187,6 +187,21 @@ const designSlice = createSlice({
     saveVariationDesign: (state, action) => {
       const { variationId, viewMode, canvasJSON, isShared = false, designAreaCm2, designAreaPercentage } = action.payload
       
+      // CRITICAL DEBUG: Log what's being saved
+      console.log('🚨 [Redux] saveVariationDesign ACTION:', {
+        variationId,
+        viewMode,
+        objectCount: canvasJSON?.objects?.length || 0,
+        isShared,
+        timestamp: new Date().toISOString(),
+        beforeSaveCount: state.variationDesigns.length,
+        allCurrentDesigns: state.variationDesigns.map(d => ({
+          id: d.variationId,
+          view: d.viewMode,
+          objects: d.canvasJSON?.objects?.length || 0
+        }))
+      })
+      
       // Find existing design for this variation+view combination
       const existingIndex = state.variationDesigns.findIndex(
         design => design.variationId === variationId && design.viewMode === viewMode
@@ -204,19 +219,22 @@ const designSlice = createSlice({
       
       if (existingIndex !== -1) {
         // Update existing design
+        console.log('🔄 [Redux] Updating existing design at index:', existingIndex)
         state.variationDesigns[existingIndex] = designData
       } else {
         // Add new design
+        console.log('➕ [Redux] Adding new design')
         state.variationDesigns.push(designData)
       }
       
       // Set current design ID
       state.currentDesignId = `${variationId}:${viewMode}`
       
-      console.log('💾 [DesignSlice] Saved variation design:', {
+      console.log('💾 [DesignSlice] After save:', {
         variationId,
         viewMode,
         isShared,
+        afterSaveCount: state.variationDesigns.length,
         designAreaCm2: designData.designAreaCm2,
         designAreaPercentage: designData.designAreaPercentage,
         totalDesigns: state.variationDesigns.length

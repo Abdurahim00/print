@@ -14,6 +14,7 @@ export function CategoryShowcase() {
   const { language } = useAppSelector((state) => state.app)
   const [isVisible, setIsVisible] = useState(false)
   const [showArrows, setShowArrows] = useState(false)
+  const [showAll, setShowAll] = useState(false)
   const usedIconsRef = useRef(new Set<string>())
 
   useEffect(() => {
@@ -293,75 +294,135 @@ export function CategoryShowcase() {
     )
   }
 
+  const mobileVisibleCount = 8
+  const displayCategories = showAll ? activeCategories : activeCategories.slice(0, mobileVisibleCount)
+
   return (
     <AnimatePresence>
-      <motion.div 
+      <motion.div
         className="w-full relative"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.3 }}
       >
-        <div className="w-full relative group">
-          <div className="relative w-full max-w-full overflow-hidden">
-            {/* Left scroll button - professional design */}
-            {showArrows && (
+        {/* Mobile Grid View */}
+        <div className="sm:hidden">
+          <motion.div
+            className="grid grid-cols-4 gap-3 px-2"
+            variants={containerVariants}
+            initial="hidden"
+            animate="visible"
+          >
+            {displayCategories.map((category: any, index: number) => {
+              const style = getCategoryStyle(category.name, index)
+              return (
+                <motion.div
+                  key={category.id}
+                  variants={itemVariants}
+                  className="flex-shrink-0"
+                >
+                  <Link
+                    href={`/products?category=${category.slug}`}
+                    className="group flex flex-col items-center gap-1.5 cursor-pointer"
+                  >
+                    <motion.div
+                      className="relative"
+                      whileTap={{ scale: 0.95 }}
+                      transition={{ type: "spring", stiffness: 400, damping: 17 }}
+                    >
+                      <div className="w-16 h-16 rounded-full bg-white border-2 border-black dark:border-white flex items-center justify-center shadow-md active:shadow-lg transition-all duration-300">
+                        <img
+                          src={style.iconUrl}
+                          alt={category.name}
+                          className="w-7 h-7 filter"
+                          style={{ filter: 'grayscale(100%) contrast(1.5) brightness(0)' }}
+                        />
+                      </div>
+                    </motion.div>
+                    <span className="text-[10px] font-bold text-black dark:text-white text-center max-w-[65px] uppercase line-clamp-2 leading-tight">
+                      {category.name}
+                    </span>
+                  </Link>
+                </motion.div>
+              )
+            })}
+          </motion.div>
+
+          {activeCategories.length > mobileVisibleCount && (
+            <div className="text-center mt-4">
               <button
-                onClick={() => scroll('left')}
-                className="absolute left-0 sm:left-1 lg:left-2 top-[32px] sm:top-[36px] lg:top-[44px] -translate-y-1/2 z-10 w-6 h-6 sm:w-8 sm:h-8 lg:w-10 lg:h-10 bg-black dark:bg-white text-white dark:text-black flex items-center justify-center hover:scale-110 active:scale-95 transition-all duration-200 opacity-80 sm:opacity-0 sm:group-hover:opacity-100 shadow-xl rounded-full"
+                onClick={() => setShowAll(!showAll)}
+                className="text-xs font-bold text-black dark:text-white uppercase px-4 py-2 border border-black dark:border-white rounded-full"
               >
-                <ChevronLeft className="h-3 w-3 sm:h-4 sm:w-4 lg:h-5 lg:w-5" />
+                {showAll ? 'Show Less' : `Show All (${activeCategories.length})`}
               </button>
+            </div>
+          )}
+        </div>
+
+        {/* Desktop Scroll View */}
+        <div className="hidden sm:block relative group">
+          <div className="relative w-full max-w-full overflow-hidden">
+            {/* Desktop scroll buttons */}
+            {showArrows && (
+              <>
+                <button
+                  onClick={() => scroll('left')}
+                  className="absolute -left-4 lg:-left-6 top-1/2 -translate-y-1/2 z-10 w-8 h-8 lg:w-10 lg:h-10 bg-black dark:bg-white text-white dark:text-black flex items-center justify-center hover:scale-110 active:scale-95 transition-all duration-200 opacity-0 group-hover:opacity-100 shadow-xl rounded-full"
+                >
+                  <ChevronLeft className="h-4 w-4 lg:h-5 lg:w-5" />
+                </button>
+                <button
+                  onClick={() => scroll('right')}
+                  className="absolute -right-4 lg:-right-6 top-1/2 -translate-y-1/2 z-10 w-8 h-8 lg:w-10 lg:h-10 bg-black dark:bg-white text-white dark:text-black flex items-center justify-center hover:scale-110 active:scale-95 transition-all duration-200 opacity-0 group-hover:opacity-100 shadow-xl rounded-full"
+                >
+                  <ChevronRight className="h-4 w-4 lg:h-5 lg:w-5" />
+                </button>
+              </>
             )}
 
-            {/* Scrollable container with padding for expansion */}
-            <motion.div 
+            {/* Desktop scrollable container */}
+            <motion.div
               ref={scrollContainerRef}
-              className="flex gap-2 sm:gap-3 lg:gap-4 xl:gap-6 overflow-x-auto scrollbar-hide scroll-smooth py-1 sm:py-2"
-              style={{ 
-                scrollbarWidth: 'none' as any, 
-                msOverflowStyle: 'none',
-                marginTop: '4px',
-                marginBottom: '4px',
-                paddingLeft: activeCategories.length <= 5 ? '0' : window.innerWidth < 640 ? '12px' : '20px',
-                paddingRight: activeCategories.length <= 5 ? '0' : window.innerWidth < 640 ? '12px' : '20px',
-                justifyContent: activeCategories.length <= 5 ? 'center' : 'flex-start',
-                width: '100%'
+              className="flex gap-3 lg:gap-4 xl:gap-6 overflow-x-auto scrollbar-hide scroll-smooth py-2 px-6 lg:px-8"
+              style={{
+                scrollbarWidth: 'none' as any,
+                msOverflowStyle: 'none'
               }}
               variants={containerVariants}
               initial="hidden"
               animate="visible"
             >
-              {/* Category items */}
+              {/* Desktop category items */}
               {activeCategories.map((category: any, index: number) => {
                 const style = getCategoryStyle(category.name, index)
-                
+
                 return (
-                  <motion.div 
+                  <motion.div
                     key={category.id}
                     variants={itemVariants}
                     className="flex-shrink-0"
                   >
                     <Link
                       href={`/products?category=${category.slug}`}
-                      className="group flex flex-col items-center gap-1.5 sm:gap-2 lg:gap-3 cursor-pointer relative z-10 min-w-0"
-                      style={{ pointerEvents: 'auto' }}
+                      className="group flex flex-col items-center gap-2 lg:gap-3 cursor-pointer relative z-10 min-w-0"
                     >
-                      <motion.div 
+                      <motion.div
                         className="relative"
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
                         transition={{ type: "spring", stiffness: 400, damping: 17 }}
                       >
-                        <div className="w-10 h-10 sm:w-12 sm:h-12 lg:w-14 lg:h-14 xl:w-16 xl:h-16 rounded-full bg-white border border-black sm:border-2 dark:border-white flex items-center justify-center shadow-md group-hover:shadow-xl transition-all duration-300 flex-shrink-0">
-                          <img 
-                            src={style.iconUrl} 
+                        <div className="w-12 h-12 lg:w-14 lg:h-14 xl:w-16 xl:h-16 rounded-full bg-white border-2 border-black dark:border-white flex items-center justify-center shadow-md group-hover:shadow-xl transition-all duration-300 flex-shrink-0">
+                          <img
+                            src={style.iconUrl}
                             alt={category.name}
-                            className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 xl:w-8 xl:h-8 filter transition-all"
+                            className="w-5 h-5 lg:w-6 lg:h-6 xl:w-8 xl:h-8 filter transition-all"
                             style={{ filter: 'grayscale(100%) contrast(1.5) brightness(0)' }}
                           />
                         </div>
                       </motion.div>
-                      <span className="text-[8px] sm:text-[10px] lg:text-xs font-bold text-black dark:text-white transition-colors text-center max-w-[48px] sm:max-w-[60px] lg:max-w-[80px] uppercase line-clamp-2 leading-tight">
+                      <span className="text-[10px] lg:text-xs font-bold text-black dark:text-white transition-colors text-center max-w-[60px] lg:max-w-[80px] uppercase line-clamp-2 leading-tight">
                         {category.name}
                       </span>
                     </Link>
@@ -369,18 +430,7 @@ export function CategoryShowcase() {
                 )
               })}
             </motion.div>
-
-            {/* Right scroll button - professional design */}
-            {showArrows && (
-              <button
-                onClick={() => scroll('right')}
-                className="absolute right-0 sm:right-1 lg:right-2 top-[32px] sm:top-[36px] lg:top-[44px] -translate-y-1/2 z-10 w-6 h-6 sm:w-8 sm:h-8 lg:w-10 lg:h-10 bg-black dark:bg-white text-white dark:text-black flex items-center justify-center hover:scale-110 active:scale-95 transition-all duration-200 opacity-80 sm:opacity-0 sm:group-hover:opacity-100 shadow-xl rounded-full"
-              >
-                <ChevronRight className="h-3 w-3 sm:h-4 sm:w-4 lg:h-5 lg:w-5" />
-              </button>
-            )}
           </div>
-
         </div>
       </motion.div>
     </AnimatePresence>

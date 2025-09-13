@@ -9,6 +9,7 @@ import { RootState } from "@/lib/redux/store"
 import { ProductAnglesSelector } from "@/components/dashboard/common/ProductAnglesSelector"
 import { LoadSavedDesign } from "./load-saved-design"
 import { useVariationDesignPersistence } from "@/hooks/useVariationDesignPersistence"
+import { VariationSelector, getVariationFrames } from "./components/VariationSelector"
 
 // Type definition for product
 interface Product {
@@ -1077,59 +1078,33 @@ export function CentralCanvas() {
   useEffect(() => {
     if (!setDesignBoundaries) return
     
-    const applyFrames = () => {
-      // Try calling setDesignBoundaries directly - it now handles canvas availability internally
-      if (currentVariationFrames && currentVariationFrames.length > 0) {
-        console.log('🎯 [CentralCanvas] Attempting to apply design boundaries:', currentVariationFrames)
-        setDesignBoundaries(currentVariationFrames, { isMobile, canvasScale })
-        
-        // Check if canvas is available for render
+    // Always call setDesignBoundaries - it now stores boundaries even if canvas isn't ready
+    if (currentVariationFrames && currentVariationFrames.length > 0) {
+      console.log('🎯 [CentralCanvas] Setting design boundaries:', currentVariationFrames.length, 'frames')
+      setDesignBoundaries(currentVariationFrames, { isMobile, canvasScale })
+      
+      // Try to render immediately if canvas is available
+      const canvas = getFabricCanvas()
+      if (canvas) {
+        canvas.requestRenderAll()
+      }
+      
+      // Set up a simple retry for rendering (not for setting boundaries)
+      let attempts = 0
+      const renderInterval = setInterval(() => {
+        attempts++
         const canvas = getFabricCanvas()
         if (canvas) {
+          console.log('✅ [CentralCanvas] Canvas ready, rendering boundaries (attempt', attempts, ')')
           canvas.requestRenderAll()
-          return true
-        }
-        return false // Canvas not ready yet, but boundaries might be stored
-      }
-      return false
-    }
-    
-    // If we have frames to apply
-    if (currentVariationFrames && currentVariationFrames.length > 0) {
-      // Try to apply immediately
-      const applied = applyFrames()
-      
-      // Set up retry mechanism
-      let retryCount = 0
-      const maxRetries = 60 // 3 seconds at 50ms intervals
-      
-      const checkInterval = setInterval(() => {
-        retryCount++
-        
-        if (applyFrames()) {
-          console.log('✅ [CentralCanvas] Frames applied successfully after', retryCount, 'attempts')
-          clearInterval(checkInterval)
-        } else if (retryCount >= maxRetries) {
-          console.warn('⚠️ [CentralCanvas] Max retries reached for frame application')
-          clearInterval(checkInterval)
-          
-          // Last attempt - force call setDesignBoundaries anyway
-          setDesignBoundaries(currentVariationFrames, { isMobile, canvasScale })
+          clearInterval(renderInterval)
+        } else if (attempts >= 20) { // 1 second max
+          console.log('⏱️ [CentralCanvas] Canvas render timeout, boundaries are stored')
+          clearInterval(renderInterval)
         }
       }, 50)
       
-      // Also try again after a longer delay as backup
-      const backupTimer = setTimeout(() => {
-        console.log('🔄 [CentralCanvas] Backup frame application attempt')
-        setDesignBoundaries(currentVariationFrames, { isMobile, canvasScale })
-        const canvas = getFabricCanvas()
-        if (canvas) canvas.requestRenderAll()
-      }, 500)
-      
-      return () => {
-        clearInterval(checkInterval)
-        clearTimeout(backupTimer)
-      }
+      return () => clearInterval(renderInterval)
     } else if (currentVariationFrames?.length === 0) {
       // Clear boundaries if no frames
       setDesignBoundaries([], { isMobile, canvasScale })
@@ -1162,17 +1137,34 @@ export function CentralCanvas() {
     const handleCanvasReady = (event: any) => {
       console.log('🎉 [CentralCanvas] Canvas ready event received')
       
-      // Apply frames if we have them
+      // Apply frames if we have them - with a small delay to ensure canvas is fully initialized
       if (currentVariationFrames.length > 0 && setDesignBoundaries) {
         console.log('🎯 [CentralCanvas] Applying frames on canvas ready')
+        
+        // Apply immediately
         setDesignBoundaries(currentVariationFrames, { isMobile, canvasScale })
         
         // Also request render
         const canvas = event.detail?.canvas || getFabricCanvas()
         if (canvas) {
           canvas.requestRenderAll()
+          
+          // Apply again after a short delay to ensure visibility
+          setTimeout(() => {
+            console.log('🔄 [CentralCanvas] Re-applying frames for visibility')
+            setDesignBoundaries(currentVariationFrames, { isMobile, canvasScale })
+            canvas.requestRenderAll()
+          }, 100)
         }
       }
+    }
+    
+    // Also check if canvas is already ready when effect runs
+    const existingCanvas = getFabricCanvas()
+    if (existingCanvas && currentVariationFrames.length > 0 && setDesignBoundaries) {
+      console.log('🎯 [CentralCanvas] Canvas already exists, applying frames')
+      setDesignBoundaries(currentVariationFrames, { isMobile, canvasScale })
+      existingCanvas.requestRenderAll()
     }
     
     window.addEventListener('fabricCanvasReady', handleCanvasReady)
@@ -1479,6 +1471,29 @@ export function CentralCanvas() {
               </div>
             </div>
           </div>
+          
+          {/* Variation Selector - Show for products with variations */}
+          {selectedProduct?.hasVariations && selectedProduct.variations?.length > 0 && (
+            <div className="flex-shrink-0 mt-3 lg:mt-4">
+              <VariationSelector
+                product={selectedProduct}
+                onVariationChange={(variation) => {
+                  // Update design boundaries based on variation frames
+                  const frames = getVariationFrames(selectedProduct, variation, viewMode)
+                  if (frames.length > 0 && canvasRef.current) {
+                    const frame = frames[0]
+                    setDesignBoundaries({
+                      left: frame.xPercent || (frame.x / 600 * 100),
+                      top: frame.yPercent || (frame.y / 600 * 100),
+                      width: frame.widthPercent || (frame.widthPx / 600 * 100),
+                      height: frame.heightPercent || (frame.heightPx / 600 * 100)
+                    })
+                  }
+                }}
+                className="mb-3"
+              />
+            </div>
+          )}
           
           {/* Product Angles - Compact design at bottom */}
           {selectedProduct && angles && angles.length > 0 && (

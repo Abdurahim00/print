@@ -188,7 +188,7 @@ export function Navbar() {
           <span className="font-black">
             {promoCoupon.discountType === "percentage" ? `${promoCoupon.discountValue}% OFF` : `${promoCoupon.discountValue} OFF`} 
           </span>
-          <span className="ml-2">CODE: <span className="underline font-mono">{promoCoupon.code}</span></span>
+          <span className="ml-2">{tCommon('code')}: <span className="underline font-mono">{promoCoupon.code}</span></span>
         </div>
       )}
       
@@ -211,7 +211,7 @@ export function Navbar() {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
               <input
                 type="text"
-                placeholder="What are you looking for?"
+                placeholder={tCommon('search') + '...'}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onKeyPress={(e) => {
@@ -436,7 +436,7 @@ export function Navbar() {
               <Link href="/products" className="flex items-center">
                 <Package className="mr-1 xl:mr-2 h-3 w-3 xl:h-4 xl:w-4" />
                 <span className="hidden xl:inline">{t('allProducts')}</span>
-                <span className="xl:hidden">Products</span>
+                <span className="xl:hidden">{t('products')}</span>
               </Link>
             </Button>
             
@@ -452,7 +452,7 @@ export function Navbar() {
               <Link href="/design-tool" className="flex items-center">
                 <Palette className="mr-1 xl:mr-2 h-3 w-3 xl:h-4 xl:w-4" />
                 <span className="hidden xl:inline">{t('designTool')}</span>
-                <span className="xl:hidden">Design</span>
+                <span className="xl:hidden">{t('designTool')}</span>
               </Link>
             </Button>
             
@@ -468,7 +468,7 @@ export function Navbar() {
               <Link href="/car-mockup" className="flex items-center">
                 <Car className="mr-1 xl:mr-2 h-3 w-3 xl:h-4 xl:w-4" />
                 <span className="hidden xl:inline">{t('carWrapDesigner')}</span>
-                <span className="xl:hidden">Car Wrap</span>
+                <span className="xl:hidden">{t('carWrapDesigner')}</span>
               </Link>
             </Button>
             
@@ -483,13 +483,13 @@ export function Navbar() {
       <Dialog open={searchOpen} onOpenChange={setSearchOpen}>
         <DialogContent className="top-[10%] translate-y-0 max-w-[calc(100vw-1rem)] sm:max-w-[calc(100vw-2rem)] md:max-w-lg mx-2 sm:mx-4">
           <DialogHeader>
-            <DialogTitle className="text-base sm:text-lg">Search Products</DialogTitle>
+            <DialogTitle className="text-base sm:text-lg">{tCommon('search')} {t('products')}</DialogTitle>
           </DialogHeader>
           <div className="relative mt-3 sm:mt-4">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
             <input
               type="text"
-              placeholder="What are you looking for?"
+              placeholder={tCommon('search') + '...'}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               onKeyPress={(e) => {
@@ -511,17 +511,17 @@ export function Navbar() {
           <DialogHeader>
             <DialogTitle className="text-lg sm:text-xl md:text-2xl font-extrabold text-center">
               {promoCoupon && promoCoupon.discountType === "percentage"
-                ? `${promoCoupon.discountValue}% OFF EVERYTHING`
+                ? `${promoCoupon.discountValue}% ${tCommon('offEverything')}`
                 : activeCoupon && activeCoupon.discountType === "percentage"
-                ? `${activeCoupon.discountValue}% OFF EVERYTHING`
-                : "COUPON"}
+                ? `${activeCoupon.discountValue}% ${tCommon('offEverything')}`
+                : tCommon('coupon')}
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-3 sm:space-y-4 text-center p-2">
             <div className="text-sm sm:text-base md:text-lg font-semibold">
-              Promo code: 
+              {t('coupons.promoCode')}: 
               <span className="font-mono block sm:inline text-xs sm:text-sm md:text-base mt-1 sm:mt-0 sm:ml-2">
-                {promoCoupon?.code ?? activeCoupon?.code ?? "No active coupon"}
+                {promoCoupon?.code ?? activeCoupon?.code ?? tCommon('noActiveCoupon')}
               </span>
             </div>
             <Button 
@@ -540,18 +540,18 @@ export function Navbar() {
                     try {
                       const { toast } = await import("@/hooks/use-toast")
                       toast({
-                        title: "🎉 Coupon Applied",
-                        description: `${payload.coupon.code} activated. Prices for eligible products are discounted ${payload.coupon.discountValue}%`,
+                        title: t('coupons.couponApplied'),
+                        description: t('coupons.couponActivated', { code: payload.coupon.code, discount: payload.coupon.discountValue }),
                       })
                     } catch {}
                   }
                 } catch {}
               }}
             >
-              Redeem coupon
+              {t('coupons.redeemCoupon')}
             </Button>
             <p className="text-xs sm:text-sm text-slate-500 px-2">
-              Discount applies to products marked as eligible. Shown prices will reflect the discount.
+              {t('coupons.discountApplies')}
             </p>
           </div>
         </DialogContent>

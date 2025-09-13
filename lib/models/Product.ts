@@ -55,6 +55,8 @@ export interface Variation {
   stockQuantity: number;
   images: VariationImage[];
   positionMapping?: string; // Which position this variant represents (front/back/side)
+  designFrames?: DesignFrame[]; // Variation-specific design frames
+  designCostPerCm2?: number; // Variation-specific cost per square centimeter
 }
 
 export interface ProductDocument {

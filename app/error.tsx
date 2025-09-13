@@ -20,7 +20,7 @@ export default function Error({
       <div className="text-center space-y-4">
         <h2 className="text-2xl font-bold">Something went wrong!</h2>
         <p className="text-gray-600 dark:text-gray-400">
-          We encountered an error while loading this page.
+          Error loading page
         </p>
         <Button
           onClick={() => reset()}

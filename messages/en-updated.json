@@ -44,10 +44,7 @@
     "coupon": "COUPON",
     "noActiveCoupon": "No active coupon",
     "code": "CODE",
-    "offEverything": "OFF EVERYTHING",
-    "backToProducts": "Back to Products",
-    "design": "Design",
-    "currency": "kr"
+    "offEverything": "OFF EVERYTHING"
   },
   "navigation": {
     "home": "Home",
@@ -61,12 +58,7 @@
     "logout": "Logout",
     "profile": "Profile",
     "designTool": "Design Tool",
-    "carWrapDesigner": "Car Wrap Designer",
-    "coupons": {
-      "promoCode": "Promo Code",
-      "redeemCoupon": "Redeem Coupon",
-      "discountApplies": "Discount applies at checkout"
-    }
+    "carWrapDesigner": "Car Wrap Designer"
   },
   "homepage": {
     "title": "Your Vision, Expertly Printed & Wrapped.",
@@ -266,9 +258,6 @@
     "subcategories": "Subcategories",
     "enableDesignCustomization": "Enable Design Customization",
     "designableProduct": "Designable Product",
-    "designFramesForVariation": "Design Frames for Variation",
-    "copyFromProduct": "Copy from Product",
-    "copyToAllVariations": "Copy to All Variations",
     "productMarkedInStock": "Product marked as in stock",
     "productMarkedOutOfStock": "Product marked as out of stock",
     "failedToUpdateProductStock": "Failed to update product stock status"
@@ -443,10 +432,6 @@
     "enterYourText": "Enter your text",
     "fontSize": "Font Size",
     "addImage": "Add Image",
-    "selectProduct": "Select a Product to Design",
-    "selectProductDescription": "Choose a product to start designing",
-    "noProducts": "No Products Available",
-    "noProductsDescription": "No designable products are currently available",
     "addShape": "Add Shape",
     "elementProperties": "Element Properties",
     "xPosition": "X Position",

@@ -33,30 +33,28 @@ export const useVariationDesignPersistence = ({
   const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const lastCanvasStateRef = useRef<string>('')
   
-  // Get current variation ID based on product, color AND view mode
+  // Get current variation ID based on product and view mode
   const getCurrentVariationId = useCallback(() => {
     // ALWAYS use refs to get current values
     const currentProduct = currentSelectedProductRef.current
-    const currentColor = currentProductColorRef.current
     const currentView = currentViewModeRef.current
     
     if (!currentProduct) return null
     
-    // CRITICAL FIX: Since variant selector is removed, we ignore color variations
     // Each angle (front/back/left/right) gets its own unique design storage
-    // This prevents syncing between different angles
+    // Format: productId_angle_viewMode
     const variationId = `${currentProduct.id}_angle_${currentView}`
     
-    console.log('🔄 [useVariationDesignPersistence] Angle-based variation ID (no color tracking):', {
+    console.log('🔄 [useVariationDesignPersistence] Angle-specific variation ID:', {
       productId: currentProduct.id,
       viewMode: currentView,
       fullVariationId: variationId,
       hasVariations: currentProduct.hasVariations,
-      note: 'Variant selector removed - each angle is independent'
+      timestamp: new Date().toISOString()
     })
     
     return variationId
-  }, []) // Remove all dependencies - always use refs
+  }, []) // No dependencies - always use refs
   
   // Get all variation IDs that have the current view mode
   const getVariationsWithCurrentView = useCallback(() => {
@@ -170,20 +168,26 @@ export const useVariationDesignPersistence = ({
   const loadCurrentDesign = useCallback(() => {
     if (!fabricCanvas) return false
     
-    const variationId = getCurrentVariationId()
+    // CRITICAL: Calculate variation ID fresh using refs
+    const currentProduct = currentSelectedProductRef.current
     const currentView = currentViewModeRef.current
     
-    if (!variationId) {
-      console.log('🔄 [useVariationDesignPersistence] No variation ID available for loading design')
+    if (!currentProduct) {
+      console.log('🔄 [useVariationDesignPersistence] No product available for loading design')
       return false
     }
+    
+    const variationId = `${currentProduct.id}_angle_${currentView}`
     
     console.log('🔍 [useVariationDesignPersistence] Looking for design:', {
       targetVariationId: variationId,
       targetViewMode: currentView,
+      expectedUniqueKey: `${currentSelectedProductRef.current?.id}_angle_${currentView}`,
+      matchesExpected: variationId === `${currentSelectedProductRef.current?.id}_angle_${currentView}`,
       availableDesigns: variationDesigns.map(d => ({
         id: d.variationId,
-        view: d.viewMode
+        view: d.viewMode,
+        hasObjects: d.canvasJSON?.objects?.length > 0
       }))
     })
     
@@ -223,7 +227,7 @@ export const useVariationDesignPersistence = ({
     fabricCanvas.clear()
     fabricCanvas.requestRenderAll()
     return false
-  }, [fabricCanvas, getCurrentVariationId, variationDesigns])
+  }, [fabricCanvas, variationDesigns])
   
   // Clear design for current variation and view
   const clearCurrentDesign = useCallback(() => {
@@ -299,6 +303,13 @@ export const useVariationDesignPersistence = ({
   
   // Update refs SYNCHRONOUSLY whenever values change
   // This ensures refs are always up-to-date before any operations
+  // CRITICAL: This must happen before ANY operation that uses these refs
+  if (currentViewModeRef.current !== viewMode) {
+    console.log('📝 [useVariationDesignPersistence] ViewMode ref updated:', {
+      old: currentViewModeRef.current,
+      new: viewMode
+    })
+  }
   currentViewModeRef.current = viewMode
   currentProductColorRef.current = productColor
   currentSelectedProductRef.current = selectedProduct
@@ -307,33 +318,50 @@ export const useVariationDesignPersistence = ({
   const saveCurrentDesign = useCallback((canvasJSON?: any, isManualModification = false) => {
     if (!fabricCanvas) return
     
-    // CRITICAL: Get the variation ID fresh every time to avoid stale data
-    const variationId = getCurrentVariationId()
-    
-    if (!variationId) {
-      console.log('🔄 [useVariationDesignPersistence] No variation ID available for saving design')
-      return
-    }
-    
-    // Get current values from refs for logging
+    // CRITICAL: Always get fresh values from refs to avoid stale closures
     const currentProduct = currentSelectedProductRef.current
     const currentViewMode = currentViewModeRef.current
     const currentProductColor = currentProductColorRef.current
     
+    if (!currentProduct) {
+      console.log('🔄 [useVariationDesignPersistence] No product available for saving design')
+      return
+    }
+    
+    // CRITICAL: Calculate variation ID fresh with current ref values
+    const variationId = `${currentProduct.id}_angle_${currentViewMode}`
+    
     const canvasData = canvasJSON || fabricCanvas.toJSON()
     
     // CRITICAL DEBUG: Log exactly what we're saving and where
-    console.log('🔍 [DEBUG] SAVE OPERATION:', {
+    console.log('🚨 [CRITICAL] SAVE OPERATION STARTING:', {
       calculatedVariationId: variationId,
       currentProductId: currentProduct?.id,
-      currentProductColor,
       currentViewMode,
+      refViewMode: currentViewModeRef.current,
+      propsViewMode: viewMode,
+      expectedUniqueKey: `${currentProduct?.id}_angle_${currentViewMode}`,
+      matchesExpected: variationId === `${currentProduct?.id}_angle_${currentViewMode}`,
+      isManualModification,
       timestamp: new Date().toISOString(),
+      canvasObjectCount: canvasData.objects?.length || 0,
       canvasObjects: canvasData.objects?.map((obj: any) => ({
         type: obj.type,
-        text: obj.text || 'N/A'
+        text: obj.text || 'N/A',
+        left: obj.left,
+        top: obj.top
+      })),
+      existingDesignsBeforeSave: variationDesigns.map(d => ({ 
+        id: d.variationId, 
+        view: d.viewMode,
+        objects: d.canvasJSON?.objects?.length || 0
       }))
     })
+    
+    // Extra validation: make sure we're not saving an empty canvas to all angles
+    if (!canvasData.objects || canvasData.objects.length === 0) {
+      console.log('⚠️ [CRITICAL] Attempting to save empty canvas - checking if intentional')
+    }
     
     // Check if this is a new design (no existing design for this variation+view)
     const existingDesign = variationDesigns.find(
@@ -376,9 +404,9 @@ export const useVariationDesignPersistence = ({
     
     // Store last canvas state for change detection
     lastCanvasStateRef.current = JSON.stringify(canvasData)
-  }, [fabricCanvas, dispatch, designAreaCm2, designAreaPercentage, getCurrentVariationId]) // Add getCurrentVariationId to deps
+  }, [fabricCanvas, dispatch, designAreaCm2, designAreaPercentage]) // Removed getCurrentVariationId - using refs directly
 
-  // Auto-save handler with debouncing
+  // Auto-save handler with debouncing - ALWAYS use refs for current values
   const handleAutoSave = useCallback((isManualModification = false) => {
     if (!fabricCanvas || !autoSaveEnabled) return
     
@@ -389,45 +417,61 @@ export const useVariationDesignPersistence = ({
     
     // Set new timeout for auto-save
     autoSaveTimeoutRef.current = setTimeout(() => {
-      // CRITICAL: Get the variation ID fresh at save time
-      const currentVariationId = getCurrentVariationId()
+      // CRITICAL: Get the variation ID fresh at save time using refs
+      const currentProduct = currentSelectedProductRef.current
+      const currentView = currentViewModeRef.current
       
-      if (!currentVariationId) {
-        console.log('⚠️ [useVariationDesignPersistence] No variation ID for auto-save')
+      if (!currentProduct) {
+        console.log('⚠️ [useVariationDesignPersistence] No product for auto-save')
         return
       }
+      
+      // Calculate variation ID fresh
+      const currentVariationId = `${currentProduct.id}_angle_${currentView}`
       
       const currentCanvasState = JSON.stringify(fabricCanvas.toJSON())
       
       // Only save if canvas has actually changed
       if (currentCanvasState !== lastCanvasStateRef.current) {
-        console.log('💾 [useVariationDesignPersistence] Auto-saving to:', {
+        console.log('💾 [useVariationDesignPersistence] Auto-saving with fresh refs:', {
           variationId: currentVariationId,
-          viewMode: currentViewModeRef.current,
-          productColor: currentProductColorRef.current,
+          viewMode: currentView,
+          productId: currentProduct.id,
           timestamp: new Date().toISOString()
         })
         saveCurrentDesign(undefined, isManualModification)
       }
     }, autoSaveDelay)
-  }, [fabricCanvas, autoSaveEnabled, saveCurrentDesign, autoSaveDelay, getCurrentVariationId])
+  }, [fabricCanvas, autoSaveEnabled, saveCurrentDesign, autoSaveDelay]) // Remove getCurrentVariationId from deps
   
   // Set up canvas event listeners for auto-save
   useEffect(() => {
     if (!fabricCanvas || !autoSaveEnabled) return
     
+    // CRITICAL: Create handler that always uses current refs
     const handleCanvasChange = () => {
+      console.log('📝 [Canvas Event] Change detected, current view:', currentViewModeRef.current)
       // Mark this as a manual modification
       handleAutoSave(true)
     }
     
-    // Listen to canvas changes
+    // CRITICAL: Remove ALL old listeners first to prevent stale closures
+    fabricCanvas.off('object:added')
+    fabricCanvas.off('object:modified')
+    fabricCanvas.off('object:removed')
+    fabricCanvas.off('object:moving')
+    fabricCanvas.off('object:scaling')
+    fabricCanvas.off('object:rotating')
+    
+    // Listen to canvas changes with fresh handlers
     fabricCanvas.on('object:added', handleCanvasChange)
     fabricCanvas.on('object:modified', handleCanvasChange)
     fabricCanvas.on('object:removed', handleCanvasChange)
     fabricCanvas.on('object:moving', handleCanvasChange)
     fabricCanvas.on('object:scaling', handleCanvasChange)
     fabricCanvas.on('object:rotating', handleCanvasChange)
+    
+    console.log('🎯 [useVariationDesignPersistence] Canvas listeners re-attached for view:', currentViewModeRef.current)
     
     return () => {
       // CRITICAL: Clear any pending auto-save to prevent saving to wrong view
@@ -443,7 +487,7 @@ export const useVariationDesignPersistence = ({
       fabricCanvas.off('object:scaling', handleCanvasChange)
       fabricCanvas.off('object:rotating', handleCanvasChange)
     }
-  }, [fabricCanvas, autoSaveEnabled, handleAutoSave, viewMode, productColor]) // Re-setup when view or color changes
+  }, [fabricCanvas, autoSaveEnabled, handleAutoSave, viewMode, selectedProduct?.id]) // Re-setup when view or product changes
   
   // Track previous values to detect actual changes
   const previousVariationIdRef = useRef<string | null>(null)
@@ -452,7 +496,17 @@ export const useVariationDesignPersistence = ({
   
   // Auto-load design when variation or view changes
   useEffect(() => {
-    if (!fabricCanvas) return
+    if (!fabricCanvas) {
+      console.log('⚠️ [useVariationDesignPersistence] No canvas available for auto-load')
+      return
+    }
+    
+    // CRITICAL: Always use fresh canvas reference
+    const canvas = (window as any).fabricCanvas || fabricCanvas
+    if (!canvas) {
+      console.log('⚠️ [useVariationDesignPersistence] No canvas found in window or ref')
+      return
+    }
     
     const currentVariationId = getCurrentVariationId()
     
@@ -513,22 +567,68 @@ export const useVariationDesignPersistence = ({
         allDesigns: variationDesigns.map(d => ({ id: d.variationId, view: d.viewMode }))
       })
       
+      // CRITICAL: Cancel any pending auto-save before switching
+      if (autoSaveTimeoutRef.current) {
+        clearTimeout(autoSaveTimeoutRef.current)
+        autoSaveTimeoutRef.current = null
+        console.log('⏸️ [useVariationDesignPersistence] Cancelled pending auto-save before switch')
+      }
+      
       // CRITICAL: Clear the canvas first to prevent design bleed-through
-      console.log('🧹 [useVariationDesignPersistence] CLEARING CANVAS for variation switch')
-      fabricCanvas.clear()
-      fabricCanvas.requestRenderAll()
+      console.log('🚨 [CRITICAL] CLEARING CANVAS for angle switch:', {
+        fromVariation: oldVariationId,
+        toVariation: currentVariationId,
+        fromView: oldViewMode,
+        toView: viewMode,
+        canvasObjectsBefore: fabricCanvas.getObjects().length
+      })
+      
+      // CRITICAL: Get fresh canvas reference
+      const canvas = (window as any).fabricCanvas || fabricCanvas
+      if (!canvas) {
+        console.error('❌ [CRITICAL] No canvas available for clearing!')
+        return
+      }
+      
+      // Nuclear option: Force clear all objects synchronously
+      const objects = canvas.getObjects()
+      console.log(`🗑️ [CRITICAL] Removing ${objects.length} objects before switch`)
+      
+      // Remove all objects synchronously
+      while(canvas.getObjects().length > 0) {
+        const obj = canvas.getObjects()[0]
+        canvas.remove(obj)
+      }
+      
+      // Clear canvas multiple times to ensure it's really clear
+      canvas.clear()
+      canvas.clear() // Double clear
+      canvas.requestRenderAll()
+      
+      // Verify clearing
+      const remainingObjects = canvas.getObjects().length
+      if (remainingObjects > 0) {
+        console.error(`❌ [CRITICAL] Canvas still has ${remainingObjects} objects after clearing!`)
+        // Force remove again
+        canvas.getObjects().forEach((obj: any) => canvas.remove(obj))
+        canvas.clear()
+      }
+      
+      console.log('✅ [CRITICAL] Canvas cleared:', {
+        canvasObjectsAfter: canvas.getObjects().length,
+        shouldBeZero: canvas.getObjects().length === 0
+      })
       
       // Reset the last canvas state so auto-save doesn't trigger immediately
-      lastCanvasStateRef.current = JSON.stringify(fabricCanvas.toJSON())
+      lastCanvasStateRef.current = JSON.stringify(canvas.toJSON())
       
-      // Design loading is now done above with fresh Redux state
-      
-      // CRITICAL DEBUG: Show what designs exist and what we're looking for
-      // Get fresh designs from Redux store to avoid stale closure
-      const latestDesigns = store.getState().design.variationDesigns
-      const designToLoad = latestDesigns.find(
-        d => d.variationId === currentVariationId && d.viewMode === currentViewModeRef.current
-      )
+      // CRITICAL: Use setTimeout to ensure canvas is fully cleared before loading new design
+      setTimeout(() => {
+        // Get fresh designs from Redux store to avoid stale closure
+        const latestDesigns = store.getState().design.variationDesigns
+        const designToLoad = latestDesigns.find(
+          d => d.variationId === currentVariationId && d.viewMode === viewMode // Use prop viewMode, not ref
+        )
       
       console.log('🔍 [DEBUG] LOAD OPERATION:', {
         lookingFor: { variationId: currentVariationId, viewMode: currentViewModeRef.current },
@@ -545,19 +645,47 @@ export const useVariationDesignPersistence = ({
       })
       
       if (designToLoad) {
-        // Double-check the design is for the correct variation and view
-        if (designToLoad.variationId === currentVariationId && designToLoad.viewMode === currentViewModeRef.current) {
+        // Triple-check the design is for the correct variation and view
+        const expectedVariationId = `${currentSelectedProductRef.current?.id}_angle_${viewMode}`
+        const loadingCorrectDesign = designToLoad.variationId === expectedVariationId && designToLoad.viewMode === viewMode
+        
+        console.log('🚨 [CRITICAL] Design load validation:', {
+          expectedVariationId,
+          expectedViewMode: viewMode,
+          foundVariationId: designToLoad.variationId,
+          foundViewMode: designToLoad.viewMode,
+          willLoad: loadingCorrectDesign,
+          designObjects: designToLoad.canvasJSON?.objects?.map((obj: any) => ({
+            type: obj.type,
+            text: obj.text || 'N/A'
+          }))
+        })
+        
+        if (loadingCorrectDesign) {
           // Extra validation: ensure design has actual objects
           if (designToLoad.canvasJSON?.objects && designToLoad.canvasJSON.objects.length > 0) {
             try {
-              fabricCanvas.loadFromJSON(designToLoad.canvasJSON, () => {
-                fabricCanvas.requestRenderAll()
+              // Clear any pending auto-save before loading
+              if (autoSaveTimeoutRef.current) {
+                clearTimeout(autoSaveTimeoutRef.current)
+                autoSaveTimeoutRef.current = null
+              }
+              
+              // Get fresh canvas reference again
+              const currentCanvas = (window as any).fabricCanvas || fabricCanvas
+              
+              // Clear canvas again before loading to be absolutely sure
+              currentCanvas.clear()
+              
+              currentCanvas.loadFromJSON(designToLoad.canvasJSON, () => {
+                currentCanvas.requestRenderAll()
                 // Update last canvas state after loading to prevent false auto-save
                 lastCanvasStateRef.current = JSON.stringify(designToLoad.canvasJSON)
-                console.log('📂 [useVariationDesignPersistence] Loaded design for new variation/view:', {
-                  variationId: currentVariationId,
-                  viewMode: currentViewModeRef.current,
-                  objectCount: designToLoad.canvasJSON?.objects?.length || 0
+                console.log('✅ [CRITICAL] Design loaded successfully:', {
+                  variationId: expectedVariationId,
+                  viewMode: viewMode,
+                  objectCount: designToLoad.canvasJSON?.objects?.length || 0,
+                  actualCanvasObjects: currentCanvas.getObjects().length
                 })
               })
             } catch (error) {
@@ -568,19 +696,37 @@ export const useVariationDesignPersistence = ({
           }
         } else {
           console.error('⚠️ [useVariationDesignPersistence] Design mismatch prevented!', {
-            expected: { variationId: currentVariationId, viewMode: currentViewModeRef.current },
+            expected: { variationId: expectedVariationId, viewMode: viewMode },
             found: { variationId: designToLoad.variationId, viewMode: designToLoad.viewMode }
           })
-          fabricCanvas.clear()
-          fabricCanvas.requestRenderAll()
+          const currentCanvas = (window as any).fabricCanvas || fabricCanvas
+          currentCanvas.clear()
+          currentCanvas.requestRenderAll()
         }
       } else {
-        fabricCanvas.requestRenderAll()
-        console.log('🔄 [useVariationDesignPersistence] No design found, canvas cleared for:', {
+        // No design found - ensure canvas is completely empty
+        // Get fresh canvas reference
+        const canvasForCheck = (window as any).fabricCanvas || fabricCanvas
+        
+        console.log('🚨 [CRITICAL] No design found for angle:', {
           variationId: currentVariationId,
-          viewMode: currentViewModeRef.current
+          viewMode: currentViewModeRef.current,
+          canvasObjects: canvasForCheck.getObjects().length,
+          shouldBeEmpty: true
         })
+        
+        // Get fresh canvas reference
+        const currentCanvas = (window as any).fabricCanvas || fabricCanvas
+        
+        // Double-check canvas is empty
+        if (currentCanvas.getObjects().length > 0) {
+          console.error('❌ [CRITICAL] Canvas not empty when it should be! Forcing clear...')
+          currentCanvas.clear()
+        }
+        
+        currentCanvas.requestRenderAll()
       }
+      }, 50) // Small delay to ensure canvas is cleared
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fabricCanvas, viewMode, selectedProduct?.id]) // Removed productColor since we don't use it for IDs anymore

@@ -47,23 +47,211 @@ export const useFabricCanvas = (canvasId: string, scaleOptions?: { isMobile?: bo
     [dispatch, userId],
   )
 
+  // Helper function to apply boundaries to canvas
+  const applyBoundariesToCanvas = (canvas: fabric.Canvas) => {
+    if (!canvas || canvas.disposed) return
+    
+    // Remove existing boundary indicators
+    const existingBoundaries = canvas.getObjects().filter((obj: any) => obj.isBoundaryIndicator)
+    existingBoundaries.forEach(obj => canvas.remove(obj))
+    
+    // Add visual boundary indicators
+    designBoundariesRef.current.forEach(boundary => {
+      try {
+        const rect = new fabric.Rect({
+          left: boundary.x,
+          top: boundary.y,
+          width: boundary.width,
+          height: boundary.height,
+          fill: 'transparent',
+          stroke: 'rgba(59, 130, 246, 0.5)', // Blue with opacity
+          strokeWidth: 2,
+          strokeDashArray: [5, 5],
+          selectable: false,
+          evented: false,
+          excludeFromExport: true,
+          isBoundaryIndicator: true // Custom property to identify boundary indicators
+        } as any)
+        
+        canvas.add(rect)
+        // Use sendToBack only if it's available
+        if (typeof canvas.sendToBack === 'function') {
+          canvas.sendToBack(rect)
+        } else if (canvas.getObjects && typeof canvas.moveTo === 'function') {
+          // Fallback: move to back using canvas.moveTo
+          const objects = canvas.getObjects()
+          const rectIndex = objects.indexOf(rect)
+          if (rectIndex > 0) {
+            canvas.moveTo(rect, 0)
+          }
+        }
+      } catch (error) {
+        console.error('Error adding boundary indicator:', error)
+      }
+    })
+    
+    canvas.requestRenderAll()
+  }
+  
   const initCanvas = useCallback(() => {
-    if (!canvasRef.current) return
-
-    // Check if canvas element exists and has proper context
-    const canvasElement = canvasRef.current
+    console.log('🎨 initCanvas called - checking for canvas element')
+    
+    // Try to get canvas element by ID if ref is not yet attached
+    let canvasElement = canvasRef.current
+    if (!canvasElement && canvasId) {
+      canvasElement = document.getElementById(canvasId) as HTMLCanvasElement
+      console.log('🔍 Canvas element from getElementById:', !!canvasElement)
+    }
+    
     if (!canvasElement) {
-      console.error('Canvas element not found')
-      return
+      console.log('⏳ Canvas element not found yet, will retry')
+      return false // Return false to indicate initialization failed
+    }
+    
+    // Update ref if we found element by ID
+    if (!canvasRef.current && canvasElement) {
+      canvasRef.current = canvasElement
+    }
+
+    // Check if we already have a working canvas
+    if ((window as any).fabricCanvas && !(window as any).fabricCanvas.disposed) {
+      console.log('✅ Reusing existing fabric canvas')
+      const existingCanvas = (window as any).fabricCanvas
+      fabricCanvasRef.current = existingCanvas
+      
+      // Ensure canvas element ref is set
+      if (!canvasRef.current) {
+        canvasRef.current = canvasElement
+      }
+      
+      // Store reference on element
+      ;(canvasElement as any).__fabric = existingCanvas
+      
+      // Re-apply boundaries if they exist
+      if (designBoundariesRef.current.length > 0) {
+        console.log('🎯 Re-applying design boundaries to existing canvas')
+        applyBoundariesToCanvas(existingCanvas)
+      }
+      
+      // Dispatch ready event
+      window.dispatchEvent(new CustomEvent('fabricCanvasReady', { detail: { canvas: existingCanvas } }))
+      
+      return existingCanvas
+    }
+    
+    // Clean up any stale reference on the element
+    if ((canvasElement as any).__fabric) {
+      delete (canvasElement as any).__fabric
     }
 
     // Get the 2D rendering context to ensure canvas is ready
     const ctx = canvasElement.getContext('2d')
     if (!ctx) {
       console.error('Canvas 2D context not available')
-      return
+      return false
     }
 
+    // Check if the canvas element already has Fabric instance data
+    if ((canvasElement as any).fabric) {
+      console.log('⚠️ Canvas element already has Fabric instance')
+      // Try to use the existing instance
+      const existingCanvas = (canvasElement as any).fabric
+      if (existingCanvas && !existingCanvas.disposed) {
+        console.log('✅ Reusing existing Fabric instance from canvas element')
+        fabricCanvasRef.current = existingCanvas
+        ;(window as any).fabricCanvas = existingCanvas
+        return existingCanvas
+      }
+      return false
+    }
+    
+    // Check if the canvas element already has Fabric canvases attached
+    const lowerCanvas = canvasElement.parentElement?.querySelector('.lower-canvas')
+    const upperCanvas = canvasElement.parentElement?.querySelector('.upper-canvas')
+    
+    if (lowerCanvas || upperCanvas) {
+      console.log('⚠️ Found existing Fabric canvas elements')
+      
+      // If we have a working canvas in window.fabricCanvas, use it
+      if ((window as any).fabricCanvas && !(window as any).fabricCanvas.disposed) {
+        console.log('✅ Using existing window.fabricCanvas')
+        fabricCanvasRef.current = (window as any).fabricCanvas
+        return true
+      }
+      
+      // Otherwise, try to recover the canvas
+      console.log('🧹 Trying to recover orphaned canvas elements')
+      
+      // Try to find the canvas from the lower canvas element
+      const lowerCanvasEl = lowerCanvas as HTMLCanvasElement
+      console.log('Lower canvas element:', lowerCanvasEl, '__fabric:', (lowerCanvasEl as any)?.__fabric)
+      
+      if (lowerCanvasEl && (lowerCanvasEl as any).__fabric) {
+        const orphanedCanvas = (lowerCanvasEl as any).__fabric
+        console.log('Found canvas on lower element, disposed:', orphanedCanvas?.disposed)
+        if (orphanedCanvas && !orphanedCanvas.disposed) {
+          console.log('✅ Found orphaned but working canvas, reusing it')
+          fabricCanvasRef.current = orphanedCanvas
+          ;(window as any).fabricCanvas = orphanedCanvas
+          ;(canvasElement as any).fabric = orphanedCanvas
+          return orphanedCanvas
+        }
+      }
+      
+      // Also check if lower canvas has a fabric property
+      if (lowerCanvasEl && (lowerCanvasEl as any).fabric) {
+        const orphanedCanvas = (lowerCanvasEl as any).fabric
+        console.log('Found canvas via .fabric property, disposed:', orphanedCanvas?.disposed)
+        if (orphanedCanvas && !orphanedCanvas.disposed) {
+          console.log('✅ Found working canvas via .fabric property')
+          fabricCanvasRef.current = orphanedCanvas
+          ;(window as any).fabricCanvas = orphanedCanvas
+          ;(canvasElement as any).fabric = orphanedCanvas
+          return orphanedCanvas
+        }
+      }
+      
+      // Try alternative recovery methods
+      // Check if upper canvas has reference
+      const upperCanvasEl = upperCanvas as HTMLCanvasElement
+      if (upperCanvasEl && (upperCanvasEl as any).__fabric) {
+        const orphanedCanvas = (upperCanvasEl as any).__fabric
+        if (orphanedCanvas && !orphanedCanvas.disposed) {
+          console.log('✅ Found canvas via upper canvas element')
+          fabricCanvasRef.current = orphanedCanvas
+          ;(window as any).fabricCanvas = orphanedCanvas
+          ;(canvasElement as any).fabric = orphanedCanvas
+          return orphanedCanvas
+        }
+      }
+      
+      // Last resort - check parent element for canvas instance
+      const parentEl = canvasElement.parentElement
+      if (parentEl && (parentEl as any).__fabricCanvas) {
+        const orphanedCanvas = (parentEl as any).__fabricCanvas
+        if (orphanedCanvas && !orphanedCanvas.disposed) {
+          console.log('✅ Found canvas via parent element')
+          fabricCanvasRef.current = orphanedCanvas
+          ;(window as any).fabricCanvas = orphanedCanvas
+          ;(canvasElement as any).fabric = orphanedCanvas
+          return orphanedCanvas
+        }
+      }
+      
+      // If we still can't find it but window.fabricCanvas exists, use that
+      if ((window as any).fabricCanvas && !(window as any).fabricCanvas.disposed) {
+        console.log('✅ Using window.fabricCanvas as fallback')
+        const canvas = (window as any).fabricCanvas
+        fabricCanvasRef.current = canvas
+        ;(canvasElement as any).fabric = canvas
+        return canvas
+      }
+      
+      // If no working canvas found, return false to prevent initialization
+      console.log('⚠️ Cannot recover canvas - all recovery attempts failed')
+      return false
+    }
+    
     // Initialize Fabric.js canvas with error handling
     let canvas: fabric.Canvas
     try {
@@ -84,9 +272,14 @@ export const useFabricCanvas = (canvasId: string, scaleOptions?: { isMobile?: bo
 
       // Ensure canvas has proper internal contexts
       if (!(canvas as any).contextTop || !(canvas as any).contextContainer) {
-        console.warn('Canvas contexts not properly initialized, reinitializing...')
-        // Force reinitialize canvas contexts
-        canvas.dispose()
+        console.warn('Canvas contexts not properly initialized')
+        // Try to use existing canvas instead of disposing
+        if ((window as any).fabricCanvas && !(window as any).fabricCanvas.disposed) {
+          console.log('Using existing window.fabricCanvas instead of reinitializing')
+          return (window as any).fabricCanvas
+        }
+        // Only reinitialize if absolutely necessary
+        console.log('Reinitializing canvas contexts...')
         canvas = new fabric.Canvas(canvasElement, {
           width: 600,
           height: 600,
@@ -104,7 +297,7 @@ export const useFabricCanvas = (canvasId: string, scaleOptions?: { isMobile?: bo
       }
     } catch (error) {
       console.error('Error initializing Fabric canvas:', error)
-      return
+      return false
     }
 
     // --- Fabric.js v6 Global Control Configuration ---
@@ -808,7 +1001,16 @@ export const useFabricCanvas = (canvasId: string, scaleOptions?: { isMobile?: bo
     
     // Make the canvas instance globally available for other functions
     (window as any).fabricCanvas = canvas
-    console.log('Canvas initialized with locked viewport (zoom=1, pan=0,0)')
+    fabricCanvasRef.current = canvas
+    
+    // Store reference on the canvas element itself to detect duplicate initialization
+    ;(canvasElement as any).__fabric = canvas
+    
+    console.log('✅ Canvas initialized and stored globally', {
+      windowFabricCanvas: !!(window as any).fabricCanvas,
+      fabricCanvasRef: !!fabricCanvasRef.current,
+      canvasId: canvasElement.id
+    })
     
     // Dispatch custom event to notify canvas is ready
     window.dispatchEvent(new CustomEvent('fabricCanvasReady', { detail: { canvas } }))
@@ -818,9 +1020,15 @@ export const useFabricCanvas = (canvasId: string, scaleOptions?: { isMobile?: bo
     
     // Trigger a re-render to ensure boundaries are applied
     canvas.requestRenderAll()
+    
+    // If we have pending design boundaries, apply them now
+    if (designBoundariesRef.current.length > 0) {
+      console.log('🎯 Applying pending design boundaries immediately after canvas init')
+      applyBoundariesToCanvas(canvas)
+    }
 
     return canvas
-  }, [dispatch, saveState])
+  }, [dispatch, saveState, canvasId])
 
   // addText now accepts the canvas instance as its first argument
   const addText = useCallback(
@@ -923,9 +1131,13 @@ export const useFabricCanvas = (canvasId: string, scaleOptions?: { isMobile?: bo
       dispatch(setSelectedTool("text"))
 
       setTimeout(() => {
-        if (textObj.enterEditing) {
-          textObj.enterEditing()
-          textObj.selectAll()
+        try {
+          if (textObj && !textObj.isDisposed && textObj.canvas && textObj.enterEditing) {
+            textObj.enterEditing()
+            textObj.selectAll()
+          }
+        } catch (error) {
+          console.warn('[useFabricCanvas] Could not enter text editing mode:', error)
         }
       }, 100)
 
@@ -1073,10 +1285,53 @@ export const useFabricCanvas = (canvasId: string, scaleOptions?: { isMobile?: bo
 
   // Set design boundaries based on frames
   const setDesignBoundaries = useCallback((frames: any[], options?: { isMobile?: boolean; canvasScale?: number }) => {
+    // Fixed canvas dimensions - but account for mobile scaling
+    const baseCanvasSize = 600
+    const scale = (options?.isMobile && options?.canvasScale) ? options.canvasScale : 1
+    const canvasWidth = baseCanvasSize
+    const canvasHeight = baseCanvasSize
+    
+    // Always process and store boundaries, even if canvas isn't ready
+    const newBoundaries: any[] = []
+    
+    if (frames && frames.length > 0) {
+      frames.forEach(frame => {
+        if (frame.xPercent !== undefined && frame.yPercent !== undefined) {
+          const boundary = {
+            x: (frame.xPercent / 100) * canvasWidth,
+            y: (frame.yPercent / 100) * canvasHeight,
+            width: (frame.widthPercent / 100) * canvasWidth,
+            height: (frame.heightPercent / 100) * canvasHeight
+          }
+          newBoundaries.push(boundary)
+        } else if (frame.widthPx !== undefined && frame.heightPx !== undefined) {
+          const boundary = {
+            x: frame.x || 0,
+            y: frame.y || 0,
+            width: frame.widthPx,
+            height: frame.heightPx
+          }
+          newBoundaries.push(boundary)
+        }
+      })
+    }
+    
+    // Store boundaries regardless of canvas availability
+    designBoundariesRef.current = newBoundaries
+    console.log('📐 [setDesignBoundaries] Boundaries stored:', newBoundaries.length)
+    
     // Check both the ref and the global window object
     const canvas = fabricCanvasRef.current || (window as any).fabricCanvas
-    if (!canvas) {
-      console.warn('⚠️ [setDesignBoundaries] Canvas not available yet')
+    if (!canvas || (canvas as any).disposed) {
+      console.warn('⚠️ [setDesignBoundaries] Canvas not ready or disposed, boundaries saved for later application')
+      // Try again after a short delay
+      setTimeout(() => {
+        const retryCanvas = fabricCanvasRef.current || (window as any).fabricCanvas
+        if (retryCanvas && !retryCanvas.disposed) {
+          console.log('🎯 [setDesignBoundaries] Retrying boundary application')
+          applyBoundariesToCanvas(retryCanvas)
+        }
+      }, 100)
       return
     }
     
@@ -1084,59 +1339,18 @@ export const useFabricCanvas = (canvasId: string, scaleOptions?: { isMobile?: bo
     if (!fabricCanvasRef.current && canvas) {
       fabricCanvasRef.current = canvas
     }
-    // Fixed canvas dimensions - but account for mobile scaling
-    const baseCanvasSize = 600
-    const scale = (options?.isMobile && options?.canvasScale) ? options.canvasScale : 1
-    const canvasWidth = baseCanvasSize
-    const canvasHeight = baseCanvasSize
-    
-    // Clear existing boundaries
-    designBoundariesRef.current = []
     
     // Remove any existing clip path
     canvas.clipPath = undefined
     
-    // Convert frame percentages to fixed canvas coordinates
-    frames.forEach(frame => {
-      if (frame.xPercent !== undefined && frame.yPercent !== undefined) {
-        // Use percentage-based positioning relative to fixed 600x600 canvas
-        const boundary = {
-          x: (frame.xPercent / 100) * canvasWidth,
-          y: (frame.yPercent / 100) * canvasHeight,
-          width: (frame.widthPercent / 100) * canvasWidth,
-          height: (frame.heightPercent / 100) * canvasHeight
-        }
-        designBoundariesRef.current.push(boundary)
-      } else if (frame.widthPx !== undefined && frame.heightPx !== undefined) {
-        // Use pixel values directly if provided
-        const boundary = {
-          x: frame.x || 0,
-          y: frame.y || 0,
-          width: frame.widthPx,
-          height: frame.heightPx
-        }
-        designBoundariesRef.current.push(boundary)
-      } else {
-        // Fallback: convert cm to pixels (1cm ≈ 37.795 pixels at 96 DPI)
-        const pixelsPerCm = 37.795
-        const boundary = {
-          x: frame.x || 0,
-          y: frame.y || 0,
-          width: frame.width * pixelsPerCm,
-          height: frame.height * pixelsPerCm
-        }
-        designBoundariesRef.current.push(boundary)
-      }
-    })
-    
+    // Boundaries have already been processed and stored above
     console.log('🎯 Design boundaries set:', designBoundariesRef.current)
     
-    // Add visual indicators and clipping for boundaries
+    // Apply boundaries using the helper function
+    applyBoundariesToCanvas(canvas)
+    
+    // Add clipping for the first boundary if it exists
     if (designBoundariesRef.current.length > 0) {
-      // Remove existing boundary indicators
-      const existingBoundaries = canvas.getObjects().filter((obj: any) => obj.isBoundaryIndicator)
-      existingBoundaries.forEach(obj => canvas.remove(obj))
-      
       // Create a clipping path for the first boundary (main design area)
       const mainBoundary = designBoundariesRef.current[0]
       const clipRect = new fabric.Rect({
@@ -1149,49 +1363,13 @@ export const useFabricCanvas = (canvasId: string, scaleOptions?: { isMobile?: bo
       
       // Apply clipping to the canvas to prevent anything outside the boundary
       canvas.clipPath = clipRect
-      
-      // Add visual boundary indicators
-      designBoundariesRef.current.forEach(boundary => {
-        try {
-          const rect = new fabric.Rect({
-            left: boundary.x,
-            top: boundary.y,
-            width: boundary.width,
-            height: boundary.height,
-            fill: 'transparent',
-            stroke: 'rgba(59, 130, 246, 0.5)', // Blue with opacity
-            strokeWidth: 2,
-            strokeDashArray: [5, 5],
-            selectable: false,
-            evented: false,
-            excludeFromExport: true,
-            isBoundaryIndicator: true // Custom property to identify boundary indicators
-          } as any)
-          
-          canvas.add(rect)
-          
-          // Try different methods to move to back
-          try {
-            if (canvas.moveTo) {
-              canvas.moveTo(rect, 0) // Move to index 0 (back)
-            } else if ((canvas as any).sendToBack) {
-              (canvas as any).sendToBack(rect)
-            }
-          } catch (moveError) {
-            console.log('Could not move boundary to back, continuing...')
-          }
-        } catch (error) {
-          console.error('Error adding boundary indicator:', error)
-        }
-      })
-      
       canvas.requestRenderAll()
     } else {
       // Clear clip path if no boundaries
       canvas.clipPath = undefined
       canvas.requestRenderAll()
     }
-  }, [])
+  }, [canvasId])
 
   // handleUndo now accepts the canvas instance as its first argument
   const handleUndo = useCallback(
@@ -1242,6 +1420,12 @@ export const useFabricCanvas = (canvasId: string, scaleOptions?: { isMobile?: bo
 
   // exportCanvas now accepts the canvas instance as its first argument
   const exportCanvas = useCallback((canvasInstance: fabric.Canvas, format: any = "png") => {
+    // Check if canvas is valid and not disposed
+    if (!canvasInstance || (canvasInstance as any).disposed) {
+      console.warn('Canvas is not available or disposed for export')
+      return null
+    }
+    
     // If we have boundaries, export only the boundary area
     if (designBoundariesRef.current.length > 0) {
       const boundary = designBoundariesRef.current[0]
@@ -1268,7 +1452,7 @@ export const useFabricCanvas = (canvasId: string, scaleOptions?: { isMobile?: bo
 
   // Text bending/curving functionality - simplified approach
   const bendText = useCallback((canvasInstance: fabric.Canvas, bendAmount: number = 0) => {
-    if (!canvasInstance) return
+    if (!canvasInstance || (canvasInstance as any).disposed) return
 
     const activeObject = canvasInstance.getActiveObject()
     if (!activeObject || (activeObject.type !== "text" && activeObject.type !== "i-text")) return
@@ -1306,44 +1490,202 @@ export const useFabricCanvas = (canvasId: string, scaleOptions?: { isMobile?: bo
     return (activeObject as any)._bendAmount || 0
   }, [])
 
+  // Canvas initialization with better DOM readiness check
   useEffect(() => {
-    // Delay canvas initialization to ensure DOM is ready
-    const timer = setTimeout(() => {
-      const canvas = initCanvas()
-      fabricCanvasRef.current = canvas
+    // Check if we already have a working canvas
+    if ((window as any).fabricCanvas && !(window as any).fabricCanvas.disposed) {
+      console.log('🚫 [useFabricCanvas] Canvas already exists and working, skipping init')
+      fabricCanvasRef.current = (window as any).fabricCanvas
       
-      // If we have boundaries already set, apply them immediately
-      if (designBoundariesRef.current.length > 0) {
-        console.log('🎯 Applying design boundaries after canvas init:', designBoundariesRef.current)
-        // Force a re-render to show boundaries
-        if (canvas) {
+      // Dispatch ready event
+      window.dispatchEvent(new CustomEvent('fabricCanvasReady', { 
+        detail: { canvas: (window as any).fabricCanvas, canvasId } 
+      }))
+      return
+    }
+    
+    console.log('🚀 [useFabricCanvas] Canvas initialization effect started', {
+      canvasId,
+      hasCanvasRef: !!canvasRef.current,
+      domReady: document.readyState
+    })
+    
+    let initAttempts = 0
+    const maxAttempts = 10
+    let initTimer: NodeJS.Timeout | null = null
+    
+    const attemptCanvasInit = () => {
+      initAttempts++
+      
+      console.log(`🔄 [useFabricCanvas] Canvas init attempt ${initAttempts}/${maxAttempts}`, {
+        hasFabricRef: !!fabricCanvasRef.current,
+        hasWindowCanvas: !!(window as any).fabricCanvas,
+        hasCanvasElement: !!canvasRef.current,
+        canvasId: canvasId,
+        domElement: !!document.getElementById(canvasId),
+        canvasRefId: canvasRef.current?.id
+      })
+      
+      // Check if already initialized
+      if (fabricCanvasRef.current && (window as any).fabricCanvas) {
+        // Check if canvas is disposed - but also check if it's actually working
+        const refDisposed = (fabricCanvasRef.current as any).disposed
+        const windowDisposed = ((window as any).fabricCanvas as any).disposed
+        
+        // Additional check - try to call a method to see if canvas is truly working
+        let isWorking = false
+        try {
+          if (!refDisposed && fabricCanvasRef.current) {
+            (fabricCanvasRef.current as any).getObjects()
+            isWorking = true
+          }
+        } catch (e) {
+          console.log('Canvas ref not working:', e)
+        }
+        
+        if ((refDisposed || windowDisposed) && !isWorking) {
+          console.log('⚠️ [useFabricCanvas] Canvas was disposed, will try to recover')
+          fabricCanvasRef.current = null
+          if (typeof window !== 'undefined') {
+            delete (window as any).fabricCanvas
+          }
+        } else if (isWorking) {
+          console.log('✅ [useFabricCanvas] Canvas already initialized, ensuring sync')
+          // Ensure refs are synced
+          if (fabricCanvasRef.current !== (window as any).fabricCanvas) {
+            fabricCanvasRef.current = (window as any).fabricCanvas
+          }
+          
+          // Apply boundaries if we have them
+          if (designBoundariesRef.current.length > 0 && fabricCanvasRef.current) {
+            console.log('🎯 [useFabricCanvas] Applying stored boundaries to existing canvas')
+            applyBoundariesToCanvas(fabricCanvasRef.current)
+          }
+          return true // Success
+        }
+      } else if ((window as any).fabricCanvas && !(window as any).fabricCanvas.disposed) {
+        // We have a working canvas in window but not in ref
+        console.log('✅ [useFabricCanvas] Found working canvas in window.fabricCanvas')
+        fabricCanvasRef.current = (window as any).fabricCanvas
+        return true
+      }
+      
+      // Try to find canvas element by ID if ref is not ready
+      const canvasElement = canvasRef.current || document.getElementById(canvasId) as HTMLCanvasElement
+      
+      if (!canvasElement) {
+        console.warn(`⏳ [useFabricCanvas] Canvas element not found yet (attempt ${initAttempts})`)
+        
+        if (initAttempts < maxAttempts) {
+          // Retry with exponential backoff
+          initTimer = setTimeout(attemptCanvasInit, 100 * Math.min(initAttempts, 5))
+        } else {
+          console.error('❌ [useFabricCanvas] Failed to find canvas element after max attempts')
+        }
+        return false
+      }
+      
+      // Update ref if we found element by ID
+      if (!canvasRef.current && canvasElement) {
+        console.log('🔧 [useFabricCanvas] Setting canvas ref from DOM element')
+        canvasRef.current = canvasElement
+      }
+      
+      // Initialize canvas
+      const canvas = initCanvas()
+      if (canvas) {
+        fabricCanvasRef.current = canvas
+        console.log('✅ [useFabricCanvas] Canvas initialization successful')
+        
+        // Emit custom event for canvas ready
+        window.dispatchEvent(new CustomEvent('fabricCanvasReady', { 
+          detail: { canvas, canvasId } 
+        }))
+        
+        // If we have boundaries already set, apply them immediately
+        if (designBoundariesRef.current.length > 0) {
+          console.log('🎯 [useFabricCanvas] Applying design boundaries after canvas init:', designBoundariesRef.current)
+          // Force a re-render to show boundaries
           canvas.requestRenderAll()
         }
-      }
-    }, 100)
-
-    return () => {
-      clearTimeout(timer)
-      if (fabricCanvasRef.current) {
-        try {
-          fabricCanvasRef.current.dispose()
-        } catch (error) {
-          console.error('Error disposing canvas:', error)
+        return true // Success
+      } else {
+        // Check if we actually have a working canvas even though initCanvas returned false
+        if ((window as any).fabricCanvas && !(window as any).fabricCanvas.disposed) {
+          console.log('✅ [useFabricCanvas] Found working canvas in window.fabricCanvas')
+          fabricCanvasRef.current = (window as any).fabricCanvas
+          
+          // Apply boundaries if we have them
+          if (designBoundariesRef.current.length > 0 && fabricCanvasRef.current) {
+            console.log('🎯 [useFabricCanvas] Applying stored boundaries to recovered canvas')
+            applyBoundariesToCanvas(fabricCanvasRef.current)
+          }
+          
+          return true
         }
-        fabricCanvasRef.current = null
-      }
-      if ((window as any).fabricCanvas) {
-        (window as any).fabricCanvas = null
+        
+        // Check for canvas in the DOM
+        const canvasEl = document.getElementById(canvasId) as HTMLCanvasElement
+        if (canvasEl) {
+          const parentEl = canvasEl.parentElement
+          const lowerCanvas = parentEl?.querySelector('.lower-canvas') as HTMLCanvasElement
+          
+          if (lowerCanvas && (lowerCanvas as any).__fabric && !(lowerCanvas as any).__fabric.disposed) {
+            console.log('✅ [useFabricCanvas] Found working canvas via DOM query')
+            const foundCanvas = (lowerCanvas as any).__fabric
+            fabricCanvasRef.current = foundCanvas
+            ;(window as any).fabricCanvas = foundCanvas
+            
+            // Apply boundaries if we have them
+            if (designBoundariesRef.current.length > 0) {
+              applyBoundariesToCanvas(foundCanvas)
+            }
+            
+            return true
+          }
+        }
+        
+        console.error('❌ [useFabricCanvas] Canvas initialization failed')
+        
+        // Only retry if we don't have any canvas at all
+        if (initAttempts < maxAttempts && !fabricCanvasRef.current && !(window as any).fabricCanvas) {
+          // Retry
+          initTimer = setTimeout(attemptCanvasInit, 200 * initAttempts)
+        }
+        return false
       }
     }
-  }, [initCanvas])
+    
+    // Start initialization attempt
+    initTimer = setTimeout(attemptCanvasInit, 100)
+    
+    // Also try immediate initialization if DOM is ready
+    if (document.readyState === 'complete' || document.readyState === 'interactive') {
+      console.log('🏃 [useFabricCanvas] DOM ready, attempting immediate init')
+      attemptCanvasInit()
+    }
+    
+    return () => {
+      if (initTimer) {
+        clearTimeout(initTimer)
+      }
+    }
+  }, [canvasId, initCanvas]) // Include canvasId in dependencies
+  
+  // Don't dispose canvas on unmount - keep it alive for navigation
+  useEffect(() => {
+    return () => {
+      // Keep canvas alive - don't dispose or clear references
+      console.log('Component unmounting but keeping canvas alive')
+    }
+  }, [])
 
   // Load canvas from JSON
   const loadFromJSON = useCallback((json: any) => {
     // Access the fabric canvas instance from the global window object
     const fabricCanvas = (window as any).fabricCanvas
-    if (!fabricCanvas) {
-      console.warn('Fabric canvas not available for loading')
+    if (!fabricCanvas || (fabricCanvas as any).disposed) {
+      console.warn('Fabric canvas not available or disposed for loading')
       return
     }
     
@@ -1564,6 +1906,19 @@ export const useFabricCanvas = (canvasId: string, scaleOptions?: { isMobile?: bo
     [dispatch, saveState],
   );
 
+  // Function to get the current canvas instance
+  const getCanvasInstance = useCallback(() => {
+    return fabricCanvasRef.current || (window as any).fabricCanvas || null
+  }, [])
+  
+  // Create a wrapper for applyBoundariesToCanvas that uses the current canvas
+  const applyBoundaries = useCallback(() => {
+    const canvas = fabricCanvasRef.current || (window as any).fabricCanvas
+    if (canvas && !canvas.disposed) {
+      applyBoundariesToCanvas(canvas)
+    }
+  }, [])
+
   return {
     canvasRef,
     addText,
@@ -1579,6 +1934,8 @@ export const useFabricCanvas = (canvasId: string, scaleOptions?: { isMobile?: bo
     bendText,
     getTextBendAmount,
     loadFromJSON,
-    setDesignBoundaries
+    setDesignBoundaries,
+    getCanvasInstance,
+    applyBoundaries
   }
 }

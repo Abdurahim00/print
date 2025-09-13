@@ -258,9 +258,6 @@
     "subcategories": "Underkategorier",
     "enableDesignCustomization": "Aktivera Designanpassning",
     "designableProduct": "Anpassningsbar Produkt",
-    "designFramesForVariation": "Designramar för variation",
-    "copyFromProduct": "Kopiera från produkt",
-    "copyToAllVariations": "Kopiera till alla variationer",
     "productMarkedInStock": "Produkt markerad som i lager",
     "productMarkedOutOfStock": "Produkt markerad som slutsåld",
     "failedToUpdateProductStock": "Misslyckades att uppdatera produktlagerstatus"

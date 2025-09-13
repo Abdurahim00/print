@@ -3,7 +3,7 @@
 import type { Product, Variation, VariationImage } from "@/types"
 import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks"
 import { translations } from "@/lib/constants"
-import { getProductImage } from "@/lib/utils/product-image"
+import { getProductImage, getAllProductImages } from "@/lib/utils/product-image"
 import { Card, CardContent, CardFooter } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { ProductImage } from "@/components/ui/product-image"
@@ -11,7 +11,7 @@ import { Palette, ShoppingCart, ChevronLeft, ChevronRight } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
 import { useRouter, useSearchParams } from "next/navigation"
-import { useMemo, memo, useState, useEffect } from "react"
+import { useMemo, memo, useState, useEffect, useCallback } from "react"
 import { useCurrency } from "@/contexts/CurrencyContext"
 import { addToCart } from "@/lib/redux/slices/cartSlice"
 import { useToast } from "@/hooks/use-toast"
@@ -39,6 +39,7 @@ function ProductCardEnhancedComponent({ product }: ProductCardEnhancedProps) {
   const [currentAngleIndex, setCurrentAngleIndex] = useState(0)
   const [currentImage, setCurrentImage] = useState<string>("")
   const [isHovering, setIsHovering] = useState(false)
+  const [hoverImageIndex, setHoverImageIndex] = useState(0)
   
   const appliedCategoryDesigns = useAppSelector((s: any) => s.app.appliedCategoryDesigns || {})
   const designs = useAppSelector((s: any) => s.designs.items)
@@ -88,6 +89,114 @@ function ProductCardEnhancedComponent({ product }: ProductCardEnhancedProps) {
     return images
   }, [product, selectedVariation])
 
+  // Get all product images for hover effect
+  const allProductImages = useMemo(() => {
+    const images = getAllProductImages(product)
+    return images.length > 0 ? images : availableImages
+  }, [product, availableImages])
+
+  // Handle mouse hover to cycle through images
+  const handleMouseEnter = useCallback(() => {
+    setIsHovering(true)
+    if (allProductImages.length > 1) {
+      setHoverImageIndex(1) // Show second image on hover
+    }
+  }, [allProductImages.length])
+
+  const handleMouseLeave = useCallback(() => {
+    setIsHovering(false)
+    setHoverImageIndex(0) // Back to first image
+  }, [])
+
+  // Cycle through images while hovering
+  useEffect(() => {
+    if (!isHovering || allProductImages.length <= 1) return
+    
+    const interval = setInterval(() => {
+      setHoverImageIndex((prev) => (prev + 1) % allProductImages.length)
+    }, 1500) // Change image every 1.5 seconds
+    
+    return () => clearInterval(interval)
+  }, [isHovering, allProductImages.length])
+
+  // Get color variations from product data
+  const colorVariations = useMemo(() => {
+    const colors: { name: string; hex: string; image?: string; variation?: Variation }[] = []
+    
+    // Debug to see what we're working with
+    console.log('Product color data:', {
+      name: product.name,
+      hasVariations: product.hasVariations,
+      variations: product.variations,
+      allKeys: Object.keys(product)
+    })
+    
+    // Get colors from variations (primary source)
+    if (product.hasVariations && product.variations && Array.isArray(product.variations)) {
+      product.variations.forEach((variation: Variation) => {
+        if (variation.color) {
+          // Check if this color is already in the list
+          const existingColor = colors.find(c => c.name === variation.color.name)
+          if (!existingColor) {
+            colors.push({
+              name: variation.color.name || 'Default',
+              hex: variation.color.hex_code || '#808080',
+              image: variation.images?.[0]?.url,
+              variation: variation
+            })
+          }
+        }
+      })
+    }
+    
+    // Check for color_variants field (different data structure)
+    if (colors.length === 0 && (product as any).color_variants && Array.isArray((product as any).color_variants)) {
+      (product as any).color_variants.forEach((colorVar: any) => {
+        if (colorVar.color_name && colorVar.hex_code) {
+          colors.push({
+            name: colorVar.color_name,
+            hex: colorVar.hex_code,
+            image: colorVar.image_url || colorVar.images?.[0]
+          })
+        }
+      })
+    }
+    
+    // Check variants field as well (some products use variants instead of variations)
+    if (colors.length === 0 && (product as any).variants && Array.isArray((product as any).variants)) {
+      (product as any).variants.forEach((variant: any) => {
+        if (variant.color) {
+          const colorName = variant.color.name || variant.color_name || variant.color
+          const hexCode = variant.color.hex_code || variant.hex_code || variant.color_hex
+          if (colorName && !colors.find(c => c.name === colorName)) {
+            colors.push({
+              name: colorName,
+              hex: hexCode || '#808080',
+              image: variant.images?.[0]?.url || variant.image_url
+            })
+          }
+        }
+      })
+    }
+    
+    // If no variations but product has a colors array (fallback for different data structures)
+    if (colors.length === 0 && (product as any).colors && Array.isArray((product as any).colors)) {
+      (product as any).colors.forEach((color: any) => {
+        const colorName = color.name || color.color_name
+        const hexCode = color.hex || color.hex_code || color.color_hex
+        if (colorName && hexCode) {
+          colors.push({
+            name: colorName,
+            hex: hexCode,
+            image: color.images?.[0] || color.image || color.image_url
+          })
+        }
+      })
+    }
+    
+    return colors.slice(0, 4) // Limit to 4 colors max to prevent wrapping
+  }, [product])
+
   // Update current image when angle changes
   useEffect(() => {
     if (availableImages.length > 0) {
@@ -104,18 +213,10 @@ function ProductCardEnhancedComponent({ product }: ProductCardEnhancedProps) {
 
   const handleDesignThisProduct = () => {
     const productId = (product as any)._id || product.id
-    const params = new URLSearchParams()
-    params.set('productId', productId)
-    
-    // Pass selected variation if any
-    if (selectedVariation) {
-      params.set('variationId', selectedVariation.id)
-      if (selectedVariation.color) {
-        params.set('color', selectedVariation.color.hex_code)
-      }
-    }
-    
-    router.push(`/design-tool?${params.toString()}`)
+    // Get current locale from pathname
+    const locale = window.location.pathname.split('/')[1] || 'en'
+    // Navigate to step-based design tool starting at step 1
+    router.push(`/${locale}/design-tool/${productId}/step/1`)
   }
 
   const handleAddToCart = () => {
@@ -187,19 +288,19 @@ function ProductCardEnhancedComponent({ product }: ProductCardEnhancedProps) {
     }`}>
       <div 
         className="relative w-full aspect-[4/3] overflow-hidden bg-gray-100 dark:bg-gray-800 flex-shrink-0"
-        onMouseEnter={() => setIsHovering(true)}
-        onMouseLeave={() => setIsHovering(false)}
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
       >
         <Link 
           href={`/product/${(product as any)._id || product.id}${searchParams.toString() ? `?from=${encodeURIComponent(searchParams.toString())}` : ''}`} 
           className="relative w-full h-full block"
         >
           <ProductImage
-            src={currentImage || getProductImage(product)}
+            src={isHovering ? allProductImages[hoverImageIndex] : (currentImage || getProductImage(product))}
             alt={`${product.name} - ${selectedVariation?.color?.name || 'Default'}`}
             fill
             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-            className="object-contain p-2 bg-gray-50 transition-transform duration-500"
+            className="object-contain p-2 bg-gray-50 transition-all duration-500 group-hover:scale-105"
             loading="lazy"
             quality={85}
           />
@@ -249,40 +350,6 @@ function ProductCardEnhancedComponent({ product }: ProductCardEnhancedProps) {
         )}
       </div>
       
-      {/* Variation Color Swatches */}
-      {product.hasVariations && product.variations && product.variations.length > 1 && (
-        <div className="px-2 sm:px-3 pt-1.5 sm:pt-2 flex gap-1 flex-wrap">
-          {product.variations.map((variation: Variation) => (
-            <button
-              key={variation.id}
-              onClick={() => handleVariationSelect(variation)}
-              className={`relative w-5 h-5 sm:w-6 sm:h-6 rounded-full border border-black sm:border-2 transition-all ${
-                selectedVariation?.id === variation.id 
-                  ? 'border-black dark:border-white scale-110' 
-                  : 'border-gray-300 dark:border-gray-600 hover:scale-105'
-              }`}
-              title={variation.color?.name || 'Select variant'}
-            >
-              {variation.color?.swatch_image ? (
-                <Image
-                  src={variation.color.swatch_image}
-                  alt={variation.color.name || ''}
-                  fill
-                  className="rounded-full object-cover"
-                />
-              ) : (
-                <div 
-                  className="w-full h-full rounded-full"
-                  style={{ backgroundColor: variation.color?.hex_code || '#ccc' }}
-                />
-              )}
-              {selectedVariation?.id === variation.id && (
-                <div className="absolute inset-0 rounded-full border-2 border-black dark:border-white" />
-              )}
-            </button>
-          ))}
-        </div>
-      )}
       
       <CardContent className="p-2 sm:p-3 flex-grow flex flex-col justify-between">
         <div>
@@ -297,6 +364,47 @@ function ProductCardEnhancedComponent({ product }: ProductCardEnhancedProps) {
           <p className="text-[10px] sm:text-xs font-bold uppercase text-gray-500 dark:text-gray-400 mt-1">
             {categoryName}
           </p>
+          {/* Color Variations - Show inline without adding height */}
+          {colorVariations.length > 0 && (
+            <div className="flex gap-1 mt-1.5 flex-wrap max-w-full">
+              {colorVariations.map((color, index) => (
+                <div
+                  key={index}
+                  className="relative group/color flex-shrink-0"
+                  title={color.name}
+                >
+                  <div
+                    className="w-4 h-4 rounded-full border border-gray-300 dark:border-gray-600 hover:border-black dark:hover:border-white transition-all cursor-pointer hover:scale-110"
+                    style={{ backgroundColor: color.hex || '#808080' }}
+                    onClick={(e) => {
+                      e.preventDefault()
+                      e.stopPropagation()
+                      // If color has a variation, select it
+                      if (color.variation) {
+                        handleVariationSelect(color.variation)
+                      }
+                      // If color has an image, find and set it
+                      else if (color.image) {
+                        const index = allProductImages.findIndex(img => img === color.image)
+                        if (index !== -1) {
+                          setHoverImageIndex(index)
+                          setCurrentAngleIndex(index)
+                        }
+                      }
+                    }}
+                  />
+                  {/* Selected indicator */}
+                  {color.variation && selectedVariation?.id === color.variation.id && (
+                    <div className="absolute inset-0 rounded-full border-2 border-black dark:border-white" />
+                  )}
+                  {/* Tooltip */}
+                  <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-2 py-1 bg-black dark:bg-white text-white dark:text-black text-xs rounded opacity-0 group-hover/color:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10">
+                    {color.name}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
         <div className="mt-2 sm:mt-3">
           {activeCoupon && activeCoupon.discountType === "percentage" && product.eligibleForCoupons ? (

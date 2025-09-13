@@ -1,4 +1,5 @@
 import React from "react"
+import { useTranslations } from "next-intl"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -146,11 +147,12 @@ export const ProductFormDialog: React.FC<ProductFormDialogProps> = ({
   onOpenChange,
   initialValues,
   onSubmit,
-  t,
+  t: _t,
   productCategories,
   isSubmitting,
   isEdit = false,
 }) => {
+  const t = useTranslations()
   const [showVariations, setShowVariations] = useState(initialValues.hasVariations || false)
   const [selectedVariationAngles, setSelectedVariationAngles] = useState<{ [key: string]: string }>({})
   const { categories, subcategories } = useAppSelector((s: any) => s.categories)
@@ -293,6 +295,7 @@ export const ProductFormDialog: React.FC<ProductFormDialogProps> = ({
       stockQuantity: 0,
       images: [],
       designFrames: [],
+      designCostPerCm2: formik.values.designCostPerCm2 || 0.5,
     }
     formik.setFieldValue("variations", [...formik.values.variations, newVariation])
   }
@@ -347,7 +350,7 @@ export const ProductFormDialog: React.FC<ProductFormDialogProps> = ({
       <DialogContent className="max-w-[95vw] sm:max-w-2xl lg:max-w-4xl max-h-[90vh] overflow-y-auto bg-white dark:bg-slate-900 border-0 shadow-2xl p-3 sm:p-6">
         <DialogHeader className="border-b border-slate-100 dark:border-slate-800 pb-4">
           <DialogTitle className="text-xl font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-2">
-            {isEdit ? t.editProduct : t.addProduct}
+            {isEdit ? t("dashboard.editProduct") : t("dashboard.addProduct")}
           </DialogTitle>
         </DialogHeader>
         <form onSubmit={formik.handleSubmit} className="space-y-6 pt-4">
@@ -355,7 +358,7 @@ export const ProductFormDialog: React.FC<ProductFormDialogProps> = ({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-6">
             <div className="space-y-2">
               <Label htmlFor="name" className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                {t.productName} <span className="text-red-500">*</span>
+                {t("dashboard.productName")} <span className="text-red-500">*</span>
               </Label>
               <Input
                 id="name"
@@ -363,7 +366,7 @@ export const ProductFormDialog: React.FC<ProductFormDialogProps> = ({
                 value={formik.values.name}
                 onChange={formik.handleChange}
                 onBlur={formik.handleBlur}
-                placeholder={t.enterProductName}
+                placeholder={t("dashboard.enterProductName")}
                 className={
                   formik.touched.name && formik.errors.name
                     ? "border-red-300 focus:border-red-500 focus:ring-red-200"
@@ -371,12 +374,12 @@ export const ProductFormDialog: React.FC<ProductFormDialogProps> = ({
                 }
               />
               {formik.touched.name && formik.errors.name && (
-                <p className="text-sm text-red-600">{t[formik.errors.name as keyof typeof t] || formik.errors.name}</p>
+                <p className="text-sm text-red-600">{formik.errors.name}</p>
               )}
             </div>
             <div className="space-y-2">
               <Label htmlFor="price" className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                {t.priceSEK} <span className="text-red-500">*</span>
+                {t("dashboard.priceSEK")} <span className="text-red-500">*</span>
               </Label>
               <Input
                 id="price"
@@ -395,7 +398,7 @@ export const ProductFormDialog: React.FC<ProductFormDialogProps> = ({
                 }
               />
               {formik.touched.price && formik.errors.price && (
-                <p className="text-sm text-red-600">{t[formik.errors.price as keyof typeof t] || formik.errors.price}</p>
+                <p className="text-sm text-red-600">{formik.errors.price}</p>
               )}
             </div>
           </div>
@@ -407,7 +410,7 @@ export const ProductFormDialog: React.FC<ProductFormDialogProps> = ({
               checked={!!formik.values.eligibleForCoupons}
               onChange={(e) => formik.setFieldValue("eligibleForCoupons", e.target.checked)}
             />
-            <Label htmlFor="eligibleForCoupons">Eligible for site-wide coupons</Label>
+            <Label htmlFor="eligibleForCoupons">{t("dashboard.eligibleForCoupons")}</Label>
           </div>
           
           {/* Purchase Limits Section */}
@@ -425,14 +428,14 @@ export const ProductFormDialog: React.FC<ProductFormDialogProps> = ({
                   })
                 }}
               />
-              <Label htmlFor="purchaseLimitEnabled" className="font-medium">Enable Purchase Limits</Label>
+              <Label htmlFor="purchaseLimitEnabled" className="font-medium">{t("dashboard.enablePurchaseLimits")}</Label>
             </div>
             
             {formik.values.purchaseLimit?.enabled && (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="maxQuantityPerOrder" className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                    Max Quantity Per Order
+                    {t("dashboard.maxQuantityPerOrder")}
                   </Label>
                   <Input
                     id="maxQuantityPerOrder"
@@ -451,7 +454,7 @@ export const ProductFormDialog: React.FC<ProductFormDialogProps> = ({
                 </div>
                 <div className="md:col-span-2 space-y-2">
                   <Label htmlFor="purchaseLimitMessage" className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                    Custom Limit Message (Optional)
+                    {t("dashboard.customLimitMessage")}
                   </Label>
                   <Input
                     id="purchaseLimitMessage"
@@ -463,7 +466,7 @@ export const ProductFormDialog: React.FC<ProductFormDialogProps> = ({
                         message: e.target.value
                       })
                     }}
-                    placeholder="Maximum quantity limit exceeded. Please reduce your order."
+                    placeholder={t("dashboard.maxQuantityLimitMessage")}
                   />
                 </div>
               </div>
@@ -472,7 +475,7 @@ export const ProductFormDialog: React.FC<ProductFormDialogProps> = ({
           
           <div className="space-y-2">
             <Label htmlFor="categoryId" className="text-sm font-medium text-slate-700 dark:text-slate-300">
-              {t.category} <span className="text-red-500">*</span>
+              {t("dashboard.category")} <span className="text-red-500">*</span>
             </Label>
             <Select
               value={formik.values.categoryId || undefined}
@@ -485,7 +488,7 @@ export const ProductFormDialog: React.FC<ProductFormDialogProps> = ({
                     : "border-slate-300 focus:border-sky-500 focus:ring-sky-200"
                 }
               >
-                <SelectValue placeholder={t.selectCategory} />
+                <SelectValue placeholder={t("dashboard.selectCategory")} />
               </SelectTrigger>
               <SelectContent>
                 {categories
@@ -498,14 +501,14 @@ export const ProductFormDialog: React.FC<ProductFormDialogProps> = ({
               </SelectContent>
             </Select>
             {formik.touched.categoryId && formik.errors.categoryId && (
-              <p className="text-sm text-red-600">{t[formik.errors.categoryId as keyof typeof t] || formik.errors.categoryId}</p>
+              <p className="text-sm text-red-600">{formik.errors.categoryId}</p>
             )}
           </div>
 
           {/* Subcategories checkboxes */}
           {formik.values.categoryId && (
             <div className="space-y-2">
-              <Label className="text-sm font-medium text-slate-700 dark:text-slate-300">Subcategories</Label>
+              <Label className="text-sm font-medium text-slate-700 dark:text-slate-300">{t("dashboard.subcategories")}</Label>
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 max-h-48 overflow-y-auto p-2 border rounded">
                 {subcategories
                   .filter((s: any) => s.categoryId === formik.values.categoryId)
@@ -532,7 +535,7 @@ export const ProductFormDialog: React.FC<ProductFormDialogProps> = ({
           )}
           <div className="space-y-2">
             <Label htmlFor="description" className="text-sm font-medium text-slate-700 dark:text-slate-300">
-              {t.description}
+              {t("dashboard.description")}
             </Label>
             <Textarea
               id="description"
@@ -540,13 +543,13 @@ export const ProductFormDialog: React.FC<ProductFormDialogProps> = ({
               value={formik.values.description}
               onChange={formik.handleChange}
               onBlur={formik.handleBlur}
-              placeholder={t.enterProductDescription}
+              placeholder={t("dashboard.enterProductDescription")}
               rows={3}
               className="border-slate-300 focus:border-sky-500 focus:ring-sky-200"
             />
           </div>
           <FileUpload
-            label={t.productImage}
+            label={t("dashboard.productImage")}
             value={formik.values.image}
             onChange={(value) => formik.setFieldValue("image", value)}
             error={formik.touched.image && formik.errors.image ? String(formik.errors.image) : undefined}
@@ -562,12 +565,12 @@ export const ProductFormDialog: React.FC<ProductFormDialogProps> = ({
                   onCheckedChange={(checked) => formik.setFieldValue("isDesignable", checked)}
                 />
                 <Label htmlFor="isDesignable" className="font-medium cursor-pointer">
-                  Enable Design Customization
+                  {t("dashboard.enableDesignCustomization")}
                 </Label>
               </div>
               {formik.values.isDesignable && (
                 <Badge variant="secondary" className="text-xs">
-                  Designable Product
+                  {t("dashboard.designableProduct")}
                 </Badge>
               )}
             </div>
@@ -609,52 +612,52 @@ export const ProductFormDialog: React.FC<ProductFormDialogProps> = ({
                 formik.setFieldValue("hasVariations", !showVariations)
               }}
             />
-            <Label htmlFor="hasVariations">{t.hasVariations || "Has Variations (e.g. color, size)"}</Label>
+            <Label htmlFor="hasVariations">{t("dashboard.hasVariations")}</Label>
           </div>
           {showVariations && (
             <div className="space-y-4 border rounded-lg p-3 sm:p-4 bg-slate-50 dark:bg-slate-800/30">
               <div className="flex justify-between items-center">
-                <h4 className="font-semibold text-slate-900 dark:text-slate-100">{t.variations || "Product Variations"}</h4>
-                <Button type="button" onClick={addVariation} size="sm">{t.addVariation || "Add Variation"}</Button>
+                <h4 className="font-semibold text-slate-900 dark:text-slate-100">{t("dashboard.productVariations")}</h4>
+                <Button type="button" onClick={addVariation} size="sm">{t("dashboard.addVariation")}</Button>
               </div>
               {formik.values.variations.map((variation: Variation, varIdx: number) => (
                 <div key={variation.id} className="border rounded-md p-2 sm:p-3 bg-white dark:bg-slate-900/50 mb-2">
                   <div className="flex justify-between items-center mb-2">
-                    <span className="font-medium text-sm sm:text-base">{t.variation} #{varIdx + 1}</span>
-                    <Button type="button" variant="destructive" size="sm" onClick={() => removeVariation(variation.id)}>{t.remove || "Remove"}</Button>
+                    <span className="font-medium text-sm sm:text-base">{t("dashboard.variation")} #{varIdx + 1}</span>
+                    <Button type="button" variant="destructive" size="sm" onClick={() => removeVariation(variation.id)}>{t("common.remove")}</Button>
                   </div>
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
                     <div>
-                      <Label>{t.colorName || "Color Name"}</Label>
+                      <Label>{t("dashboard.colorName")}</Label>
                       <Input
                         value={variation.color.name}
                         onChange={e => updateVariation(varIdx, { color: { ...variation.color, name: e.target.value } })}
-                        placeholder={t.colorName || "Color Name"}
+                        placeholder={t("dashboard.colorName")}
                       />
                     </div>
                     {formik.values.isDesignable && (
                       <div>
-                        <Label>Position Mapping</Label>
+                        <Label>{t("dashboard.positionMapping")}</Label>
                         <Select
                           value={variation.positionMapping || undefined}
                           onValueChange={(value) => updateVariation(varIdx, { positionMapping: value })}
                         >
                           <SelectTrigger>
-                            <SelectValue placeholder="Select position" />
+                            <SelectValue placeholder={t("dashboard.selectPosition")} />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="front">Front</SelectItem>
-                            <SelectItem value="back">Back</SelectItem>
-                            <SelectItem value="left">Left Side</SelectItem>
-                            <SelectItem value="right">Right Side</SelectItem>
-                            <SelectItem value="top">Top</SelectItem>
-                            <SelectItem value="bottom">Bottom</SelectItem>
+                            <SelectItem value="front">{t("dashboard.front")}</SelectItem>
+                            <SelectItem value="back">{t("dashboard.back")}</SelectItem>
+                            <SelectItem value="left">{t("dashboard.leftSide")}</SelectItem>
+                            <SelectItem value="right">{t("dashboard.rightSide")}</SelectItem>
+                            <SelectItem value="top">{t("dashboard.top")}</SelectItem>
+                            <SelectItem value="bottom">{t("dashboard.bottom")}</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
                     )}
                     <div>
-                      <Label>{t.colorHex || "Color Hex"}</Label>
+                      <Label>{t("dashboard.colorHex")}</Label>
                       <div className="flex gap-2">
                         <Input
                           value={variation.color.hex_code || "#000000"}
@@ -687,7 +690,7 @@ export const ProductFormDialog: React.FC<ProductFormDialogProps> = ({
                             }
                           }}
                           className="h-10 w-12 rounded border border-slate-300 cursor-pointer"
-                          title="Pick color"
+                          title={t("dashboard.pickColor")}
                         />
                         <Button
                           type="button"
@@ -695,40 +698,40 @@ export const ProductFormDialog: React.FC<ProductFormDialogProps> = ({
                           size="sm"
                           onClick={() => startWebPageColorPicker(varIdx)}
                           className="px-3"
-                          title="Pick color from web page"
+                          title={t("dashboard.pickColorFromWebPage")}
                         >
                           🎨
                         </Button>
                       </div>
                     </div>
                     <div>
-                      <Label>{t.swatchImage || "Swatch Image"}</Label>
+                      <Label>{t("dashboard.swatchImage")}</Label>
                       <FileUpload
                         value={variation.color.swatch_image || ""}
                         onChange={(img: string) => updateVariation(varIdx, { color: { ...variation.color, swatch_image: img } })}
-                        label={t.swatchImage || "Swatch Image"}
+                        label={t("dashboard.swatchImage")}
                       />
                     </div>
                     <div>
-                      <Label>{t.variationPrice || "Variation Price"}</Label>
+                      <Label>{t("dashboard.variationPrice")}</Label>
                       <Input
                         type="number"
                         value={variation.price}
                         onChange={e => updateVariation(varIdx, { price: Number(e.target.value) })}
-                        placeholder={t.variationPrice || "Variation Price"}
+                        placeholder={t("dashboard.variationPrice")}
                       />
                     </div>
                     <div>
-                      <Label>{t.stockQuantity || "Stock Quantity"}</Label>
+                      <Label>{t("dashboard.stockQuantity")}</Label>
                       <Input
                         type="number"
                         value={variation.stockQuantity}
                         onChange={e => updateVariation(varIdx, { stockQuantity: Number(e.target.value) })}
-                        placeholder={t.stockQuantity || "Stock Quantity"}
+                        placeholder={t("dashboard.stockQuantity")}
                       />
                     </div>
                     <div>
-                      <Label>{t.inStock || "In Stock"}</Label>
+                      <Label>{t("dashboard.inStock")}</Label>
                       <input
                         type="checkbox"
                         checked={variation.inStock}
@@ -737,13 +740,13 @@ export const ProductFormDialog: React.FC<ProductFormDialogProps> = ({
                     </div>
                   </div>
                   <div className="mt-4">
-                    <h5 className="font-medium mb-2">{t.variationImages || "Variation Images"}</h5>
+                    <h5 className="font-medium mb-2">{t("dashboard.variationImages")}</h5>
                     <div className="mb-3 space-y-2">
                       <div className="flex items-center justify-between">
-                        <Label>Select Angle to Edit</Label>
+                        <Label>{t("dashboard.selectAngleToEdit")}</Label>
                         {variation.images && variation.images.length > 0 && (
                           <span className="text-xs text-gray-500">
-                            {variation.images.length} image{variation.images.length !== 1 ? 's' : ''} configured
+                            {t("dashboard.imagesConfigured", { count: variation.images.length })}
                           </span>
                         )}
                       </div>
@@ -772,15 +775,15 @@ export const ProductFormDialog: React.FC<ProductFormDialogProps> = ({
                         }}
                       >
                         <SelectTrigger>
-                          <SelectValue placeholder="Select angle" />
+                          <SelectValue placeholder={t("dashboard.selectAngle")} />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="none">None (No images)</SelectItem>
-                          <SelectItem value="front">Front</SelectItem>
-                          <SelectItem value="back">Back</SelectItem>
-                          <SelectItem value="left">Left</SelectItem>
-                          <SelectItem value="right">Right</SelectItem>
-                          <SelectItem value="material">Material</SelectItem>
+                          <SelectItem value="none">{t("dashboard.noImages")}</SelectItem>
+                          <SelectItem value="front">{t("dashboard.front")}</SelectItem>
+                          <SelectItem value="back">{t("dashboard.back")}</SelectItem>
+                          <SelectItem value="left">{t("dashboard.left")}</SelectItem>
+                          <SelectItem value="right">{t("dashboard.right")}</SelectItem>
+                          <SelectItem value="material">{t("dashboard.material")}</SelectItem>
                         </SelectContent>
                       </Select>
                       {/* Show available angles for this variation */}
@@ -809,12 +812,12 @@ export const ProductFormDialog: React.FC<ProductFormDialogProps> = ({
                           <FileUpload
                             value={img.url}
                             onChange={url => updateVariationImage(varIdx, actualIdx, { url })}
-                            label={t.variationImage || "Image"}
+                            label={t("dashboard.variationImage")}
                           />
                           <Input
                             value={img.alt_text}
                             onChange={e => updateVariationImage(varIdx, actualIdx, { alt_text: e.target.value })}
-                            placeholder={t.altText || "Alt text"}
+                            placeholder={t("dashboard.altText")}
                           />
                           <div className="flex items-center gap-2 mt-1">
                             <span className="text-xs">{img.angle}</span>
@@ -827,15 +830,15 @@ export const ProductFormDialog: React.FC<ProductFormDialogProps> = ({
                                 updateVariation(varIdx, { images })
                               }}
                             />
-                            <span className="text-xs">{t.primary || "Primary"}</span>
+                            <span className="text-xs">{t("dashboard.primary")}</span>
                           </div>
-                          <Button type="button" variant="destructive" size="sm" className="absolute top-1 right-1" onClick={() => removeVariationImage(varIdx, img.id)}>{t.remove || "Remove"}</Button>
+                          <Button type="button" variant="destructive" size="sm" className="absolute top-1 right-1" onClick={() => removeVariationImage(varIdx, img.id)}>{t("common.remove")}</Button>
                         </div>
                       )
                       })
                       ) : (
                         <div className="col-span-3 text-center text-gray-500 py-8 border-2 border-dashed rounded-lg">
-                          <p className="text-sm">Select an angle above to add images</p>
+                          <p className="text-sm">{t("dashboard.selectAngleToAddImages")}</p>
                         </div>
                       )}
                     </div>
@@ -843,7 +846,53 @@ export const ProductFormDialog: React.FC<ProductFormDialogProps> = ({
                   {/* Variation-specific Design Frames */}
                   {formik.values.isDesignable && (
                     <div className="mt-4 border-t pt-4">
-                      <h5 className="font-medium mb-2">Design Frames for this Variation</h5>
+                      <div className="flex items-center justify-between mb-2">
+                        <h5 className="font-medium">{t("dashboard.designFramesForVariation")}</h5>
+                        <div className="flex gap-2">
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              // Copy frames from product level to this variation
+                              const productFrames = formik.values.designFrames || []
+                              if (productFrames.length > 0) {
+                                const variationFrames = productFrames.map((frame: any) => ({
+                                  ...frame,
+                                  id: `frame_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+                                  variationId: variation.id
+                                }))
+                                updateVariation(varIdx, { designFrames: variationFrames })
+                              }
+                            }}
+                          >
+                            {t("dashboard.copyFromProduct")}
+                          </Button>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              // Copy this variation's frames to all other variations
+                              const currentFrames = variation.designFrames || []
+                              if (currentFrames.length > 0) {
+                                const newVariations = formik.values.variations.map((v: any, idx: number) => {
+                                  if (idx === varIdx) return v // Skip current variation
+                                  const copiedFrames = currentFrames.map((frame: any) => ({
+                                    ...frame,
+                                    id: `frame_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+                                    variationId: v.id
+                                  }))
+                                  return { ...v, designFrames: copiedFrames }
+                                })
+                                formik.setFieldValue("variations", newVariations)
+                              }
+                            }}
+                          >
+                            {t("dashboard.copyToAllVariations")}
+                          </Button>
+                        </div>
+                      </div>
                       <DesignFrameEditor
                         productImage={formik.values.image}
                         frontImage={variation.images?.find((img: any) => img.angle === 'front')?.url || formik.values.frontImage || formik.values.image}
@@ -852,9 +901,10 @@ export const ProductFormDialog: React.FC<ProductFormDialogProps> = ({
                         rightImage={variation.images?.find((img: any) => img.angle === 'right')?.url || formik.values.rightImage}
                         frames={variation.designFrames || []}
                         onChange={(frames) => updateVariation(varIdx, { designFrames: frames })}
-                        designCostPerCm2={formik.values.designCostPerCm2}
-                        onCostChange={(cost) => formik.setFieldValue("designCostPerCm2", cost)}
+                        designCostPerCm2={variation.designCostPerCm2 || formik.values.designCostPerCm2}
+                        onCostChange={(cost) => updateVariation(varIdx, { designCostPerCm2: cost })}
                         variationId={variation.id}
+                        showCostConfig={true}
                       />
                     </div>
                   )}
@@ -865,10 +915,10 @@ export const ProductFormDialog: React.FC<ProductFormDialogProps> = ({
           <Separator />
           <div className="flex gap-3 pt-2">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)} className="flex-1 border-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800">
-              {t.cancel}
+              {t("common.cancel")}
             </Button>
             <Button type="submit" className="flex-1 bg-gradient-to-r from-black to-gray-800 hover:from-gray-900 hover:to-black text-white shadow-lg" disabled={isSubmitting}>
-              {isSubmitting ? t.creating : isEdit ? t.updateProduct : t.createProduct}
+              {isSubmitting ? t("dashboard.creating") : isEdit ? t("dashboard.updateProduct") : t("dashboard.createProduct")}
             </Button>
           </div>
         </form>

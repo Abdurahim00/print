@@ -365,8 +365,9 @@ export function ProductDetailView({
   // Handle design button
   const handleDesignProduct = () => {
     const productId = (product as any)._id || product.id
-    const variantParam = selectedVariant ? `&variant=${selectedVariant.id}` : ''
-    router.push(`/design-tool?productId=${productId}${variantParam}`)
+    const locale = window.location.pathname.split('/')[1] || 'en'
+    // Navigate to step-based design tool starting at step 1
+    router.push(`/${locale}/design-tool/${productId}/step/1`)
   }
   
   return (

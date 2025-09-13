@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { useAppSelector, useAppDispatch } from "@/lib/redux/hooks"
+import { useTranslations } from "next-intl"
 import { fetchOrders, updateOrderStatus } from "@/lib/redux/slices/ordersSlice"
 import { translations } from "@/lib/constants"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -43,8 +44,7 @@ function hasDesignData(item: any) {
 export function OperationsDashboard() {
   const dispatch = useAppDispatch()
   const { items: orders, loading } = useAppSelector((state) => state.orders)
-  const { language } = useAppSelector((state) => state.app)
-  const t = translations[language]
+  const t = useTranslations()
 
   // Use document visibility API to prevent unnecessary API calls
   const [isVisible, setIsVisible] = useState(typeof window !== 'undefined' ? !document.hidden : true);
@@ -96,10 +96,10 @@ export function OperationsDashboard() {
       console.log('Updating order status:', { orderId, newStatus })
       const result = await dispatch(updateOrderStatus({ id: orderId, status: newStatus })).unwrap()
       console.log('Order status updated successfully:', result)
-      toast.success(t.orderStatusChanged.replace("{orderId}", orderId).replace("{newStatus}", newStatus))
+      toast.success(t("dashboard.orderStatusChanged", { orderId, newStatus }))
     } catch (error) {
       console.error('Failed to update order status:', error)
-      toast.error(t.failedToUpdateOrder)
+      toast.error(t("dashboard.failedToUpdateOrder"))
     }
   }
 
@@ -107,19 +107,19 @@ export function OperationsDashboard() {
     try {
       const order = orders.find(o => o.id === orderId)
       if (!order) {
-        toast.error('Order not found')
+        toast.error(t("dashboard.orderNotFound"))
         return
       }
       
-      toast.success(`Generating PDF for order ${orderId}...`)
+      toast.success(t("dashboard.generatingPDF", { orderId }))
       
       // Generate and download PDF
       downloadOrderPDF(order)
       
-      toast.success(`PDF generated successfully for order ${orderId}`)
+      toast.success(t("dashboard.pdfGenerated", { orderId }))
     } catch (error) {
       console.error('Error generating PDF:', error)
-      toast.error('Failed to generate PDF. Please try again.')
+      toast.error(t("dashboard.failedToGeneratePDF"))
     }
   }
 
@@ -127,19 +127,19 @@ export function OperationsDashboard() {
     try {
       const order = orders.find(o => o.id === orderId)
       if (!order) {
-        toast.error('Order not found')
+        toast.error(t("dashboard.orderNotFound"))
         return
       }
       
-      toast.success(`Generating print package for order ${orderId}...`)
+      toast.success(t("dashboard.generatingPrintPackage", { orderId }))
       
       // Generate and download complete print package as ZIP
       await downloadPrintPackage(order)
       
-      toast.success(`Print package generated successfully for order ${orderId}`)
+      toast.success(t("dashboard.printPackageGenerated", { orderId }))
     } catch (error) {
       console.error('Error generating print package:', error)
-      toast.error('Failed to generate print package. Please try again.')
+      toast.error(t("dashboard.failedToGeneratePrintPackage"))
     }
   }
 
@@ -258,7 +258,7 @@ export function OperationsDashboard() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-blue-600 dark:text-blue-400">{t.totalOrders}</p>
+                  <p className="text-sm font-medium text-blue-600 dark:text-blue-400">{t("dashboard.totalOrders")}</p>
                   <p className="text-2xl font-bold text-blue-900 dark:text-blue-100">{totalOrders}</p>
                 </div>
                 <Package className="h-8 w-8 text-blue-600 dark:text-blue-400" />
@@ -270,7 +270,7 @@ export function OperationsDashboard() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-yellow-600 dark:text-yellow-400">{t.inQueue}</p>
+                  <p className="text-sm font-medium text-yellow-600 dark:text-yellow-400">{t("dashboard.inQueue")}</p>
                   <p className="text-2xl font-bold text-yellow-900 dark:text-yellow-100">{queuedOrders}</p>
                 </div>
                 <Clock className="h-8 w-8 text-yellow-600 dark:text-yellow-400" />
@@ -282,7 +282,7 @@ export function OperationsDashboard() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-black dark:text-gray-400">{t.inProduction}</p>
+                  <p className="text-sm font-medium text-black dark:text-gray-400">{t("dashboard.inProduction")}</p>
                   <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{inProductionOrders}</p>
                 </div>
                 <Printer className="h-8 w-8 text-black dark:text-gray-400" />
@@ -294,7 +294,7 @@ export function OperationsDashboard() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-green-600 dark:text-green-400">{t.completed}</p>
+                  <p className="text-sm font-medium text-green-600 dark:text-green-400">{t("dashboard.completed")}</p>
                   <p className="text-2xl font-bold text-green-900 dark:text-green-100">{completedOrders}</p>
                 </div>
                 <CheckCircle className="h-8 w-8 text-green-600 dark:text-green-400" />
@@ -309,7 +309,7 @@ export function OperationsDashboard() {
         <CardHeader className="border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50">
           <CardTitle className="flex items-center gap-2 text-slate-900 dark:text-slate-100">
             <Package className="h-5 w-5 text-sky-600" />
-            {t.activeOrdersQueue}
+            {t("dashboard.activeOrdersQueue")}
           </CardTitle>
         </CardHeader>
         <CardContent className="p-0">
@@ -323,25 +323,25 @@ export function OperationsDashboard() {
                 <TableHeader>
                   <TableRow className="border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50">
                     <TableHead className="min-w-[100px] font-semibold text-slate-700 dark:text-slate-300">
-                      {t.orderId}
+                      {t("dashboard.orderId")}
                     </TableHead>
                     <TableHead className="min-w-[120px] font-semibold text-slate-700 dark:text-slate-300">
-                      {t.customer}
+                      {t("dashboard.customer")}
                     </TableHead>
                     <TableHead className="min-w-[100px] font-semibold text-slate-700 dark:text-slate-300">
-                      {t.date}
+                      {t("dashboard.date")}
                     </TableHead>
                     <TableHead className="min-w-[120px] font-semibold text-slate-700 dark:text-slate-300">
-                      {t.status}
+                      {t("dashboard.status")}
                     </TableHead>
                     <TableHead className="min-w-[150px] font-semibold text-slate-700 dark:text-slate-300">
-                      {t.updateStatus}
+                      {t("dashboard.updateStatus")}
                     </TableHead>
                     <TableHead className="min-w-[150px] font-semibold text-slate-700 dark:text-slate-300">
-                      {t.exportPrintFile}
+                      {t("dashboard.exportPrintFile")}
                     </TableHead>
                     <TableHead className="min-w-[120px] font-semibold text-slate-700 dark:text-slate-300">
-                      Items
+                      {t("dashboard.items")}
                     </TableHead>
                   </TableRow>
                 </TableHeader>
@@ -390,7 +390,7 @@ export function OperationsDashboard() {
                           className="w-full min-w-[140px] bg-transparent hover:bg-gray-100 hover:text-black hover:border-gray-400 dark:hover:bg-gray-800"
                         >
                           <FileArchive className="mr-2 h-4 w-4" />
-                          {t.exportPrintFile}
+                          {t("dashboard.exportPrintFile")}
                         </Button>
                       </TableCell>
                       <TableCell>
@@ -400,7 +400,7 @@ export function OperationsDashboard() {
                           onClick={() => { setDetailsOrder(order); setDetailsOpen(true) }}
                           className="w-full min-w-[100px]"
                         >
-                          View Items
+                          {t("dashboard.viewItems")}
                         </Button>
                       </TableCell>
                     </TableRow>
@@ -411,8 +411,8 @@ export function OperationsDashboard() {
           ) : (
             <div className="text-center py-12">
               <Package className="h-16 w-16 text-slate-400 dark:text-slate-500 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-slate-700 dark:text-slate-300 mb-2">{t.noOrdersInQueue}</h3>
-              <p className="text-slate-500 dark:text-slate-400">{t.allOrdersProcessed}</p>
+              <h3 className="text-lg font-semibold text-slate-700 dark:text-slate-300 mb-2">{t("dashboard.noOrdersInQueue")}</h3>
+              <p className="text-slate-500 dark:text-slate-400">{t("dashboard.allOrdersProcessed")}</p>
             </div>
           )}
         </CardContent>
@@ -423,7 +423,7 @@ export function OperationsDashboard() {
         <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-2xl font-bold text-slate-900 dark:text-slate-100">
-              Order {detailsOrder?.id} - Complete Details
+              {t("dashboard.orderCompleteDetails", { id: detailsOrder?.id })}
             </DialogTitle>
           </DialogHeader>
           
@@ -433,21 +433,21 @@ export function OperationsDashboard() {
               <div className="bg-gradient-to-r from-amber-50 to-yellow-50 dark:from-amber-900/20 dark:to-yellow-900/20 rounded-lg p-4 border border-amber-200 dark:border-amber-800">
                 <h3 className="text-lg font-semibold text-amber-900 dark:text-amber-100 mb-3 flex items-center gap-2">
                   <ImageIcon className="h-5 w-5" />
-                  Design Data Summary
+                  {t("dashboard.designDataSummary")}
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
                   <div>
-                    <p className="font-medium text-amber-800 dark:text-amber-200">Total Items</p>
+                    <p className="font-medium text-amber-800 dark:text-amber-200">{t("dashboard.totalItems")}</p>
                     <p className="text-lg font-bold text-amber-900 dark:text-amber-100">{detailsOrder.items.length}</p>
                   </div>
                   <div>
-                    <p className="font-medium text-amber-800 dark:text-amber-200">With Design Context</p>
+                    <p className="font-medium text-amber-800 dark:text-amber-200">{t("dashboard.withDesignContext")}</p>
                     <p className="text-lg font-bold text-amber-900 dark:text-amber-100">
                       {detailsOrder.items.filter((item: any) => getDesignContext(item)).length}
                     </p>
                   </div>
                   <div>
-                    <p className="font-medium text-amber-800 dark:text-amber-200">With Design Canvas</p>
+                    <p className="font-medium text-amber-800 dark:text-amber-200">{t("dashboard.withDesignCanvas")}</p>
                     <p className="text-lg font-bold text-amber-900 dark:text-amber-100">
                       {detailsOrder.items.filter((item: any) => getCanvasJSON(item)).length}
                     </p>
@@ -464,17 +464,17 @@ export function OperationsDashboard() {
                       <div className="mt-3 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
                         <div className="flex items-center gap-2 text-red-800 dark:text-red-200 mb-2">
                           <AlertTriangle className="h-4 w-4" />
-                          <span className="font-medium">Design Data Issues Detected</span>
+                          <span className="font-medium">{t("dashboard.designDataIssues")}</span>
                         </div>
                         <div className="text-sm text-red-700 dark:text-red-300 space-y-1">
                           {itemsWithoutDesign.length > 0 && (
-                            <div>• {itemsWithoutDesign.length} item(s) missing design context</div>
+                            <div>• {t("dashboard.itemsMissingDesignContext", { count: itemsWithoutDesign.length })}</div>
                           )}
                           {itemsWithoutCanvas.length > 0 && (
-                            <div>• {itemsWithoutCanvas.length} item(s) missing design canvas data</div>
+                            <div>• {t("dashboard.itemsMissingCanvasData", { count: itemsWithoutCanvas.length })}</div>
                           )}
                           <div className="mt-2 text-xs">
-                            These items may not have complete design specifications for production.
+                            {t("dashboard.incompleteDesignSpecs")}
                           </div>
                         </div>
                       </div>
@@ -488,38 +488,38 @@ export function OperationsDashboard() {
               <div className="bg-gradient-to-r from-blue-50 to-gray-50 dark:from-blue-900/20 dark:to-gray-900/20 rounded-lg p-6 border border-blue-200 dark:border-blue-800">
                 <h3 className="text-lg font-semibold text-blue-900 dark:text-blue-100 mb-4 flex items-center gap-2">
                   <User className="h-5 w-5" />
-                  Customer Information
+                  {t("dashboard.customerInformation")}
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <p className="text-sm font-medium text-blue-700 dark:text-blue-300">Customer Number</p>
+                    <p className="text-sm font-medium text-blue-700 dark:text-blue-300">{t("dashboard.customerNumber")}</p>
                     <p className="text-lg font-semibold text-blue-900 dark:text-blue-100">{detailsOrder.customer}</p>
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-blue-700 dark:text-blue-300">Order Date</p>
+                    <p className="text-sm font-medium text-blue-700 dark:text-blue-300">{t("dashboard.orderDate")}</p>
                     <p className="text-lg font-semibold text-blue-900 dark:text-blue-100">{detailsOrder.date}</p>
                   </div>
                   {detailsOrder.customerName && (
                     <div>
-                      <p className="text-sm font-medium text-blue-700 dark:text-blue-300">Full Name</p>
+                      <p className="text-sm font-medium text-blue-700 dark:text-blue-300">{t("dashboard.fullName")}</p>
                       <p className="text-lg font-semibold text-blue-900 dark:text-blue-100">{detailsOrder.customerName}</p>
                     </div>
                   )}
                   {detailsOrder.customerEmail && (
                     <div>
-                      <p className="text-sm font-medium text-blue-700 dark:text-blue-300">Email</p>
+                      <p className="text-sm font-medium text-blue-700 dark:text-blue-300">{t("dashboard.email")}</p>
                       <p className="text-lg font-semibold text-blue-900 dark:text-blue-100">{detailsOrder.customerEmail}</p>
                     </div>
                   )}
                   {detailsOrder.customerPhone && (
                     <div>
-                      <p className="text-sm font-medium text-blue-700 dark:text-blue-300">Phone</p>
+                      <p className="text-sm font-medium text-blue-700 dark:text-blue-300">{t("dashboard.phone")}</p>
                       <p className="text-lg font-semibold text-blue-900 dark:text-blue-100">{detailsOrder.customerPhone}</p>
                     </div>
                   )}
                   {detailsOrder.customerAddress && (
                     <div className="md:col-span-2">
-                      <p className="text-sm font-medium text-blue-700 dark:text-blue-300">Address</p>
+                      <p className="text-sm font-medium text-blue-700 dark:text-blue-300">{t("dashboard.address")}</p>
                       <p className="text-lg font-semibold text-blue-900 dark:text-blue-100">
                         {detailsOrder.customerAddress}
                         {detailsOrder.customerCity && `, ${detailsOrder.customerCity}`}
@@ -535,26 +535,26 @@ export function OperationsDashboard() {
               <div className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-lg p-6 border border-green-200 dark:border-green-800">
                 <h3 className="text-lg font-semibold text-green-900 dark:text-green-100 mb-4 flex items-center gap-2">
                   <Package className="h-5 w-5" />
-                  Order Summary
+                  {t("dashboard.orderSummary")}
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
-                    <p className="text-sm font-medium text-green-700 dark:text-green-300">Status</p>
+                    <p className="text-sm font-medium text-green-700 dark:text-green-300">{t("dashboard.status")}</p>
                     <Badge className={`${getStatusColor(detailsOrder.status)} flex items-center gap-1 w-fit font-medium text-base px-3 py-1`}>
                       {getStatusIcon(detailsOrder.status)}
                       {detailsOrder.status}
                     </Badge>
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-green-700 dark:text-green-300">Total Amount</p>
+                    <p className="text-sm font-medium text-green-700 dark:text-green-300">{t("dashboard.totalAmount")}</p>
                     <p className="text-2xl font-bold text-green-900 dark:text-green-100">
                       {detailsOrder.total ? detailsOrder.total.toFixed(2) : '0.00'} SEK
                     </p>
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-green-700 dark:text-green-300">Payment Method</p>
+                    <p className="text-sm font-medium text-green-700 dark:text-green-300">{t("dashboard.paymentMethod")}</p>
                     <p className="text-lg font-semibold text-green-900 dark:text-green-100 capitalize">
-                      {detailsOrder.paymentMethod || 'Not specified'}
+                      {detailsOrder.paymentMethod || t("dashboard.notSpecified")}
                     </p>
                   </div>
                 </div>
@@ -564,7 +564,7 @@ export function OperationsDashboard() {
               <div className="space-y-4">
                 <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-4 flex items-center gap-2">
                   <ImageIcon className="h-5 w-5" />
-                  Products & Designs ({detailsOrder.items.length} items)
+                  {t("dashboard.productsAndDesigns", { count: detailsOrder.items.length })}
                 </h3>
                 
                 {detailsOrder.items.map((item, idx) => (
@@ -1009,10 +1009,10 @@ export function OperationsDashboard() {
                       <div className="p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
                         <div className="flex items-center gap-2 text-yellow-800 dark:text-yellow-200">
                           <AlertTriangle className="h-4 w-4" />
-                          <span className="font-medium">No Design Context Available</span>
+                          <span className="font-medium">{t("dashboard.noDesignContext")}</span>
                         </div>
                         <p className="text-sm text-yellow-700 dark:text-yellow-300 mt-1">
-                          This item was added without design customization. Design data may not be available for production.
+                          {t("dashboard.noDesignCustomization")}
                         </p>
                       </div>
                     )}
@@ -1024,7 +1024,7 @@ export function OperationsDashboard() {
               <div className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-lg p-6 border border-green-200 dark:border-green-800">
                 <h3 className="text-lg font-semibold text-green-900 dark:text-green-100 mb-4 flex items-center gap-2">
                   <Download className="h-5 w-5" />
-                  Export Options
+                  {t("dashboard.exportOptions")}
                 </h3>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -1035,7 +1035,7 @@ export function OperationsDashboard() {
                     className="justify-start"
                   >
                     <FileText className="mr-2 h-4 w-4" />
-                    Order Report (PDF)
+                    {t("dashboard.orderReportPDF")}
                   </Button>
                   
                   {/* Export Complete Package */}
@@ -1045,13 +1045,13 @@ export function OperationsDashboard() {
                     className="justify-start"
                   >
                     <Package2 className="mr-2 h-4 w-4" />
-                    Complete Print Package
+                    {t("dashboard.completePrintPackage")}
                   </Button>
                   
                   {/* Export All Designs */}
                   <Button 
                     onClick={async () => {
-                      toast.info('Exporting all designs...')
+                      toast.info(t("dashboard.exportingAllDesigns"))
                       for (const [index, item] of detailsOrder.items.entries()) {
                         const canvasJSON = (item as any).designCanvasJSON || (item as any).designData?.designCanvasJSON || (item as any).designData?.canvasJSON;
                         if (canvasJSON) {
@@ -1067,13 +1067,13 @@ export function OperationsDashboard() {
                           }
                         }
                       }
-                      toast.success('Designs exported successfully!')
+                      toast.success(t("dashboard.designsExportedSuccessfully"))
                     }}
                     variant="outline"
                     className="justify-start"
                   >
                     <FileImage className="mr-2 h-4 w-4" />
-                    All Designs (PNG)
+                    {t("dashboard.allDesignsPNG")}
                   </Button>
                   
                   {/* Export Individual Elements */}
@@ -1085,13 +1085,13 @@ export function OperationsDashboard() {
                     className="justify-start"
                   >
                     <Layers className="mr-2 h-4 w-4" />
-                    Custom Export Options
+                    {t("dashboard.customExportOptions")}
                   </Button>
                 </div>
                 
                 {/* Per-Item Export Options */}
                 <div className="mt-4">
-                  <h4 className="text-sm font-medium text-green-800 dark:text-green-200 mb-2">Individual Item Exports:</h4>
+                  <h4 className="text-sm font-medium text-green-800 dark:text-green-200 mb-2">{t("dashboard.individualItemExports")}:</h4>
                   <div className="space-y-2">
                     {detailsOrder.items.map((item, index) => {
                       if (!(item as any).designCanvasJSON) return null
@@ -1100,11 +1100,11 @@ export function OperationsDashboard() {
                         <div key={index} className="flex items-center justify-between bg-white dark:bg-slate-800 rounded-lg p-3 border border-green-200 dark:border-green-700">
                           <div className="flex items-center gap-2">
                             <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                              Item #{index + 1}: {typeof item.name === 'string' ? item.name : typeof item.name === 'object' && item.name?.name ? String(item.name.name) : 'Product'}
+                              {t("dashboard.itemNumber", { number: index + 1 })}: {typeof item.name === 'string' ? item.name : typeof item.name === 'object' && item.name?.name ? String(item.name.name) : t("dashboard.product")}
                             </span>
                             {(item as any).designContext?.viewMode && (
                               <Badge variant="outline" className="text-xs">
-                                {(item as any).designContext.viewMode} view
+                                {(item as any).designContext.viewMode} {t("dashboard.view")}
                               </Badge>
                             )}
                           </div>
@@ -1123,12 +1123,12 @@ export function OperationsDashboard() {
                                   link.href = designData as string
                                   link.download = `design-only-${detailsOrder.id}-item-${index + 1}.png`
                                   link.click()
-                                  toast.success(`Design exported for item ${index + 1}`)
+                                  toast.success(t("dashboard.designExported", { item: index + 1 }))
                                 } catch (error) {
-                                  toast.error('Failed to export design')
+                                  toast.error(t("dashboard.failedToExportDesign"))
                                 }
                               }}
-                              title="Export design only (transparent background)"
+                              title={t("dashboard.exportDesignOnly")}
                             >
                               <FileImage className="h-4 w-4" />
                             </Button>
@@ -1154,13 +1154,13 @@ export function OperationsDashboard() {
                                       link.href = compositeData
                                       link.download = `composite-${detailsOrder.id}-item-${index + 1}.png`
                                       link.click()
-                                      toast.success(`Composite exported for item ${index + 1}`)
+                                      toast.success(t("dashboard.compositeExported", { item: index + 1 }))
                                     }
                                   } catch (error) {
-                                    toast.error('Failed to export composite')
+                                    toast.error(t("dashboard.failedToExportComposite"))
                                   }
                                 }}
-                                title="Export with product (composite view)"
+                                title={t("dashboard.exportWithProduct")}
                               >
                                 <Package2 className="h-4 w-4" />
                               </Button>
@@ -1174,7 +1174,7 @@ export function OperationsDashboard() {
                                 setExportingItemIndex(index)
                                 setExportModalOpen(true)
                               }}
-                              title="Advanced export options"
+                              title={t("dashboard.advancedExportOptions")}
                             >
                               <Settings className="h-4 w-4" />
                             </Button>
@@ -1193,7 +1193,7 @@ export function OperationsDashboard() {
                   onClick={() => setDetailsOpen(false)}
                   className="flex-1"
                 >
-                  Close
+                  {t("common.close")}
                 </Button>
             </div>
             </div>

@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from "react"
 import * as Yup from "yup"
 import { useAppSelector, useAppDispatch } from "@/lib/redux/hooks"
+import { useTranslations } from "next-intl"
 import { fetchProducts, createProduct, updateProduct, deleteProduct } from "@/lib/redux/slices/productsSlice"
 import { fetchUsers, updateUser, deleteUser } from "@/lib/redux/slices/usersSlice"
 import { fetchTemplates, createTemplate, updateTemplate, deleteTemplate } from "@/lib/redux/slices/templatesSlice"
@@ -86,8 +87,7 @@ export function AdminDashboardNew({ onLogout }: AdminDashboardNewProps) {
   const { items: templates, loading: templatesLoading } = useAppSelector((state) => state.templatesManagement)
   const { items: coupons, loading: couponsLoading } = useAppSelector((state) => state.coupons)
   const { categories, subcategories } = useAppSelector((state) => (state as any).categories)
-  const { language } = useAppSelector((state) => state.app)
-  const t = translations[language]
+  const t = useTranslations()
 
   const [activePage, setActivePage] = useState<AdminPage>("users")
   
@@ -147,49 +147,49 @@ export function AdminDashboardNew({ onLogout }: AdminDashboardNewProps) {
   const menuItems = [
     {
       id: "analytics" as AdminPage,
-      label: "Analytics",
+      label: t("dashboard.analytics"),
       icon: BarChart3,
       count: null,
     },
     {
       id: "site-config" as AdminPage,
-      label: "Site Configuration",
+      label: t("dashboard.siteConfiguration"),
       icon: Settings,
       count: null,
     },
     {
       id: "users" as AdminPage,
-      label: "Manage Users",
+      label: t("dashboard.manageUsers"),
       icon: Users,
       count: users.length,
     },
     {
       id: "products" as AdminPage,
-      label: "Manage Products",
+      label: t("dashboard.manageProducts"),
       icon: Package,
       count: products.length,
     },
     {
       id: "templates" as AdminPage,
-      label: "Manage Templates",
+      label: t("dashboard.manageTemplates"),
       icon: ImageIcon,
       count: templates.length,
     },
     {
       id: "coupons" as AdminPage,
-      label: "Manage Coupons",
+      label: t("dashboard.manageCoupons"),
       icon: Ticket,
       count: coupons.length,
     },
     {
       id: "categories" as AdminPage,
-      label: "Manage Categories",
+      label: t("dashboard.manageCategories"),
       icon: FolderTree,
       count: categories.length,
     },
     {
       id: "subcategories" as AdminPage,
-      label: "Manage Subcategories",
+      label: t("dashboard.manageSubcategories"),
       icon: FolderTree,
       count: subcategories.length,
     },
@@ -271,11 +271,11 @@ export function AdminDashboardNew({ onLogout }: AdminDashboardNewProps) {
         inStock: true,
       }
       await dispatch(createProduct(productData))
-      toast.success(t.productCreated.replace("{productName}", values.name))
+      toast.success(t("dashboard.productCreated", { productName: values.name }))
       setIsAddProductDialogOpen(false)
       resetForm()
     } catch (error) {
-      toast.error(t.failedToCreateProduct)
+      toast.error(t("dashboard.failedToCreateProduct"))
     } finally {
       setSubmitting(false)
     }
@@ -299,12 +299,12 @@ export function AdminDashboardNew({ onLogout }: AdminDashboardNewProps) {
       
       console.log('Updating product with data:', productData)
       await dispatch(updateProduct(productData))
-      toast.success(t.productUpdated.replace("{productName}", values.name))
+      toast.success(t("dashboard.productUpdated", { productName: values.name }))
       setIsEditProductDialogOpen(false)
       setEditingProduct(null)
     } catch (error) {
       console.error('Failed to update product:', error)
-      toast.error(t.failedToUpdateProduct)
+      toast.error(t("dashboard.failedToUpdateProduct"))
     } finally {
       setSubmitting(false)
     }
@@ -316,11 +316,11 @@ export function AdminDashboardNew({ onLogout }: AdminDashboardNewProps) {
   ) => {
     try {
       await dispatch(updateUser(values as UserType))
-      toast.success(t.userUpdated)
+      toast.success(t("dashboard.userUpdated"))
       setIsEditUserDialogOpen(false)
       setEditingUser(null)
     } catch (error) {
-      toast.error(t.failedToUpdateUser)
+      toast.error(t("dashboard.failedToUpdateUser"))
     } finally {
       setSubmitting(false)
     }
@@ -329,9 +329,9 @@ export function AdminDashboardNew({ onLogout }: AdminDashboardNewProps) {
   const handleToggleProductStock = async (productId: string, inStock: boolean) => {
     try {
       await dispatch(updateProduct({ id: productId, inStock }))
-      toast.success(inStock ? "Product marked as in stock" : "Product marked as out of stock")
+      toast.success(inStock ? t("dashboard.productInStock") : t("dashboard.productOutOfStock"))
     } catch (error) {
-      toast.error("Failed to update product stock status")
+      toast.error(t("dashboard.failedToUpdateStock"))
     }
   }
 
@@ -341,11 +341,11 @@ export function AdminDashboardNew({ onLogout }: AdminDashboardNewProps) {
   ) => {
     try {
       await dispatch(createTemplate(values))
-      toast.success(`Template "${values.name}" created successfully`)
+      toast.success(t("dashboard.templateCreated", { name: values.name }))
       setIsAddTemplateDialogOpen(false)
       resetForm()
     } catch (error) {
-      toast.error("Failed to create template")
+      toast.error(t("dashboard.failedToCreateTemplate"))
     } finally {
       setSubmitting(false)
     }
@@ -357,11 +357,11 @@ export function AdminDashboardNew({ onLogout }: AdminDashboardNewProps) {
   ) => {
     try {
       await dispatch(updateTemplate(values))
-      toast.success(`Template "${values.name}" updated successfully`)
+      toast.success(t("dashboard.templateUpdated", { name: values.name }))
       setIsEditTemplateDialogOpen(false)
       setEditingTemplate(null)
     } catch (error) {
-      toast.error("Failed to update template")
+      toast.error(t("dashboard.failedToUpdateTemplate"))
     } finally {
       setSubmitting(false)
     }
@@ -374,11 +374,11 @@ export function AdminDashboardNew({ onLogout }: AdminDashboardNewProps) {
     try {
       await dispatch(createCoupon(values))
       await dispatch(fetchCoupons())
-      toast.success(`Coupon "${values.code}" created successfully`)
+      toast.success(t("dashboard.couponCreated", { code: values.code }))
       setIsAddCouponDialogOpen(false)
       resetForm()
     } catch (error) {
-      toast.error("Failed to create coupon")
+      toast.error(t("dashboard.failedToCreateCoupon"))
     } finally {
       setSubmitting(false)
     }
@@ -390,56 +390,56 @@ export function AdminDashboardNew({ onLogout }: AdminDashboardNewProps) {
   ) => {
     try {
       await dispatch(updateCoupon(values))
-      toast.success(`Coupon "${values.code}" updated successfully`)
+      toast.success(t("dashboard.couponUpdated", { code: values.code }))
       setIsEditCouponDialogOpen(false)
       setEditingCoupon(null)
     } catch (error) {
-      toast.error("Failed to update coupon")
+      toast.error(t("dashboard.failedToUpdateCoupon"))
     } finally {
       setSubmitting(false)
     }
   }
 
   const handleDeleteProduct = async (id: string, name: string) => {
-    if (confirm(t.confirmDeleteProduct.replace("{productName}", name))) {
+    if (confirm(t("dashboard.confirmDeleteProduct", { productName: name }))) {
       try {
         await dispatch(deleteProduct(id))
-        toast.success(t.productDeleted.replace("{productName}", name))
+        toast.success(t("dashboard.productDeleted", { productName: name }))
       } catch (error) {
-        toast.error(t.failedToDeleteProduct)
+        toast.error(t("dashboard.failedToDeleteProduct"))
       }
     }
   }
 
   const handleDeleteUser = async (id: string, email: string) => {
-    if (confirm(t.confirmDeleteUser)) {
+    if (confirm(t("dashboard.confirmDeleteUser"))) {
       try {
         await dispatch(deleteUser(id))
-        toast.success(t.userDeleted)
+        toast.success(t("dashboard.userDeleted"))
       } catch (error) {
-        toast.error(t.failedToDeleteUser)
+        toast.error(t("dashboard.failedToDeleteUser"))
       }
     }
   }
 
   const handleDeleteTemplate = async (id: string, name: string) => {
-    if (confirm(`Are you sure you want to delete template "${name}"?`)) {
+    if (confirm(t("dashboard.confirmDeleteTemplate", { name }))) {
       try {
         await dispatch(deleteTemplate(id))
-        toast.success(`Template "${name}" deleted successfully`)
+        toast.success(t("dashboard.templateDeleted", { name }))
       } catch (error) {
-        toast.error("Failed to delete template")
+        toast.error(t("dashboard.failedToDeleteTemplate"))
       }
     }
   }
 
   const handleDeleteCoupon = async (id: string, code: string) => {
-    if (confirm(`Are you sure you want to delete coupon "${code}"?`)) {
+    if (confirm(t("dashboard.confirmDeleteCoupon", { code }))) {
       try {
         await dispatch(deleteCoupon(id))
-        toast.success(`Coupon "${code}" deleted successfully`)
+        toast.success(t("dashboard.couponDeleted", { code }))
       } catch (error) {
-        toast.error("Failed to delete coupon")
+        toast.error(t("dashboard.failedToDeleteCoupon"))
       }
     }
   }
@@ -485,14 +485,14 @@ export function AdminDashboardNew({ onLogout }: AdminDashboardNewProps) {
             <CardHeader className="border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 space-y-4">
               <CardTitle className="flex items-center gap-2 text-slate-900 dark:text-slate-100">
                 <Users className="h-5 w-5 text-black" />
-                {t.manageUsers}
+                {t("dashboard.manageUsers")}
               </CardTitle>
               <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
                 <div className="relative flex-1">
                   <Search className="absolute left-2 sm:left-3 top-1/2 transform -translate-y-1/2 h-3 w-3 sm:h-4 sm:w-4 text-slate-400" />
                   <Input
                     type="search"
-                    placeholder={t.searchUsers}
+                    placeholder={t("dashboard.searchUsers")}
                     value={userSearchTerm}
                     onChange={(e) => setUserSearchTerm(e.target.value)}
                     className="pl-8 sm:pl-10 border-slate-300 focus:border-black focus:ring-gray-200 text-sm sm:text-base h-9 sm:h-10"
@@ -500,13 +500,13 @@ export function AdminDashboardNew({ onLogout }: AdminDashboardNewProps) {
                 </div>
                 <Select value={selectedUserRole} onValueChange={setSelectedUserRole}>
                   <SelectTrigger className="w-full sm:w-[180px] lg:w-[200px] border-slate-300 focus:border-black focus:ring-gray-200 h-9 sm:h-10 text-sm sm:text-base">
-                    <SelectValue placeholder={t.filterByRole} />
+                    <SelectValue placeholder={t("dashboard.filterByRole")} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">{t.allRoles}</SelectItem>
-                    <SelectItem value="user">{t.userRole}: {t.user}</SelectItem>
-                    <SelectItem value="admin">{t.userRole}: {t.admin}</SelectItem>
-                    <SelectItem value="operations">{t.userRole}: {t.operations}</SelectItem>
+                    <SelectItem value="all">{t("dashboard.allRoles")}</SelectItem>
+                    <SelectItem value="user">{t("dashboard.userRole")}: {t("dashboard.user")}</SelectItem>
+                    <SelectItem value="admin">{t("dashboard.userRole")}: {t("dashboard.admin")}</SelectItem>
+                    <SelectItem value="operations">{t("dashboard.userRole")}: {t("dashboard.operations")}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -515,7 +515,7 @@ export function AdminDashboardNew({ onLogout }: AdminDashboardNewProps) {
               <UserTable
                 users={filteredUsers.sort((a, b) => a.id.localeCompare(b.id))}
                 loading={usersLoading}
-                t={t}
+                t={{}}
                 getRoleColor={getRoleColor}
                 onEdit={openEditUserDialog}
                 onDelete={handleDeleteUser}
@@ -531,14 +531,14 @@ export function AdminDashboardNew({ onLogout }: AdminDashboardNewProps) {
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <CardTitle className="flex items-center gap-2 text-slate-900 dark:text-slate-100">
                   <Package className="h-5 w-5 text-black" />
-                  {t.manageProductsPrices}
+                  {t("dashboard.manageProducts")}
                 </CardTitle>
                 <Button
                   className="bg-gradient-to-r from-black to-gray-800 hover:from-gray-900 hover:to-black text-white shadow-lg hover:shadow-xl transition-all duration-200"
                   onClick={() => setIsAddProductDialogOpen(true)}
                 >
                   <Plus className="mr-2 h-4 w-4" />
-                  {t.addProduct}
+                  {t("dashboard.addProduct")}
                 </Button>
               </div>
               <div className="flex flex-col gap-4">
@@ -547,7 +547,7 @@ export function AdminDashboardNew({ onLogout }: AdminDashboardNewProps) {
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
                   <Input
                     type="search"
-                    placeholder="Global product search (name, description, category, subcategory)..."
+                    placeholder={t("dashboard.globalProductSearch")}
                     value={globalProductSearch}
                     onChange={(e) => setGlobalProductSearch(e.target.value)}
                     onBlur={() => {
@@ -602,7 +602,7 @@ export function AdminDashboardNew({ onLogout }: AdminDashboardNewProps) {
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
                     <Input
                       type="search"
-                      placeholder={t.searchProducts}
+                      placeholder={t("dashboard.searchProducts")}
                       value={productSearchTerm}
                       onChange={(e) => setProductSearchTerm(e.target.value)}
                       className="pl-10 border-slate-300 focus:border-black focus:ring-gray-200"
@@ -610,10 +610,10 @@ export function AdminDashboardNew({ onLogout }: AdminDashboardNewProps) {
                   </div>
                   <Select value={selectedProductCategory} onValueChange={setSelectedProductCategory}>
                     <SelectTrigger className="w-full sm:w-[200px] border-slate-300 focus:border-black focus:ring-gray-200">
-                      <SelectValue placeholder={t.filterByCategory} />
+                      <SelectValue placeholder={t("dashboard.filterByCategory")} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">All Categories</SelectItem>
+                      <SelectItem value="all">{t("products.allCategories")}</SelectItem>
                       {categories
                         .filter((cat: any) => cat.id && cat.id !== '')
                         .map((cat: any) => (
@@ -632,7 +632,7 @@ export function AdminDashboardNew({ onLogout }: AdminDashboardNewProps) {
                       className="w-4 h-4"
                     />
                     <Label htmlFor="designableOnly" className="text-sm cursor-pointer">
-                      Designable Only
+                      {t("dashboard.designableOnly")}
                     </Label>
                   </div>
                 </div>
@@ -642,7 +642,7 @@ export function AdminDashboardNew({ onLogout }: AdminDashboardNewProps) {
               <ProductTable
                 products={filteredProducts}
                 loading={productsLoading}
-                t={t}
+                t={{}}
                 productCategories={productCategories}
                 onEdit={openEditProductDialog}
                 onDelete={handleDeleteProduct}
@@ -653,11 +653,13 @@ export function AdminDashboardNew({ onLogout }: AdminDashboardNewProps) {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4">
                     <p className="text-sm text-slate-600 dark:text-slate-400">
-                      Showing <span className="font-semibold">{filteredProducts.length}</span> of{" "}
-                      <span className="font-semibold">{products.length}</span> products
+                      {t("dashboard.showingProducts", { 
+                        showing: filteredProducts.length, 
+                        total: products.length 
+                      })}
                       {products.length < 43149 && (
                         <span className="ml-2 text-amber-600">
-                          (Total in DB: 43,149)
+                          {t("dashboard.totalInDB", { total: "43,149" })}
                         </span>
                       )}
                     </p>
@@ -666,12 +668,12 @@ export function AdminDashboardNew({ onLogout }: AdminDashboardNewProps) {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="20">20 per page</SelectItem>
-                        <SelectItem value="50">50 per page</SelectItem>
-                        <SelectItem value="100">100 per page</SelectItem>
-                        <SelectItem value="200">200 per page</SelectItem>
-                        <SelectItem value="500">500 per page</SelectItem>
-                        <SelectItem value="1000">1000 per page</SelectItem>
+                        <SelectItem value="20">{t("dashboard.perPage", { count: 20 })}</SelectItem>
+                        <SelectItem value="50">{t("dashboard.perPage", { count: 50 })}</SelectItem>
+                        <SelectItem value="100">{t("dashboard.perPage", { count: 100 })}</SelectItem>
+                        <SelectItem value="200">{t("dashboard.perPage", { count: 200 })}</SelectItem>
+                        <SelectItem value="500">{t("dashboard.perPage", { count: 500 })}</SelectItem>
+                        <SelectItem value="1000">{t("dashboard.perPage", { count: 1000 })}</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -682,10 +684,13 @@ export function AdminDashboardNew({ onLogout }: AdminDashboardNewProps) {
                       onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
                       disabled={currentPage === 1}
                     >
-                      Previous
+                      {t("common.previous")}
                     </Button>
                     <span className="text-sm px-3">
-                      Page {currentPage} of {Math.ceil(43149 / productsPerPage)}
+                      {t("dashboard.pageOf", { 
+                        current: currentPage, 
+                        total: Math.ceil(43149 / productsPerPage) 
+                      })}
                     </span>
                     <Button
                       variant="outline"
@@ -693,7 +698,7 @@ export function AdminDashboardNew({ onLogout }: AdminDashboardNewProps) {
                       onClick={() => setCurrentPage(currentPage + 1)}
                       disabled={currentPage >= Math.ceil(43149 / productsPerPage)}
                     >
-                      Next
+                      {t("common.next")}
                     </Button>
                   </div>
                 </div>
@@ -709,14 +714,14 @@ export function AdminDashboardNew({ onLogout }: AdminDashboardNewProps) {
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <CardTitle className="flex items-center gap-2 text-slate-900 dark:text-slate-100">
                   <ImageIcon className="h-5 w-5 text-black" />
-                  Manage Templates
+                  {t("dashboard.manageTemplates")}
                 </CardTitle>
                 <Button
                   className="bg-gradient-to-r from-black to-gray-800 hover:from-gray-900 hover:to-black text-white shadow-lg hover:shadow-xl transition-all duration-200"
                   onClick={() => setIsAddTemplateDialogOpen(true)}
                 >
                   <Plus className="mr-2 h-4 w-4" />
-                  Add Template
+                  {t("dashboard.addTemplate")}
                 </Button>
               </div>
               <div className="flex flex-col sm:flex-row gap-4">
@@ -724,7 +729,7 @@ export function AdminDashboardNew({ onLogout }: AdminDashboardNewProps) {
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
                   <Input
                     type="search"
-                    placeholder="Search templates..."
+                    placeholder={t("dashboard.searchTemplates")}
                     value={templateSearchTerm}
                     onChange={(e) => setTemplateSearchTerm(e.target.value)}
                     className="pl-10 border-slate-300 focus:border-black focus:ring-gray-200"
@@ -732,22 +737,22 @@ export function AdminDashboardNew({ onLogout }: AdminDashboardNewProps) {
                 </div>
                 <Select value={selectedTemplateCategory} onValueChange={setSelectedTemplateCategory}>
                   <SelectTrigger className="w-full sm:w-[200px] border-slate-300 focus:border-black focus:ring-gray-200">
-                    <SelectValue placeholder="Filter by category" />
+                    <SelectValue placeholder={t("dashboard.filterByCategory")} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">All Categories</SelectItem>
-                    <SelectItem value="Business">Business</SelectItem>
-                    <SelectItem value="Abstract">Abstract</SelectItem>
-                    <SelectItem value="Outdoor">Outdoor</SelectItem>
-                    <SelectItem value="Text">Text</SelectItem>
-                    <SelectItem value="Sports">Sports</SelectItem>
-                    <SelectItem value="Music">Music</SelectItem>
-                    <SelectItem value="Art">Art</SelectItem>
-                    <SelectItem value="Technology">Technology</SelectItem>
-                    <SelectItem value="Nature">Nature</SelectItem>
-                    <SelectItem value="Geometric">Geometric</SelectItem>
-                    <SelectItem value="Vintage">Vintage</SelectItem>
-                    <SelectItem value="Modern">Modern</SelectItem>
+                    <SelectItem value="all">{t("products.allCategories")}</SelectItem>
+                    <SelectItem value="Business">{t("templates.business")}</SelectItem>
+                    <SelectItem value="Abstract">{t("templates.abstract")}</SelectItem>
+                    <SelectItem value="Outdoor">{t("templates.outdoor")}</SelectItem>
+                    <SelectItem value="Text">{t("templates.text")}</SelectItem>
+                    <SelectItem value="Sports">{t("templates.sports")}</SelectItem>
+                    <SelectItem value="Music">{t("templates.music")}</SelectItem>
+                    <SelectItem value="Art">{t("templates.art")}</SelectItem>
+                    <SelectItem value="Technology">{t("templates.technology")}</SelectItem>
+                    <SelectItem value="Nature">{t("templates.nature")}</SelectItem>
+                    <SelectItem value="Geometric">{t("templates.geometric")}</SelectItem>
+                    <SelectItem value="Vintage">{t("templates.vintage")}</SelectItem>
+                    <SelectItem value="Modern">{t("templates.modern")}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -756,7 +761,7 @@ export function AdminDashboardNew({ onLogout }: AdminDashboardNewProps) {
               <TemplateTable
                 templates={filteredTemplates}
                 loading={templatesLoading}
-                t={t}
+                t={{}}
                 onEdit={openEditTemplateDialog}
                 onDelete={handleDeleteTemplate}
               />
@@ -771,14 +776,14 @@ export function AdminDashboardNew({ onLogout }: AdminDashboardNewProps) {
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <CardTitle className="flex items-center gap-2 text-slate-900 dark:text-slate-100">
                   <Ticket className="h-5 w-5 text-black" />
-                  Manage Coupons
+                  {t("dashboard.manageCoupons")}
                 </CardTitle>
                 <Button
                   className="bg-gradient-to-r from-black to-gray-800 hover:from-gray-900 hover:to-black text-white shadow-lg hover:shadow-xl transition-all duration-200"
                   onClick={() => setIsAddCouponDialogOpen(true)}
                 >
                   <Plus className="mr-2 h-4 w-4" />
-                  Create Coupon
+                  {t("dashboard.createCoupon")}
                 </Button>
               </div>
               <div className="flex flex-col sm:flex-row gap-4">
@@ -786,7 +791,7 @@ export function AdminDashboardNew({ onLogout }: AdminDashboardNewProps) {
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
                   <Input
                     type="search"
-                    placeholder="Search coupons..."
+                    placeholder={t("dashboard.searchCoupons")}
                     value={couponSearchTerm}
                     onChange={(e) => setCouponSearchTerm(e.target.value)}
                     className="pl-10 border-slate-300 focus:border-black focus:ring-gray-200"
@@ -798,7 +803,7 @@ export function AdminDashboardNew({ onLogout }: AdminDashboardNewProps) {
               <CouponTable
                 coupons={filteredCoupons}
                 loading={couponsLoading}
-                t={t}
+                t={{}}
                 onEdit={openEditCouponDialog}
                 onDelete={handleDeleteCoupon}
               />
@@ -813,10 +818,10 @@ export function AdminDashboardNew({ onLogout }: AdminDashboardNewProps) {
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <CardTitle className="flex items-center gap-2 text-slate-900 dark:text-slate-100">
                   <FolderTree className="h-5 w-5 text-black" />
-                  Manage Categories
+                  {t("dashboard.manageCategories")}
                 </CardTitle>
                 <Button onClick={() => { setIsAddCategoryOpen(true); setEditingCategory(null) }} className="bg-gradient-to-r from-black to-gray-800 text-white">
-                  <Plus className="h-4 w-4 mr-2" /> Add Category
+                  <Plus className="h-4 w-4 mr-2" /> {t("dashboard.addCategory")}
                 </Button>
               </div>
             </CardHeader>
@@ -826,7 +831,7 @@ export function AdminDashboardNew({ onLogout }: AdminDashboardNewProps) {
                 loading={false}
                 onEdit={(c) => { setEditingCategory(c); setIsEditCategoryOpen(true) }}
                 onDelete={async (id) => {
-                  if (confirm("Delete this category? Related subcategories will be removed.")) {
+                  if (confirm(t("dashboard.confirmDeleteCategory"))) {
                     await dispatch(deleteCategoryThunk(id) as any)
                     dispatch(fetchCategories())
                     dispatch(fetchSubcategories())
@@ -844,10 +849,10 @@ export function AdminDashboardNew({ onLogout }: AdminDashboardNewProps) {
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <CardTitle className="flex items-center gap-2 text-slate-900 dark:text-slate-100">
                   <FolderTree className="h-5 w-5 text-black" />
-                  Manage Subcategories
+                  {t("dashboard.manageSubcategories")}
                 </CardTitle>
                 <Button onClick={() => { setIsAddSubcategoryOpen(true); setEditingSubcategory(null) }} className="bg-gradient-to-r from-black to-gray-800 text-white">
-                  <Plus className="h-4 w-4 mr-2" /> Add Subcategory
+                  <Plus className="h-4 w-4 mr-2" /> {t("dashboard.addSubcategory")}
                 </Button>
               </div>
             </CardHeader>
@@ -858,7 +863,7 @@ export function AdminDashboardNew({ onLogout }: AdminDashboardNewProps) {
                 loading={false}
                 onEdit={(s) => { setEditingSubcategory(s); setIsEditSubcategoryOpen(true) }}
                 onDelete={async (id) => {
-                  if (confirm("Delete this subcategory?")) {
+                  if (confirm(t("dashboard.confirmDeleteSubcategory"))) {
                     await dispatch(deleteSubcategoryThunk(id) as any)
                     dispatch(fetchSubcategories())
                   }
@@ -877,7 +882,7 @@ export function AdminDashboardNew({ onLogout }: AdminDashboardNewProps) {
             <CardHeader className="border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50">
               <CardTitle className="flex items-center gap-2 text-slate-900 dark:text-slate-100">
                 <BarChart3 className="h-5 w-5 text-black" />
-                Analytics & Reports
+                {t("dashboard.analyticsReports")}
               </CardTitle>
             </CardHeader>
             <CardContent className="p-6">
@@ -885,7 +890,7 @@ export function AdminDashboardNew({ onLogout }: AdminDashboardNewProps) {
                 <div className="bg-gradient-to-r from-gray-50 to-gray-100 p-6 rounded-lg">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium text-gray-700">Total Users</p>
+                      <p className="text-sm font-medium text-gray-700">{t("dashboard.totalUsers")}</p>
                       <p className="text-3xl font-bold text-gray-900">{users.length}</p>
                     </div>
                     <Users className="h-10 w-10 text-black" />
@@ -894,7 +899,7 @@ export function AdminDashboardNew({ onLogout }: AdminDashboardNewProps) {
                 <div className="bg-gradient-to-r from-green-50 to-green-100 p-6 rounded-lg">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium text-green-700">Total Products</p>
+                      <p className="text-sm font-medium text-green-700">{t("dashboard.totalProducts")}</p>
                       <p className="text-3xl font-bold text-green-900">{products.length}</p>
                     </div>
                     <Package className="h-10 w-10 text-green-600" />
@@ -903,7 +908,7 @@ export function AdminDashboardNew({ onLogout }: AdminDashboardNewProps) {
                 <div className="bg-gradient-to-r from-gray-50 to-gray-100 p-6 rounded-lg">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium text-gray-700">Total Templates</p>
+                      <p className="text-sm font-medium text-gray-700">{t("dashboard.totalTemplates")}</p>
                       <p className="text-3xl font-bold text-gray-900">{templates.length}</p>
                     </div>
                     <ImageIcon className="h-10 w-10 text-black" />
@@ -912,7 +917,7 @@ export function AdminDashboardNew({ onLogout }: AdminDashboardNewProps) {
                 <div className="bg-gradient-to-r from-orange-50 to-orange-100 p-6 rounded-lg">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium text-orange-700">Total Coupons</p>
+                      <p className="text-sm font-medium text-orange-700">{t("dashboard.totalCoupons")}</p>
                       <p className="text-3xl font-bold text-orange-900">{coupons.length}</p>
                     </div>
                     <Ticket className="h-10 w-10 text-orange-600" />
@@ -921,7 +926,7 @@ export function AdminDashboardNew({ onLogout }: AdminDashboardNewProps) {
               </div>
               <div className="mt-6">
                 <p className="text-slate-600 dark:text-slate-400 text-center">
-                  More detailed analytics and reports coming soon...
+                  {t("dashboard.moreAnalyticsSoon")}
                 </p>
               </div>
             </CardContent>
@@ -941,8 +946,8 @@ export function AdminDashboardNew({ onLogout }: AdminDashboardNewProps) {
             <div className="flex items-center gap-2">
               <Shield className="h-8 w-8 text-black" />
               <div className="flex flex-col">
-                <h2 className="text-lg font-extrabold text-slate-900 dark:text-white tracking-tight">Admin Panel</h2>
-                <p className="text-xs text-gray-700 dark:text-gray-300 font-medium">Management Dashboard</p>
+                <h2 className="text-lg font-extrabold text-slate-900 dark:text-white tracking-tight">{t("dashboard.adminPanel")}</h2>
+                <p className="text-xs text-gray-700 dark:text-gray-300 font-medium">{t("dashboard.managementDashboard")}</p>
               </div>
             </div>
           </SidebarHeader>
@@ -950,7 +955,7 @@ export function AdminDashboardNew({ onLogout }: AdminDashboardNewProps) {
           <SidebarContent className="p-2">
             <SidebarGroup>
               <SidebarGroupLabel className="text-sm sm:text-base font-extrabold text-gray-700 dark:text-gray-300 uppercase tracking-widest mb-3">
-                Management
+                {t("dashboard.management")}
               </SidebarGroupLabel>
               <SidebarGroupContent>
                 <SidebarMenu>
@@ -988,8 +993,8 @@ export function AdminDashboardNew({ onLogout }: AdminDashboardNewProps) {
                 <User className="h-4 w-4 text-black dark:text-gray-400" />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-slate-900 dark:text-white truncate">Admin User</p>
-                <p className="text-xs text-slate-500 dark:text-slate-400">Administrator</p>
+                <p className="text-sm font-medium text-slate-900 dark:text-white truncate">{t("dashboard.adminUser")}</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400">{t("dashboard.administrator")}</p>
               </div>
               {onLogout && (
                 <Button 
@@ -1036,7 +1041,7 @@ export function AdminDashboardNew({ onLogout }: AdminDashboardNewProps) {
         onOpenChange={setIsAddProductDialogOpen}
         initialValues={{ name: "", price: "", categoryId: "", description: "", image: "" }}
         onSubmit={handleAddProduct}
-        t={t}
+        t={{}}
         productCategories={categories}
         isSubmitting={false}
         isEdit={false}
@@ -1047,7 +1052,7 @@ export function AdminDashboardNew({ onLogout }: AdminDashboardNewProps) {
         onOpenChange={setIsEditProductDialogOpen}
         initialValues={editingProduct || { name: "", price: "", categoryId: "", description: "", image: "" }}
         onSubmit={handleEditProduct}
-        t={t}
+        t={{}}
         productCategories={categories}
         isSubmitting={false}
         isEdit={true}
@@ -1058,7 +1063,7 @@ export function AdminDashboardNew({ onLogout }: AdminDashboardNewProps) {
         onOpenChange={setIsEditUserDialogOpen}
         initialValues={editingUser || { id: "", email: "", fullName: "", role: "user", customerNumber: "" }}
         onSubmit={handleEditUser}
-        t={t}
+        t={{}}
         isSubmitting={false}
       />
 
@@ -1067,7 +1072,7 @@ export function AdminDashboardNew({ onLogout }: AdminDashboardNewProps) {
         onOpenChange={setIsAddTemplateDialogOpen}
         initialValues={{ name: "", category: "", image: "", price: "free" }}
         onSubmit={handleAddTemplate}
-        t={t}
+        t={{}}
         isSubmitting={false}
         isEdit={false}
       />
@@ -1077,7 +1082,7 @@ export function AdminDashboardNew({ onLogout }: AdminDashboardNewProps) {
         onOpenChange={setIsEditTemplateDialogOpen}
         initialValues={editingTemplate || { name: "", category: "", image: "", price: "free" }}
         onSubmit={handleEditTemplate}
-        t={t}
+        t={{}}
         isSubmitting={false}
         isEdit={true}
       />
@@ -1088,7 +1093,7 @@ export function AdminDashboardNew({ onLogout }: AdminDashboardNewProps) {
         onOpenChange={setIsAddCouponDialogOpen}
         initialValues={newCouponInitial}
         onSubmit={(v: any, helpers: any) => handleAddCoupon(v as CreateCouponData, helpers)}
-        t={t}
+        t={{}}
         isSubmitting={false}
         isEdit={false}
       />
@@ -1099,7 +1104,7 @@ export function AdminDashboardNew({ onLogout }: AdminDashboardNewProps) {
         onOpenChange={setIsEditCouponDialogOpen}
         initialValues={editingCoupon || {}}
         onSubmit={(v: any, helpers: any) => handleEditCoupon(v as UpdateCouponData, helpers)}
-        t={t}
+        t={{}}
         isSubmitting={false}
         isEdit={true}
       />

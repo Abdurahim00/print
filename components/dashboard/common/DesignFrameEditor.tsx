@@ -18,6 +18,7 @@ interface DesignFrameEditorProps {
   designCostPerCm2?: number
   onCostChange?: (cost: number) => void
   variationId?: string // Optional: specific to a variation
+  showCostConfig?: boolean // Show cost configuration for variation-specific frames
 }
 
 const POSITIONS = ["front", "back", "left", "right", "top", "bottom"]
@@ -34,7 +35,8 @@ export const DesignFrameEditor: React.FC<DesignFrameEditorProps> = ({
   onChange,
   designCostPerCm2 = 0.5,
   onCostChange,
-  variationId
+  variationId,
+  showCostConfig = false
 }) => {
   const [selectedFrame, setSelectedFrame] = useState<string | null>(null)
   const [selectedPosition, setSelectedPosition] = useState<string>('front')
@@ -309,17 +311,19 @@ export const DesignFrameEditor: React.FC<DesignFrameEditorProps> = ({
             <span className="sm:hidden">Copy All</span>
           </Button>
         </div>
-        <div className="flex items-center gap-2">
-          <Label htmlFor="costPerCm2" className="text-xs sm:text-sm whitespace-nowrap">Cost/cm²:</Label>
-          <Input
-            id="costPerCm2"
-            type="number"
-            step="0.01"
-            value={designCostPerCm2}
-            onChange={(e) => onCostChange?.(parseFloat(e.target.value) || 0)}
-            className="w-20 sm:w-24 text-xs sm:text-sm"
-          />
-        </div>
+        {(showCostConfig || !variationId) && (
+          <div className="flex items-center gap-2">
+            <Label htmlFor="costPerCm2" className="text-xs sm:text-sm whitespace-nowrap">Cost/cm²:</Label>
+            <Input
+              id="costPerCm2"
+              type="number"
+              step="0.01"
+              value={designCostPerCm2}
+              onChange={(e) => onCostChange?.(parseFloat(e.target.value) || 0)}
+              className="w-20 sm:w-24 text-xs sm:text-sm"
+            />
+          </div>
+        )}
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">

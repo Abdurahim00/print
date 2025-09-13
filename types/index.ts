@@ -88,6 +88,7 @@ export interface Variation {
   images: VariationImage[];
   positionMapping?: string; // Which position this variant represents (front/back/side)
   designFrames?: DesignFrame[]; // Variation-specific design frames per angle
+  designCostPerCm2?: number; // Variation-specific cost per square centimeter
 }
 
 export interface Product {

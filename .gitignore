@@ -34,6 +34,15 @@ new.json
 new_raw.txt
 products-backup-*.json
 *.backup.json
+products-fully-fixed.json
+products-optimized.json
+products-improved-categorization.json
+products-with-categories.json
+products-with-complete-subcategories.json
+products-with-pdfs.json
+products-final.json
+products-fixed.json
+products-*.json
 
 # Scripts and logs
 fix-categories.log

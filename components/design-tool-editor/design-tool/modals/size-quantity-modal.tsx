@@ -20,6 +20,7 @@ import { RootState } from "@/lib/redux/store"
 import { SizePrice } from "@/lib/models/Product"
 import { composeProductAndDesign } from "@/lib/utils/imageCompose"
 import { calculateDesignElementCosts, formatDesignPrice } from "@/lib/utils/designPricing"
+import { useCurrency } from "@/contexts/CurrencyContext"
 
 interface SizeQuantityModalProps {
   open: boolean
@@ -774,10 +775,8 @@ export function SizeQuantityModal({ open, onOpenChange, onAddToCart }: SizeQuant
     onOpenChange(false)
   }
   
-  // Format price with currency
-  const formatPrice = (price: number) => {
-    return `${Math.round(price)} kr`
-  }
+  // Get formatPrice from currency context
+  const { formatPrice } = useCurrency()
   
   const purchaseLimits = getPurchaseLimits()
   

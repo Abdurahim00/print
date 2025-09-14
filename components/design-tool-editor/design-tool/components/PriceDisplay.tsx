@@ -9,7 +9,8 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip"
 import { Info, TrendingUp, Package, Palette } from 'lucide-react'
-import { formatPrice, setupPriceMonitoring } from '@/lib/utils/designPricing'
+import { setupPriceMonitoring } from '@/lib/utils/designPricing'
+import { useCurrency } from '@/contexts/CurrencyContext'
 import type { DesignFrame } from '@/types'
 
 interface PriceDisplayProps {
@@ -43,11 +44,11 @@ export const PriceDisplay: React.FC<PriceDisplayProps> = ({
   costPerCm2 = 0.5,
   frame,
   canvasScale = 1,
-  currency = 'SEK',
   className = '',
   showBreakdown = true,
   onPriceChange
 }) => {
+  const { formatPrice } = useCurrency()
   const [priceCalculation, setPriceCalculation] = useState<PriceCalculation | null>(null)
   const [isAnimating, setIsAnimating] = useState(false)
   const [previousPrice, setPreviousPrice] = useState(basePrice)
@@ -98,7 +99,7 @@ export const PriceDisplay: React.FC<PriceDisplayProps> = ({
           <div className={`text-2xl font-bold transition-all duration-300 ${
             isAnimating ? 'scale-110 text-blue-600' : 'text-gray-900'
           }`}>
-            {formatPrice(totalPrice, currency)}
+            {formatPrice(totalPrice)}
           </div>
         </div>
 
@@ -110,7 +111,7 @@ export const PriceDisplay: React.FC<PriceDisplayProps> = ({
               {/* Base Price */}
               <div className="flex items-center justify-between text-sm">
                 <span className="text-gray-600">Base Product</span>
-                <span className="font-medium">{formatPrice(basePrice, currency)}</span>
+                <span className="font-medium">{formatPrice(basePrice)}</span>
               </div>
 
               {/* Design Cost */}
@@ -127,7 +128,7 @@ export const PriceDisplay: React.FC<PriceDisplayProps> = ({
                         <TooltipContent>
                           <div className="text-xs space-y-1">
                             <p>Area: {priceCalculation?.designAreaCm2 || 0} cm²</p>
-                            <p>Rate: {formatPrice(costPerCm2, currency)}/cm²</p>
+                            <p>Rate: {formatPrice(costPerCm2)}/cm²</p>
                             <p>Objects: {priceCalculation?.breakdown.objectCount || 0}</p>
                           </div>
                         </TooltipContent>
@@ -135,7 +136,7 @@ export const PriceDisplay: React.FC<PriceDisplayProps> = ({
                     </TooltipProvider>
                   </div>
                   <span className="font-medium text-green-600">
-                    +{formatPrice(designCost, currency)}
+                    +{formatPrice(designCost)}
                   </span>
                 </div>
               )}
@@ -205,10 +206,10 @@ export const CompactPriceDisplay: React.FC<PriceDisplayProps> = ({
   costPerCm2 = 0.5,
   frame,
   canvasScale = 1,
-  currency = 'SEK',
   className = '',
   onPriceChange
 }) => {
+  const { formatPrice } = useCurrency()
   const [totalPrice, setTotalPrice] = useState(basePrice)
   const [designCost, setDesignCost] = useState(0)
   const [isAnimating, setIsAnimating] = useState(false)
@@ -246,12 +247,12 @@ export const CompactPriceDisplay: React.FC<PriceDisplayProps> = ({
         <p className={`text-lg font-bold transition-all duration-300 ${
           isAnimating ? 'text-blue-600' : 'text-gray-900'
         }`}>
-          {formatPrice(totalPrice, currency)}
+          {formatPrice(totalPrice)}
         </p>
       </div>
       {designCost > 0 && (
         <Badge variant="outline" className="text-xs">
-          +{formatPrice(designCost, currency)}
+          +{formatPrice(designCost)}
         </Badge>
       )}
     </div>

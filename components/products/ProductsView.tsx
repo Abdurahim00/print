@@ -11,7 +11,8 @@ import { useRouter, useSearchParams, usePathname } from "next/navigation"
 import { ProductCardEnhanced } from "@/components/products/product-card-enhanced"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { Search, Filter, SlidersHorizontal, X, ChevronDown, ChevronRight, ChevronLeft, Palette } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
+import { Search, Filter, SlidersHorizontal, X, ChevronDown, ChevronRight, ChevronLeft, Palette, Layers } from "lucide-react"
 import { setFilters, setPage } from "@/lib/redux/slices/productsSlice"
 import { Skeleton } from "@/components/ui/skeleton"
 import Link from "next/link"
@@ -25,7 +26,7 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb"
 
-export function ProductsView({ categorySlug, subcategorySlug }: { categorySlug?: string; subcategorySlug?: string }) {
+export function ProductsView({ categorySlug, subcategorySlug, collectionId }: { categorySlug?: string; subcategorySlug?: string; collectionId?: string }) {
   const dispatch = useAppDispatch()
   const router = useRouter()
   const pathname = usePathname()
@@ -35,7 +36,9 @@ export function ProductsView({ categorySlug, subcategorySlug }: { categorySlug?:
   const t = useTranslations()
   const [loadTimeout, setLoadTimeout] = useState(false)
   const [staticCategoryCounts, setStaticCategoryCounts] = useState<any[]>([])
-  
+  const [collectionData, setCollectionData] = useState<any>(null)
+  const [collectionProducts, setCollectionProducts] = useState<string[]>([])
+
   // Extract locale from pathname
   const locale = pathname.split('/')[1] === 'sv' ? 'sv' : 'en'
   
@@ -46,6 +49,36 @@ export function ProductsView({ categorySlug, subcategorySlug }: { categorySlug?:
       setStaticCategoryCounts(categoryCounts)
     }
   }, [categoryCounts, staticCategoryCounts.length]) // Only depend on categoryCounts to avoid initialization error
+
+  // Fetch collection data if collectionId is provided
+  useEffect(() => {
+    if (collectionId) {
+      fetchCollectionData()
+    }
+  }, [collectionId])
+
+  const fetchCollectionData = async () => {
+    try {
+      // Fetch site configuration to get collection details
+      const response = await fetch('/api/admin/site-configuration?configKey=homepage')
+      const data = await response.json()
+
+      if (data && data.featuredProducts) {
+        const collection = data.featuredProducts.find((fp: any) =>
+          fp.type === 'collection' && fp.collectionId === collectionId
+        )
+
+        if (collection) {
+          setCollectionData(collection)
+          // Extract product IDs from the collection
+          const productIds = collection.products?.map((p: any) => p._id || p.id) || []
+          setCollectionProducts(productIds)
+        }
+      }
+    } catch (error) {
+      console.error('Failed to fetch collection data:', error)
+    }
+  }
 
   const cats = useAppSelector((s: any) => s.categories.categories)
   const subs = useAppSelector((s: any) => s.categories.subcategories)
@@ -252,8 +285,16 @@ export function ProductsView({ categorySlug, subcategorySlug }: { categorySlug?:
     return subs.find((s: any) => s.slug === subcategorySlug && s.categoryId === selectedCategory.id)
   }, [subcategorySlug, selectedCategory, subs])
 
-  // No need for client-side filtering since we're doing it server-side now
-  const filteredAndSortedProducts = products
+  // Filter products based on collection if collectionId is provided
+  const filteredAndSortedProducts = useMemo(() => {
+    if (collectionId && collectionProducts.length > 0) {
+      // Filter products to only show those in the collection
+      return products.filter(product =>
+        collectionProducts.includes(product._id || product.id)
+      )
+    }
+    return products
+  }, [products, collectionId, collectionProducts])
 
   const ProductCardSkeleton = () => (
     <Card className="overflow-hidden flex flex-col border-2 border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 rounded-xl animate-pulse">
@@ -275,15 +316,48 @@ export function ProductsView({ categorySlug, subcategorySlug }: { categorySlug?:
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-black">
       {/* Hero Section */}
-      <div className="relative bg-black text-white py-8 sm:py-12 lg:py-16 px-4">
-        <div className="absolute inset-0 bg-gradient-to-r from-green-500 via-yellow-500 to-red-500 opacity-20" />
+      <div className={`relative text-white py-8 sm:py-12 lg:py-16 px-4 ${
+        collectionId ? 'bg-gradient-to-r from-blue-600 to-purple-600' : 'bg-black'
+      }`}>
+        {!collectionId && (
+          <div className="absolute inset-0 bg-gradient-to-r from-green-500 via-yellow-500 to-red-500 opacity-20" />
+        )}
         <div className="relative max-w-7xl mx-auto text-center">
-          <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black uppercase tracking-wider mb-2 sm:mb-4">
-            {selectedCategory ? selectedCategory.name : t("products.products")}
-          </h1>
-          <p className="text-sm sm:text-base md:text-lg lg:text-xl opacity-90">
-            {selectedSubcategory ? selectedSubcategory.name : t("products.viewProducts")}
-          </p>
+          {collectionId && collectionData ? (
+            <>
+              <div className="flex items-center justify-center gap-2 mb-4">
+                <Layers className="h-6 w-6 sm:h-8 sm:w-8" />
+                <Badge className="bg-white/20 text-white border-white/30 text-sm sm:text-base">
+                  Collection
+                </Badge>
+              </div>
+              <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black uppercase tracking-wider mb-2 sm:mb-4">
+                {collectionData.collectionName || 'Collection'}
+              </h1>
+              {collectionData.collectionDescription && (
+                <p className="text-sm sm:text-base md:text-lg lg:text-xl opacity-90 mb-2">
+                  {collectionData.collectionDescription}
+                </p>
+              )}
+              <p className="text-sm sm:text-base opacity-75">
+                {collectionProducts.length} Products in this collection
+              </p>
+              {collectionData.collectionBadge && (
+                <Badge className={`mt-4 ${collectionData.collectionBadgeColor || 'bg-white/20 text-white'}`}>
+                  {collectionData.collectionBadge}
+                </Badge>
+              )}
+            </>
+          ) : (
+            <>
+              <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black uppercase tracking-wider mb-2 sm:mb-4">
+                {selectedCategory ? selectedCategory.name : t("products.products")}
+              </h1>
+              <p className="text-sm sm:text-base md:text-lg lg:text-xl opacity-90">
+                {selectedSubcategory ? selectedSubcategory.name : t("products.viewProducts")}
+              </p>
+            </>
+          )}
         </div>
       </div>
 
@@ -819,20 +893,30 @@ export function ProductsView({ categorySlug, subcategorySlug }: { categorySlug?:
         </div>
         
         {/* Results Count and Pagination */}
-        {!loading && pagination && (
+        {!loading && (collectionId ? filteredAndSortedProducts.length > 0 : pagination) && (
           <div className="mt-6 sm:mt-8 space-y-3 sm:space-y-4">
             <div className="text-center">
               <p className="text-xs sm:text-sm font-bold uppercase text-gray-600 dark:text-gray-400">
-                {t("products.showingRange", {
-                  start: Math.min(pagination.limit * (pagination.page - 1) + 1, pagination.total),
-                  end: Math.min(pagination.limit * pagination.page, pagination.total),
-                  total: pagination.total
-                })}
+                {collectionId ? (
+                  // For collections, show the actual count of filtered products
+                  t("products.showingRange", {
+                    start: 1,
+                    end: filteredAndSortedProducts.length,
+                    total: filteredAndSortedProducts.length
+                  })
+                ) : (
+                  // For regular browsing, use pagination
+                  t("products.showingRange", {
+                    start: Math.min(pagination.limit * (pagination.page - 1) + 1, pagination.total),
+                    end: Math.min(pagination.limit * pagination.page, pagination.total),
+                    total: pagination.total
+                  })
+                )}
               </p>
             </div>
-            
-            {/* Pagination Controls */}
-            {pagination.totalPages > 1 && (
+
+            {/* Pagination Controls - Only show for non-collection views or collections with many products */}
+            {!collectionId && pagination && pagination.totalPages > 1 && (
               <div className="flex flex-col sm:flex-row justify-center items-center gap-2">
                 <Button
                   variant="outline"

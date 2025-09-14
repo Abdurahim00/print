@@ -43,16 +43,19 @@ export default function DesignToolPage() {
     // Otherwise, load products for selection
     const loadProducts = async () => {
       try {
-        const response = await fetch('/api/products')
+        // Fetch only designable products with higher limit
+        const response = await fetch('/api/products?designableOnly=true&limit=500')
         if (!response.ok) throw new Error('Failed to load products')
         
         const data = await response.json()
         // Check if data is an array, if not try data.products
         const productsArray = Array.isArray(data) ? data : (data.products || [])
         
-        // Filter for designable products
+        // Additional filter to ensure only products with design customization are shown
         const designableProducts = productsArray.filter((p: Product) => 
-          p.designCostPerCm2 !== undefined && p.designCostPerCm2 > 0
+          (p.designCostPerCm2 !== undefined && p.designCostPerCm2 > 0) || 
+          p.isDesignable === true ||
+          p.designable === true
         )
         setProducts(designableProducts)
       } catch (err) {
@@ -98,7 +101,7 @@ export default function DesignToolPage() {
           <Link href="/products">
             <Button>
               <ArrowLeft className="mr-2 h-4 w-4" />
-              {t("common.backToProducts")}
+              Back to Products
             </Button>
           </Link>
         </div>
@@ -111,14 +114,14 @@ export default function DesignToolPage() {
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
         <div className="text-center">
           <Palette className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-          <h2 className="text-xl font-semibold mb-2">{t("designTool.noProducts")}</h2>
+          <h2 className="text-xl font-semibold mb-2">{t('designTool.noProducts')}</h2>
           <p className="text-gray-600 dark:text-gray-400 mb-4">
-            {t("designTool.noProductsDescription")}
+            {t('designTool.noProductsDescription')}
           </p>
           <Link href="/products">
             <Button>
               <ArrowLeft className="mr-2 h-4 w-4" />
-              {t("common.backToProducts")}
+              Back to Products
             </Button>
           </Link>
         </div>
@@ -137,10 +140,10 @@ export default function DesignToolPage() {
                 <ArrowLeft className="h-4 w-4" />
               </Button>
             </Link>
-            <h1 className="text-3xl font-bold">{t("designTool.selectProduct")}</h1>
+            <h1 className="text-3xl font-bold">{t('designTool.selectProduct')}</h1>
           </div>
           <p className="text-gray-600 dark:text-gray-400">
-            {t("designTool.selectProductDescription")}
+            {t('designTool.selectProductDescription')}
           </p>
         </div>
         
@@ -180,11 +183,11 @@ export default function DesignToolPage() {
                   )}
                   <div className="flex items-center justify-between">
                     <span className="text-lg font-bold">
-                      {product.price} {t("common.currency")}
+                      {product.price} {t('common.currency')}
                     </span>
                     <Button size="sm">
                       <Palette className="mr-2 h-4 w-4" />
-                      {t("common.design")}
+                      {t('common.design')}
                     </Button>
                   </div>
                 </CardContent>

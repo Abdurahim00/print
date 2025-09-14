@@ -306,29 +306,29 @@ useEffect(() => {
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-black">
       {/* Hero Section */}
-      <div className="relative bg-black text-white py-8 sm:py-12 px-4 mb-8">
+      <div className="relative bg-black text-white py-6 sm:py-8 md:py-12 px-4 mb-6 sm:mb-8">
         <div className="absolute inset-0 bg-gradient-to-r from-green-500 via-yellow-500 via-orange-500 to-red-500 opacity-20" />
         <div className="relative max-w-7xl mx-auto text-center">
-          <h1 className="text-3xl sm:text-4xl md:text-5xl font-black uppercase tracking-wider mb-2">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black uppercase tracking-wider mb-1 sm:mb-2">
             SECURE CHECKOUT
           </h1>
-          <p className="text-sm sm:text-base opacity-90">
+          <p className="text-xs sm:text-sm md:text-base opacity-90">
             Complete your order securely
           </p>
         </div>
       </div>
       
-      <div className="max-w-7xl mx-auto px-4 pb-8 space-y-8">
-      <div className="grid lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-2 space-y-6">
-          <Card className="border-2 border-black dark:border-white bg-white dark:bg-gray-900 rounded-xl overflow-hidden">
-            <CardHeader className="border-b-2 border-black dark:border-white bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 pb-4">
-              <CardTitle className="text-2xl font-black uppercase text-black dark:text-white">
+      <div className="max-w-7xl mx-auto px-3 sm:px-4 pb-6 sm:pb-8 space-y-6 sm:space-y-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8">
+        <div className="lg:col-span-2 space-y-4 sm:space-y-6">
+          <Card className="border sm:border-2 border-black dark:border-white bg-white dark:bg-gray-900 rounded-lg sm:rounded-xl overflow-hidden">
+            <CardHeader className="border-b sm:border-b-2 border-black dark:border-white bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 p-4 sm:pb-4">
+              <CardTitle className="text-lg sm:text-xl md:text-2xl font-black uppercase text-black dark:text-white">
                 BILLING & SHIPPING INFORMATION
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-6 p-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <CardContent className="space-y-4 sm:space-y-6 p-4 sm:p-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 <div className="space-y-1">
                   <Label htmlFor="checkout-name">{t.fullName}</Label>
                   <Input
@@ -367,7 +367,7 @@ useEffect(() => {
                   placeholder="Storgatan 1"
                 />
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
                 <div className="space-y-1">
                   <Label htmlFor="checkout-city">{t.city}</Label>
                   <Input
@@ -399,32 +399,32 @@ useEffect(() => {
             </CardContent>
           </Card>
 
-          <Card className="border border-black sm:border-2 dark:border-white bg-white dark:bg-gray-900 rounded-lg sm:rounded-xl overflow-hidden">
-            <CardHeader className="border-b border-black sm:border-b-2 dark:border-white bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 p-3 sm:p-4 lg:p-6">
-              <CardTitle className="text-lg sm:text-xl lg:text-2xl font-black uppercase text-black dark:text-white">
+          <Card className="border sm:border-2 border-black dark:border-white bg-white dark:bg-gray-900 rounded-lg sm:rounded-xl overflow-hidden">
+            <CardHeader className="border-b sm:border-b-2 border-black dark:border-white bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 p-3 sm:p-4">
+              <CardTitle className="text-base sm:text-lg md:text-xl lg:text-2xl font-black uppercase text-black dark:text-white">
                 SHIPPING METHOD
               </CardTitle>
             </CardHeader>
-            <CardContent className="p-3 sm:p-4 lg:p-6">
-              <RadioGroup value={shippingOption} onValueChange={setShippingOption} className="space-y-3">
+            <CardContent className="p-3 sm:p-4 md:p-6">
+              <RadioGroup value={shippingOption} onValueChange={setShippingOption} className="space-y-2 sm:space-y-3">
                 <Label
                   htmlFor="std-shipping"
-                  className="flex items-center gap-2 sm:gap-3 p-3 sm:p-4 border border-gray-300 sm:border-2 dark:border-gray-700 rounded-lg has-[:checked]:border-black has-[:checked]:bg-yellow-50 dark:has-[:checked]:border-white dark:has-[:checked]:bg-gray-800 cursor-pointer transition-all duration-200 hover:border-gray-400"
+                  className="flex items-center gap-2 sm:gap-3 p-2.5 sm:p-3 md:p-4 border sm:border-2 border-gray-300 dark:border-gray-700 rounded-lg has-[:checked]:border-black has-[:checked]:bg-yellow-50 dark:has-[:checked]:border-white dark:has-[:checked]:bg-gray-800 cursor-pointer transition-all duration-200 hover:border-gray-400"
                 >
-                  <RadioGroupItem value="standard" id="std-shipping" className="border border-black sm:border-2" />
-                  <div className="flex flex-col">
-                    <span className="font-bold text-black dark:text-white text-sm sm:text-base">STANDARD DELIVERY</span>
-                    <span className="text-gray-600 dark:text-gray-400 text-xs sm:text-sm">3-5 business days • {formatPrice(79)}</span>
+                  <RadioGroupItem value="standard" id="std-shipping" className="border sm:border-2 border-black flex-shrink-0" />
+                  <div className="flex flex-col min-w-0">
+                    <span className="font-bold text-black dark:text-white text-xs sm:text-sm md:text-base">STANDARD DELIVERY</span>
+                    <span className="text-gray-600 dark:text-gray-400 text-[10px] sm:text-xs md:text-sm">3-5 business days • {formatPrice(79)}</span>
                   </div>
                 </Label>
                 <Label
                   htmlFor="exp-shipping"
-                  className="flex items-center gap-2 sm:gap-3 p-3 sm:p-4 border border-gray-300 sm:border-2 dark:border-gray-700 rounded-lg has-[:checked]:border-black has-[:checked]:bg-yellow-50 dark:has-[:checked]:border-white dark:has-[:checked]:bg-gray-800 cursor-pointer transition-all duration-200 hover:border-gray-400"
+                  className="flex items-center gap-2 sm:gap-3 p-2.5 sm:p-3 md:p-4 border sm:border-2 border-gray-300 dark:border-gray-700 rounded-lg has-[:checked]:border-black has-[:checked]:bg-yellow-50 dark:has-[:checked]:border-white dark:has-[:checked]:bg-gray-800 cursor-pointer transition-all duration-200 hover:border-gray-400"
                 >
-                  <RadioGroupItem value="express" id="exp-shipping" className="border border-black sm:border-2" />
-                  <div className="flex flex-col">
-                    <span className="font-bold text-black dark:text-white text-sm sm:text-base">EXPRESS DELIVERY</span>
-                    <span className="text-gray-600 dark:text-gray-400 text-xs sm:text-sm">1-2 business days • {formatPrice(149)}</span>
+                  <RadioGroupItem value="express" id="exp-shipping" className="border sm:border-2 border-black flex-shrink-0" />
+                  <div className="flex flex-col min-w-0">
+                    <span className="font-bold text-black dark:text-white text-xs sm:text-sm md:text-base">EXPRESS DELIVERY</span>
+                    <span className="text-gray-600 dark:text-gray-400 text-[10px] sm:text-xs md:text-sm">1-2 business days • {formatPrice(149)}</span>
                   </div>
                 </Label>
               </RadioGroup>
@@ -432,17 +432,17 @@ useEffect(() => {
           </Card>
         </div>
 
-        <div className="lg:col-span-1 space-y-4 sm:space-y-6">
-          <Card className="border border-black sm:border-2 dark:border-white bg-white dark:bg-gray-900 rounded-lg sm:rounded-xl overflow-hidden">
-            <CardHeader className="border-b border-black sm:border-b-2 dark:border-white bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 p-3 sm:p-4 lg:p-6">
-              <CardTitle className="text-lg sm:text-xl lg:text-2xl font-black uppercase text-black dark:text-white">ORDER SUMMARY</CardTitle>
+        <div className="lg:col-span-1 space-y-3 sm:space-y-4 md:space-y-6">
+          <Card className="border sm:border-2 border-black dark:border-white bg-white dark:bg-gray-900 rounded-lg sm:rounded-xl overflow-hidden">
+            <CardHeader className="border-b sm:border-b-2 border-black dark:border-white bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 p-3 sm:p-4">
+              <CardTitle className="text-base sm:text-lg md:text-xl lg:text-2xl font-black uppercase text-black dark:text-white">ORDER SUMMARY</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-2 sm:space-y-3 p-3 sm:p-4 lg:p-6 text-sm sm:text-base">
+            <CardContent className="space-y-2 sm:space-y-3 p-3 sm:p-4 md:p-6 text-xs sm:text-sm md:text-base">
               {cart.map((item) => (
                 <div key={item.id} className="pb-3 border-b border-slate-100 dark:border-slate-700 last:border-0 last:pb-0">
                   <div className="flex items-start gap-3">
                     {/* Product Image with Design */}
-                    <div className="relative w-12 h-12 sm:w-16 sm:h-16 flex-shrink-0">
+                    <div className="relative w-10 h-10 sm:w-12 sm:h-12 md:w-16 md:h-16 flex-shrink-0">
                       <Image
                         src={(item as any).designPreview || item.image || item.imageUrl || item.images?.[0]?.url || "/placeholder.svg"}
                         alt={item.name}
@@ -461,7 +461,7 @@ useEffect(() => {
                     <div className="flex-1">
                       <div className="flex justify-between">
                         <div>
-                          <p className="font-medium text-slate-900 dark:text-white">
+                          <p className="font-medium text-slate-900 dark:text-white text-xs sm:text-sm md:text-base">
                             {item.name}
                           </p>
                           {(item as any).designContext?.selectedVariation && (
@@ -469,7 +469,7 @@ useEffect(() => {
                               {(item as any).designContext.selectedVariation.colorName}
                             </p>
                           )}
-                          <p className="text-sm text-slate-600 dark:text-slate-400">
+                          <p className="text-[10px] sm:text-xs md:text-sm text-slate-600 dark:text-slate-400">
                             Qty: {item.quantity}
                           </p>
                         </div>
@@ -515,7 +515,7 @@ useEffect(() => {
                 <span className="font-semibold">{formatPrice(shippingCost)}</span>
               </div>
               <Separator className="bg-gray-300 dark:bg-gray-700" />
-              <div className="flex justify-between font-black text-2xl text-black dark:text-white">
+              <div className="flex justify-between font-black text-base sm:text-lg md:text-xl lg:text-2xl text-black dark:text-white">
                 <span>TOTAL:</span>
                 <span>{formatPrice(grandTotal)}</span>
               </div>
@@ -523,11 +523,11 @@ useEffect(() => {
           </Card>
 
           {/* Coupon Code Section */}
-          <Card className="border-2 border-black dark:border-white bg-white dark:bg-gray-900 rounded-xl overflow-hidden">
-            <CardHeader className="border-b-2 border-black dark:border-white bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 pb-4">
-              <CardTitle className="text-2xl font-black uppercase text-black dark:text-white">PROMO CODE</CardTitle>
+          <Card className="border sm:border-2 border-black dark:border-white bg-white dark:bg-gray-900 rounded-lg sm:rounded-xl overflow-hidden">
+            <CardHeader className="border-b sm:border-b-2 border-black dark:border-white bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 p-3 sm:p-4">
+              <CardTitle className="text-base sm:text-lg md:text-xl lg:text-2xl font-black uppercase text-black dark:text-white">PROMO CODE</CardTitle>
             </CardHeader>
-            <CardContent className="p-6">
+            <CardContent className="p-3 sm:p-4 md:p-6">
               {appliedCoupon ? (
                 <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
                   <div className="flex items-center justify-between">
@@ -593,33 +593,36 @@ useEffect(() => {
             </CardContent>
           </Card>
 
-          <Card className="border-2 border-black dark:border-white bg-white dark:bg-gray-900 rounded-xl overflow-hidden">
-            <CardHeader className="border-b-2 border-black dark:border-white bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 pb-4">
-              <CardTitle className="text-2xl font-black uppercase text-black dark:text-white">PAYMENT METHOD</CardTitle>
+          <Card className="border sm:border-2 border-black dark:border-white bg-white dark:bg-gray-900 rounded-lg sm:rounded-xl overflow-hidden">
+            <CardHeader className="border-b sm:border-b-2 border-black dark:border-white bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 p-3 sm:p-4">
+              <CardTitle className="text-base sm:text-lg md:text-xl lg:text-2xl font-black uppercase text-black dark:text-white">PAYMENT METHOD</CardTitle>
             </CardHeader>
-            <CardContent className="p-6">
+            <CardContent className="p-3 sm:p-4 md:p-6">
               <Tabs value={paymentMethod} onValueChange={setPaymentMethod} className="w-full">
-                <TabsList className="grid w-full grid-cols-3 bg-gray-100 dark:bg-gray-800 p-1">
+                <TabsList className="grid w-full grid-cols-3 bg-gray-100 dark:bg-gray-800 p-0.5 sm:p-1">
                   <TabsTrigger
                     value="card"
-                    className="font-bold uppercase data-[state=active]:bg-black data-[state=active]:text-white dark:data-[state=active]:bg-white dark:data-[state=active]:text-black data-[state=active]:shadow-sm"
+                    className="font-bold uppercase text-[10px] sm:text-xs md:text-sm data-[state=active]:bg-black data-[state=active]:text-white dark:data-[state=active]:bg-white dark:data-[state=active]:text-black data-[state=active]:shadow-sm py-1.5 sm:py-2"
                   >
-                    <CreditCard className="h-4 w-4 mr-1 sm:mr-2" />
-                    CARD
+                    <CreditCard className="h-3 w-3 sm:h-4 sm:w-4 mr-0.5 sm:mr-1 md:mr-2" />
+                    <span className="hidden xs:inline">CARD</span>
+                    <span className="xs:hidden">CARD</span>
                   </TabsTrigger>
                   <TabsTrigger
                     value="swish"
-                    className="font-bold uppercase data-[state=active]:bg-black data-[state=active]:text-white dark:data-[state=active]:bg-white dark:data-[state=active]:text-black data-[state=active]:shadow-sm"
+                    className="font-bold uppercase text-[10px] sm:text-xs md:text-sm data-[state=active]:bg-black data-[state=active]:text-white dark:data-[state=active]:bg-white dark:data-[state=active]:text-black data-[state=active]:shadow-sm py-1.5 sm:py-2"
                   >
-                    <Smartphone className="h-4 w-4 mr-1 sm:mr-2" />
-                    SWISH
+                    <Smartphone className="h-3 w-3 sm:h-4 sm:w-4 mr-0.5 sm:mr-1 md:mr-2" />
+                    <span className="hidden xs:inline">SWISH</span>
+                    <span className="xs:hidden">SWISH</span>
                   </TabsTrigger>
                   <TabsTrigger
                     value="klarna"
-                    className="font-bold uppercase data-[state=active]:bg-black data-[state=active]:text-white dark:data-[state=active]:bg-white dark:data-[state=active]:text-black data-[state=active]:shadow-sm"
+                    className="font-bold uppercase text-[10px] sm:text-xs md:text-sm data-[state=active]:bg-black data-[state=active]:text-white dark:data-[state=active]:bg-white dark:data-[state=active]:text-black data-[state=active]:shadow-sm py-1.5 sm:py-2"
                   >
-                    <KlarnaIcon className="h-4 w-4 mr-1 sm:mr-2" />
-                    KLARNA
+                    <KlarnaIcon className="h-3 w-3 sm:h-4 sm:w-4 mr-0.5 sm:mr-1 md:mr-2" />
+                    <span className="hidden xs:inline">KLARNA</span>
+                    <span className="xs:hidden">KLA</span>
                   </TabsTrigger>
                 </TabsList>
                 <TabsContent
@@ -693,14 +696,14 @@ useEffect(() => {
                 </TabsContent>
               </Tabs>
             </CardContent>
-            <CardFooter className="p-6 pt-0">
+            <CardFooter className="p-3 sm:p-4 md:p-6 pt-0">
               <Button
                 size="lg"
-                className="w-full bg-black hover:bg-gray-800 text-white dark:bg-white dark:hover:bg-gray-200 dark:text-black font-black uppercase text-lg py-6 border-2 border-black dark:border-white transition-all duration-200 hover:scale-[1.02]"
+                className="w-full bg-black hover:bg-gray-800 text-white dark:bg-white dark:hover:bg-gray-200 dark:text-black font-black uppercase text-xs sm:text-sm md:text-base lg:text-lg py-4 sm:py-5 md:py-6 border sm:border-2 border-black dark:border-white transition-all duration-200 hover:scale-[1.02]"
                 onClick={handlePayment}
                 disabled={loading}
               >
-                <ShieldCheck className="mr-2 h-5 w-5" />
+                <ShieldCheck className="mr-1 sm:mr-2 h-4 w-4 sm:h-5 sm:w-5" />
                 {loading ? "PROCESSING..." : `COMPLETE ORDER • ${formatPrice(grandTotal)}`}
               </Button>
             </CardFooter>
@@ -709,21 +712,21 @@ useEffect(() => {
       </div>
       
       {/* Security Badges */}
-      <div className="max-w-7xl mx-auto px-4 pb-12">
-        <div className="flex flex-wrap justify-center items-center gap-6 p-6 bg-gray-50 dark:bg-gray-900 rounded-xl border-2 border-gray-200 dark:border-gray-800">
-          <div className="flex items-center gap-2">
-            <ShieldCheck className="h-5 w-5 text-green-600" />
-            <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">SSL SECURED</span>
+      <div className="max-w-7xl mx-auto px-3 sm:px-4 pb-8 sm:pb-12">
+        <div className="flex flex-wrap justify-center items-center gap-3 sm:gap-4 md:gap-6 p-3 sm:p-4 md:p-6 bg-gray-50 dark:bg-gray-900 rounded-lg sm:rounded-xl border sm:border-2 border-gray-200 dark:border-gray-800">
+          <div className="flex items-center gap-1 sm:gap-2">
+            <ShieldCheck className="h-4 w-4 sm:h-5 sm:w-5 text-green-600" />
+            <span className="text-[10px] sm:text-xs md:text-sm font-semibold text-gray-700 dark:text-gray-300">SSL SECURED</span>
           </div>
-          <div className="flex items-center gap-2">
-            <CreditCard className="h-5 w-5 text-blue-600" />
-            <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">PCI COMPLIANT</span>
+          <div className="flex items-center gap-1 sm:gap-2">
+            <CreditCard className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600" />
+            <span className="text-[10px] sm:text-xs md:text-sm font-semibold text-gray-700 dark:text-gray-300">PCI COMPLIANT</span>
           </div>
-          <div className="flex items-center gap-2">
-            <Badge className="bg-black text-white dark:bg-white dark:text-black">STRIPE VERIFIED</Badge>
+          <div className="flex items-center gap-1 sm:gap-2">
+            <Badge className="bg-black text-white dark:bg-white dark:text-black text-[10px] sm:text-xs">STRIPE VERIFIED</Badge>
           </div>
-          <div className="flex items-center gap-2">
-            <Badge className="bg-black text-white dark:bg-white dark:text-black">SECURE CHECKOUT</Badge>
+          <div className="flex items-center gap-1 sm:gap-2">
+            <Badge className="bg-black text-white dark:bg-white dark:text-black text-[10px] sm:text-xs">SECURE CHECKOUT</Badge>
           </div>
         </div>
       </div>

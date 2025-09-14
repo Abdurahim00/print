@@ -19,6 +19,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Separator } from "@/components/ui/separator"
 import { CalendarIcon, AlertCircle } from "lucide-react"
 import type { Coupon, CreateCouponData, UpdateCouponData } from "@/types"
+import { useCurrency } from "@/contexts/CurrencyContext"
 
 interface CouponFormDialogProps {
   open: boolean
@@ -59,6 +60,7 @@ export const CouponFormDialog: React.FC<CouponFormDialogProps> = ({
   isSubmitting,
   isEdit,
 }) => {
+  const { currency } = useCurrency()
   // Stable default dates per dialog lifecycle to prevent Formik re-inits
   const defaultFromRef = useRef<string>(new Date().toISOString().slice(0, 16))
   const defaultUntilRef = useRef<string>(
@@ -214,7 +216,7 @@ export const CouponFormDialog: React.FC<CouponFormDialogProps> = ({
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="percentage">Percentage (%)</SelectItem>
-                  <SelectItem value="fixed">Fixed Amount (SEK)</SelectItem>
+                  <SelectItem value="fixed">Fixed Amount ({currency})</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -243,7 +245,7 @@ export const CouponFormDialog: React.FC<CouponFormDialogProps> = ({
                 />
                 <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
                   <span className="text-sm text-slate-500">
-                    {formik.values.discountType === "percentage" ? "%" : "SEK"}
+                    {formik.values.discountType === "percentage" ? "%" : currency}
                   </span>
                 </div>
               </div>
@@ -259,7 +261,7 @@ export const CouponFormDialog: React.FC<CouponFormDialogProps> = ({
             {/* Minimum Order Amount */}
             <div className="space-y-2">
               <Label htmlFor="minimumOrderAmount" className="text-sm font-medium">
-                Minimum Order Amount (SEK)
+                Minimum Order Amount ({currency})
               </Label>
               <Input
                 id="minimumOrderAmount"

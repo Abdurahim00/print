@@ -28,8 +28,9 @@ export interface CategoryDocument {
 
 export interface SubcategoryDocument {
   _id?: ObjectId
-  categoryId: ObjectId
+  categoryId: ObjectId | string
   name: string
+  swedishName?: string
   nameTranslations?: {
     en?: string
     sv?: string

@@ -552,7 +552,7 @@ export function StepBasedCanvas({ product, stepNumber, angle }: StepBasedCanvasP
     const pricePerCm2 = product?.designCostPerCm2 || 0.5 // Use product's designCostPerCm2
     const designCost = totalDesignArea * pricePerCm2
     const totalPrice = basePrice + designCost
-    console.log(`💰 Price calc - Base: ${basePrice} SEK, Design area: ${totalDesignArea} cm², Cost per cm²: ${pricePerCm2} SEK, Design cost: ${designCost} SEK, Total: ${totalPrice} SEK`)
+    console.log(`💰 Price calc - Base: ${basePrice}, Design area: ${totalDesignArea} cm², Cost per cm²: ${pricePerCm2}, Design cost: ${designCost}, Total: ${totalPrice}`)
     return totalPrice
   }, [product?.price, product?.designCostPerCm2, getTotalDesignArea])
   

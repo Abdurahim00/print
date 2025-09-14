@@ -24,6 +24,7 @@ import { exportDesignSimple } from "@/lib/utils/simpleDesignExport"
 import { ExportOptionsDialog } from "./ExportOptionsDialog"
 import { MultiPositionExportDialog } from "./MultiPositionExportDialog"
 import { Download, FileImage, FileText, Package2, Layers } from "lucide-react"
+import { useCurrency } from "@/contexts/CurrencyContext"
 
 // Helper functions to extract design data from different structures
 function getDesignContext(item: any) {
@@ -43,6 +44,7 @@ function hasDesignData(item: any) {
 
 export function OperationsDashboard() {
   const dispatch = useAppDispatch()
+  const { formatPrice } = useCurrency()
   const { items: orders, loading } = useAppSelector((state) => state.orders)
   const t = useTranslations()
 
@@ -548,7 +550,7 @@ export function OperationsDashboard() {
                   <div>
                     <p className="text-sm font-medium text-green-700 dark:text-green-300">{t("dashboard.totalAmount")}</p>
                     <p className="text-2xl font-bold text-green-900 dark:text-green-100">
-                      {detailsOrder.total ? detailsOrder.total.toFixed(2) : '0.00'} SEK
+                      {formatPrice(detailsOrder.total || 0)}
                     </p>
                   </div>
                   <div>
@@ -610,7 +612,7 @@ export function OperationsDashboard() {
                                   return 'N/A';
                                 }
                                 return 'N/A';
-                              })()} SEK
+                              })()}
                             </div>
                           {(item as any).selectedSizes && (item as any).selectedSizes.length > 0 && (
                               <div className="text-sm text-slate-600 dark:text-slate-400 mt-1">
@@ -627,7 +629,7 @@ export function OperationsDashboard() {
                                 return (parseFloat(item.price) * item.quantity).toFixed(2);
                               }
                               return 'N/A';
-                            })()} SEK
+                            })()}
                           </div>
                           <div className="text-sm text-slate-500 dark:text-slate-400">Total</div>
                         </div>
@@ -688,7 +690,7 @@ export function OperationsDashboard() {
                                   Price: {(() => {
                                     const price = (item as any).designContext.selectedTemplate.price;
                                     if (price === 'free') return 'Free';
-                                    if (typeof price === 'number') return `${price} SEK`;
+                                    if (typeof price === 'number') return formatPrice(price);
                                     if (typeof price === 'string') return price;
                                     if (typeof price === 'object' && price !== null) return 'N/A';
                                     return 'N/A';

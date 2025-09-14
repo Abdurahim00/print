@@ -7,6 +7,11 @@ export default function ProductsPage() {
   const searchParams = useSearchParams()
   const categorySlug = searchParams.get("category") || undefined
   const subcategorySlug = searchParams.get("subcategory") || undefined
-  
-  return <ProductsView categorySlug={categorySlug} subcategorySlug={subcategorySlug} />
+  const collectionId = searchParams.get("collection") || undefined
+
+  return <ProductsView
+    categorySlug={categorySlug}
+    subcategorySlug={subcategorySlug}
+    collectionId={collectionId}
+  />
 }

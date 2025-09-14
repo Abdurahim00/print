@@ -8,16 +8,17 @@ import { addToCart } from "@/lib/redux/slices/cartSlice"
 import { getProductImage } from "@/lib/utils/product-image"
 import { getOptimizedImageUrl, generateImageSizes, blurDataURL } from "@/lib/utils/image-optimizer"
 import { toast } from "sonner"
+import { useCurrency } from "@/contexts/CurrencyContext"
 import { CategoryShowcase } from "@/components/home/category-showcase"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Card } from "@/components/ui/card"
-import { 
-  Palette, 
-  Package, 
-  Star, 
-  Sparkles, 
-  Zap, 
+import {
+  Palette,
+  Package,
+  Star,
+  Sparkles,
+  Zap,
   ShoppingBag,
   Truck,
   Shield,
@@ -32,11 +33,14 @@ import {
   Rocket,
   Layers,
   LucideIcon,
-  ShoppingCart
+  ShoppingCart,
+  Eye
 } from "lucide-react"
+import { useRouter } from "next/navigation"
 import Link from "next/link"
 import Image from "next/image"
 import { motion, AnimatePresence, useScroll, useTransform } from "framer-motion"
+import { useTranslations } from "next-intl"
 
 // Map icon types to actual icons
 const iconMap: Record<string, LucideIcon> = {
@@ -149,7 +153,10 @@ interface SiteConfiguration {
 const ProductCarousel = ({ featuredProducts }: { featuredProducts: any[] }) => {
   const [currentIndex, setCurrentIndex] = useState(0)
   const dispatch = useAppDispatch()
+  const router = useRouter()
+  const { formatPrice } = useCurrency()
   const { items: reduxProducts = [] } = useAppSelector((state) => state.products)
+  const t = useTranslations()
   
   // Use featured products if available, otherwise use redux products or mock data
   const mockProducts = [
@@ -237,7 +244,7 @@ const ProductCarousel = ({ featuredProducts }: { featuredProducts: any[] }) => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.5 }}
           >
-            Featured Products
+            {t('homepage.featuredProducts')}
           </motion.h3>
           <motion.p
             className="text-gray-600 dark:text-gray-300 text-xs sm:text-base lg:text-lg"
@@ -245,7 +252,7 @@ const ProductCarousel = ({ featuredProducts }: { featuredProducts: any[] }) => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.6 }}
           >
-            Browse our collection
+            {t('homepage.browseCollection')}
           </motion.p>
         </div>
         
@@ -259,75 +266,153 @@ const ProductCarousel = ({ featuredProducts }: { featuredProducts: any[] }) => {
               exit={{ opacity: 0, x: -100 }}
               transition={{ duration: 0.5, ease: "easeInOut" }}
             >
-              <Link href={`/product/${currentProduct._id || currentProduct.id}`} className="block relative h-40 sm:h-64 lg:h-80 xl:h-96 mb-3 sm:mb-4 lg:mb-6 overflow-hidden bg-black dark:bg-white cursor-pointer group">
-                <Image
-                  src={getOptimizedImageUrl(getProductImage(currentProduct))}
-                  alt={currentProduct.name}
-                  fill
-                  sizes={generateImageSizes('hero')}
-                  className="object-contain p-4 opacity-90 group-hover:opacity-100 transition-opacity bg-white"
-                  priority
-                  quality={90}
-                  placeholder="blur"
-                  blurDataURL={blurDataURL}
-                />
-                
-                <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-black/80 to-transparent" />
-                
-                <div className="absolute bottom-2 left-2 sm:bottom-4 sm:left-4 lg:bottom-6 lg:left-6">
-                  <div className="bg-white text-black px-2 py-1 sm:px-3 sm:py-1.5 lg:px-4 lg:py-2">
-                    <span className="text-sm sm:text-xl lg:text-2xl xl:text-3xl font-black">
-                      {typeof currentProduct.price === 'number' ? currentProduct.price.toFixed(2) : (currentProduct.basePrice || 0).toFixed(2)} SEK
-                    </span>
+              {currentProduct.type === 'collection' ? (
+                // Render collection card
+                <div
+                  onClick={() => router.push(`/products?collection=${currentProduct.id}`)}
+                  className="block relative h-40 sm:h-64 lg:h-80 xl:h-96 mb-3 sm:mb-4 lg:mb-6 overflow-hidden bg-gradient-to-br from-blue-50 to-purple-50 dark:from-blue-900 dark:to-purple-900 cursor-pointer group border-2 border-black dark:border-white"
+                >
+                  {/* Collection preview grid */}
+                  <div className="absolute inset-0 p-4 grid grid-cols-2 gap-2">
+                    {currentProduct.products?.slice(0, 4).map((product: any, idx: number) => (
+                      <div key={idx} className="relative bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-md">
+                        {product.image ? (
+                          <Image
+                            src={getProductImage(product)}
+                            alt=""
+                            fill
+                            className="object-contain p-2"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center">
+                            <Package className="h-8 w-8 text-gray-400" />
+                          </div>
+                        )}
+                      </div>
+                    ))}
                   </div>
-                  <div className="h-0.5 sm:h-1 bg-black" />
-                </div>
-                
-                {currentProduct.badge && (
-                  <div className={`absolute top-2 right-2 sm:top-4 sm:right-4 px-2 py-1 sm:px-3 sm:py-1 text-xs font-bold uppercase ${currentProduct.badgeColor || 'bg-black text-white'}`}>
-                    {currentProduct.badge}
+
+                  {/* Collection overlay info */}
+                  <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black to-transparent p-4">
+                    <Badge className="mb-2 bg-blue-500 text-white">
+                      <Layers className="h-3 w-3 mr-1" />
+                      {t('homepage.collectionProducts', { count: currentProduct.products?.length || 0 })}
+                    </Badge>
+                    <h3 className="text-white font-bold text-lg sm:text-xl lg:text-2xl">
+                      {currentProduct.name}
+                    </h3>
+                    {currentProduct.description && (
+                      <p className="text-white/80 text-sm mt-1 line-clamp-2">
+                        {currentProduct.description}
+                      </p>
+                    )}
                   </div>
-                )}
-                
-                <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                  <span className="text-white text-lg sm:text-xl font-bold uppercase">View Product</span>
+
+                  {currentProduct.badge && (
+                    <div className={`absolute top-2 right-2 sm:top-4 sm:right-4 px-2 py-1 sm:px-3 sm:py-1 text-xs font-bold uppercase ${currentProduct.badgeColor || 'bg-black text-white'}`}>
+                      {currentProduct.badge}
+                    </div>
+                  )}
+
+                  <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                    <span className="text-white text-lg sm:text-xl font-bold uppercase">{t('homepage.viewCollection')}</span>
+                  </div>
                 </div>
-              </Link>
+              ) : (
+                // Render single product
+                <Link href={`/product/${currentProduct._id || currentProduct.id}`} className="block relative h-40 sm:h-64 lg:h-80 xl:h-96 mb-3 sm:mb-4 lg:mb-6 overflow-hidden bg-black dark:bg-white cursor-pointer group">
+                  <Image
+                    src={getOptimizedImageUrl(getProductImage(currentProduct))}
+                    alt={currentProduct.name}
+                    fill
+                    sizes={generateImageSizes('hero')}
+                    className="object-contain p-4 opacity-90 group-hover:opacity-100 transition-opacity bg-white"
+                    priority
+                    quality={90}
+                    placeholder="blur"
+                    blurDataURL={blurDataURL}
+                  />
+
+                  <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-black/80 to-transparent" />
+
+                  <div className="absolute bottom-2 left-2 sm:bottom-4 sm:left-4 lg:bottom-6 lg:left-6">
+                    <div className="bg-white text-black px-2 py-1 sm:px-3 sm:py-1.5 lg:px-4 lg:py-2">
+                      <span className="text-sm sm:text-xl lg:text-2xl xl:text-3xl font-black">
+                        {formatPrice(currentProduct.price || currentProduct.basePrice || 0)}
+                      </span>
+                    </div>
+                    <div className="h-0.5 sm:h-1 bg-black" />
+                  </div>
+
+                  {currentProduct.badge && (
+                    <div className={`absolute top-2 right-2 sm:top-4 sm:right-4 px-2 py-1 sm:px-3 sm:py-1 text-xs font-bold uppercase ${currentProduct.badgeColor || 'bg-black text-white'}`}>
+                      {currentProduct.badge}
+                    </div>
+                  )}
+
+                  <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                    <span className="text-white text-lg sm:text-xl font-bold uppercase">{t('homepage.viewProduct')}</span>
+                  </div>
+                </Link>
+              )}
               
               <div className="text-center px-2">
-                <Link href={`/product/${currentProduct._id || currentProduct.id}`} className="hover:underline">
-                  <h4 className="text-base sm:text-xl lg:text-2xl font-semibold text-gray-900 dark:text-white mb-2 sm:mb-4 lg:mb-6 cursor-pointer line-clamp-2">
-                    {currentProduct.name}
-                  </h4>
-                </Link>
-                
+                <h4 className="text-base sm:text-xl lg:text-2xl font-semibold text-gray-900 dark:text-white mb-2 sm:mb-4 lg:mb-6 cursor-pointer line-clamp-2">
+                  {currentProduct.name}
+                </h4>
+
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 1 }}
                   className="flex flex-col sm:flex-row gap-2 sm:gap-3"
                 >
-                  <Button
-                    size="lg"
-                    className="flex-1 bg-black hover:bg-gray-900 text-white dark:bg-white dark:text-black dark:hover:bg-gray-100 min-h-[40px] sm:min-h-[44px] touch-manipulation text-xs sm:text-sm lg:text-base px-2 sm:px-4"
-                    asChild
-                  >
-                    <Link href={`/product/${currentProduct._id || currentProduct.id}`} className="flex items-center justify-center">
-                      <span className="font-black uppercase">View</span>
-                      <ArrowRight className="ml-1 h-3 w-3 sm:h-4 sm:w-4" />
-                    </Link>
-                  </Button>
-                  <Button
-                    size="lg"
-                    className="flex-1 border-2 border-black dark:border-white bg-transparent text-black dark:text-white hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black transition-colors min-h-[40px] sm:min-h-[44px] text-xs sm:text-sm lg:text-base px-2 sm:px-4"
-                    onClick={() => {
-                      dispatch(addToCart(currentProduct))
-                      toast.success('Added to cart!')
-                    }}
-                  >
-                    <ShoppingCart className="mr-1 h-3 w-3 sm:h-4 sm:w-4 lg:h-5 lg:w-5" />
-                    <span className="font-black uppercase">Add</span>
-                  </Button>
+                  {currentProduct.type === 'collection' ? (
+                    // Collection buttons
+                    <>
+                      <Button
+                        size="lg"
+                        className="flex-1 bg-blue-600 hover:bg-blue-700 text-white min-h-[40px] sm:min-h-[44px] touch-manipulation text-xs sm:text-sm lg:text-base px-2 sm:px-4"
+                        onClick={() => router.push(`/products?collection=${currentProduct.id}`)}
+                      >
+                        <Eye className="mr-1 h-3 w-3 sm:h-4 sm:w-4" />
+                        <span className="font-black uppercase">{t('homepage.viewCollection')}</span>
+                      </Button>
+                      <Button
+                        size="lg"
+                        className="flex-1 border-2 border-blue-600 bg-transparent text-blue-600 hover:bg-blue-600 hover:text-white transition-colors min-h-[40px] sm:min-h-[44px] text-xs sm:text-sm lg:text-base px-2 sm:px-4"
+                        onClick={() => router.push('/products')}
+                      >
+                        <Package className="mr-1 h-3 w-3 sm:h-4 sm:w-4" />
+                        <span className="font-black uppercase">{t('homepage.allProducts')}</span>
+                      </Button>
+                    </>
+                  ) : (
+                    // Single product buttons
+                    <>
+                      <Button
+                        size="lg"
+                        className="flex-1 bg-black hover:bg-gray-900 text-white dark:bg-white dark:text-black dark:hover:bg-gray-100 min-h-[40px] sm:min-h-[44px] touch-manipulation text-xs sm:text-sm lg:text-base px-2 sm:px-4"
+                        asChild
+                      >
+                        <Link href={`/product/${currentProduct._id || currentProduct.id}`} className="flex items-center justify-center">
+                          <span className="font-black uppercase">{t('homepage.view')}</span>
+                          <ArrowRight className="ml-1 h-3 w-3 sm:h-4 sm:w-4" />
+                        </Link>
+                      </Button>
+                      <Button
+                        size="lg"
+                        className="flex-1 border-2 border-black dark:border-white bg-transparent text-black dark:text-white hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black transition-colors min-h-[40px] sm:min-h-[44px] text-xs sm:text-sm lg:text-base px-2 sm:px-4"
+                        onClick={() => {
+                          dispatch(addToCart(currentProduct))
+                          toast.success(t('homepage.addedToCart'))
+                        }}
+                      >
+                        <ShoppingCart className="mr-1 h-3 w-3 sm:h-4 sm:w-4 lg:h-5 lg:w-5" />
+                        <span className="font-black uppercase">{t('homepage.addToCart')}</span>
+                      </Button>
+                    </>
+                  )}
                 </motion.div>
               </div>
             </motion.div>
@@ -463,33 +548,33 @@ const AnimatedStats = ({ stats }: { stats: SiteConfiguration['stats'] }) => {
   )
 }
 
-// Default configuration
-const getDefaultConfig = (): SiteConfiguration => ({
+// Default configuration with translation keys
+const getDefaultConfig = (t?: any): SiteConfiguration => ({
   heroHeadline: {
-    line1: "Create Custom",
-    line2: "Products",
-    subtitle: "Design and print custom t-shirts, business cards, stickers, and more. <span class='font-bold'>Professional quality, delivered fast.</span>"
+    line1: t?.('homepage.heroLine1') || "Create Custom",
+    line2: t?.('homepage.heroLine2') || "Products",
+    subtitle: t?.('homepage.heroSubtitle') || "Design and print custom t-shirts, business cards, stickers, and more. <span class='font-bold'>Professional quality, delivered fast.</span>"
   },
   stats: [
     {
       id: "1",
       value: 10000,
       suffix: "+",
-      label: "Designs",
+      label: t?.('homepage.statsDesigns') || "Designs",
       duration: 2
     },
     {
       id: "2",
       value: 500,
       suffix: "+",
-      label: "Products",
+      label: t?.('homepage.statsProducts') || "Products",
       duration: 2.5
     },
     {
       id: "3",
       value: 24,
       suffix: "hr",
-      label: "Delivery",
+      label: t?.('homepage.statsDelivery') || "Delivery",
       duration: 1.5
     }
   ],
@@ -497,48 +582,50 @@ const getDefaultConfig = (): SiteConfiguration => ({
     {
       id: "1",
       iconType: "Zap",
-      title: "Lightning Fast Design",
-      description: "Create stunning designs in minutes with our intuitive design tool"
+      title: t?.('homepage.feature1Title') || "Lightning Fast Design",
+      description: t?.('homepage.feature1Description') || "Create stunning designs in minutes with our intuitive design tool"
     },
     {
       id: "2",
       iconType: "Shield",
-      title: "Premium Quality",
-      description: "High-quality printing on premium materials that last"
+      title: t?.('homepage.feature2Title') || "Premium Quality",
+      description: t?.('homepage.feature2Description') || "High-quality printing on premium materials that last"
     },
     {
       id: "3",
       iconType: "Truck",
-      title: "Fast Delivery",
-      description: "Get your custom products delivered in 3-5 business days"
+      title: t?.('homepage.feature3Title') || "Fast Delivery",
+      description: t?.('homepage.feature3Description') || "Get your custom products delivered in 3-5 business days"
     },
     {
       id: "4",
       iconType: "Users",
-      title: "24/7 Support",
-      description: "Our team is here to help you create the perfect design"
+      title: t?.('homepage.feature4Title') || "24/7 Support",
+      description: t?.('homepage.feature4Description') || "Our team is here to help you create the perfect design"
     }
   ],
   featuredProducts: [],
   bestSellers: [],
   customSections: [],
   ctaSection: {
-    headline: "Ready to Create Something Amazing?",
-    subtitle: "Join thousands of customers who trust us with their custom printing needs",
-    primaryButtonText: "Start Your Design",
+    headline: t?.('homepage.ctaHeadline') || "Ready to Create Something Amazing?",
+    subtitle: t?.('homepage.ctaSubtitle') || "Join thousands of customers who trust us with their custom printing needs",
+    primaryButtonText: t?.('homepage.ctaPrimaryButton') || "Start Your Design",
     primaryButtonLink: "/design-tool",
-    secondaryButtonText: "Get Started Free",
+    secondaryButtonText: t?.('homepage.ctaSecondaryButton') || "Get Started Free",
     secondaryButtonLink: "/signup"
   },
-  bestSellersTitle: "Best Sellers",
-  bestSellersSubtitle: "Our most popular products",
-  featuresTitle: "Why Choose MR MERCH"
+  bestSellersTitle: t?.('homepage.bestSellersTitle') || "Best Sellers",
+  bestSellersSubtitle: t?.('homepage.bestSellersSubtitle') || "Our most popular products",
+  featuresTitle: t?.('homepage.featuresTitle') || "Why Choose MR MERCH"
 })
 
 export default function DynamicHomepage() {
   const dispatch = useAppDispatch()
+  const { formatPrice } = useCurrency()
   const { items: products = [] } = useAppSelector((state) => state.products)
-  const [config, setConfig] = useState<SiteConfiguration | null>(getDefaultConfig())
+  const t = useTranslations()
+  const [config, setConfig] = useState<SiteConfiguration | null>(getDefaultConfig(t))
   const [featuredProducts, setFeaturedProducts] = useState<any[]>([])
   const [bestSellerProducts, setBestSellerProducts] = useState<any[]>([])
   const [customSectionsData, setCustomSectionsData] = useState<any[]>([])
@@ -547,14 +634,30 @@ export default function DynamicHomepage() {
   // Map product IDs from config to actual products when both are available
   useEffect(() => {
     if (config && products.length > 0) {
-      // Map featured products
+      // Map featured products and collections
       if (config.featuredProducts && config.featuredProducts.length > 0) {
         const mappedFeatured = config.featuredProducts
           .map(fp => {
+            // Handle collections
+            if (fp.type === 'collection') {
+              return {
+                type: 'collection',
+                id: fp.collectionId,
+                name: fp.collectionName,
+                description: fp.collectionDescription,
+                image: fp.collectionImage,
+                badge: fp.collectionBadge,
+                badgeColor: fp.collectionBadgeColor,
+                products: fp.products || [],
+                order: fp.order
+              }
+            }
+            // Handle single products
             const product = products.find(p => p._id === fp.productId || p.id === fp.productId)
             if (product) {
               return {
                 ...product,
+                type: 'product',
                 badge: fp.badge,
                 badgeColor: fp.badgeColor,
                 order: fp.order
@@ -564,9 +667,9 @@ export default function DynamicHomepage() {
           })
           .filter(Boolean)
           .sort((a, b) => (a.order || 0) - (b.order || 0))
-        
+
         setFeaturedProducts(mappedFeatured)
-        console.log("Mapped featured products:", mappedFeatured)
+        console.log("Mapped featured products and collections:", mappedFeatured)
       }
       
       // Map best sellers
@@ -635,14 +738,14 @@ export default function DynamicHomepage() {
           }
         } else {
           // Use default configuration if API returns invalid data
-          setConfig(getDefaultConfig())
+          setConfig(getDefaultConfig(t))
         }
         setLoading(false)
       })
       .catch(err => {
         console.error("Error fetching configuration:", err)
         // Use default configuration on error
-        setConfig(getDefaultConfig())
+        setConfig(getDefaultConfig(t))
         setLoading(false)
       })
   }, [dispatch])
@@ -657,7 +760,7 @@ export default function DynamicHomepage() {
   
   // Ensure config is always available
   if (!config) {
-    setConfig(getDefaultConfig())
+    setConfig(getDefaultConfig(t))
     return null
   }
   
@@ -693,7 +796,7 @@ export default function DynamicHomepage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
           >
-            <div className="px-3 sm:px-6 lg:px-8 pt-4 sm:pt-6 lg:pt-8">
+            <div className="px-4 sm:px-6 lg:px-8 pt-4 sm:pt-6 lg:pt-8">
               <CategoryShowcase />
             </div>
             
@@ -737,7 +840,7 @@ export default function DynamicHomepage() {
                       <Link href="/design-tool" className="flex items-center justify-center relative z-10">
                         <div className="absolute inset-0 bg-gradient-to-r from-brand-green via-brand-yellow via-brand-orange to-brand-red opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                         <Palette className="mr-1.5 sm:mr-2 h-4 w-4 sm:h-5 sm:w-5 relative z-10" />
-                        <span className="relative z-10 font-bold">Start Designing</span>
+                        <span className="relative z-10 font-bold">{t('homepage.startDesigning')}</span>
                         <ArrowRight className="ml-1.5 sm:ml-2 h-3 w-3 sm:h-4 sm:w-4 relative z-10" />
                       </Link>
                     </Button>
@@ -746,7 +849,7 @@ export default function DynamicHomepage() {
                     <Button size="lg" variant="outline" asChild className="w-full sm:w-auto border-2 border-black dark:border-white hover:bg-gray-50 dark:hover:bg-gray-800 text-black dark:text-white min-h-[48px] text-sm sm:text-base px-4 sm:px-6">
                       <Link href="/products" className="flex items-center justify-center">
                         <Package className="mr-1.5 sm:mr-2 h-4 w-4 sm:h-5 sm:w-5" />
-                        <span className="font-bold">Browse Products</span>
+                        <span className="font-bold">{t('homepage.browseProducts')}</span>
                       </Link>
                     </Button>
                   </motion.div>
@@ -865,7 +968,7 @@ export default function DynamicHomepage() {
                           </h3>
                           <div className="flex flex-col gap-1.5 sm:gap-2">
                             <span className="text-sm sm:text-base lg:text-lg xl:text-xl font-black text-black">
-                              {product.basePrice || product.price || '0.00'} SEK
+                              {formatPrice(product.basePrice || product.price || 0)}
                             </span>
                             <Button 
                               className="bg-black hover:bg-gray-800 text-white font-bold uppercase text-xs w-full min-h-[36px] sm:min-h-[40px]" 
@@ -874,10 +977,10 @@ export default function DynamicHomepage() {
                                 e.preventDefault()
                                 // Add to cart logic
                                 dispatch(addToCart(product))
-                                toast.success('Added to cart!')
+                                toast.success(t('homepage.addedToCart'))
                               }}
                             >
-                              Add to Cart
+                              {t('homepage.addToCart')}
                             </Button>
                           </div>
                         </div>
@@ -891,7 +994,7 @@ export default function DynamicHomepage() {
                     href="/products" 
                     className="text-sm text-gray-500 dark:text-gray-400 hover:text-black dark:hover:text-white transition-colors inline-flex items-center gap-1"
                   >
-                    Browse all products
+                    {t('homepage.browseAllProducts')}
                     <ArrowRight className="h-3 w-3" />
                   </Link>
                 </div>
@@ -999,7 +1102,7 @@ export default function DynamicHomepage() {
                             </h3>
                             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                               <span className="text-lg sm:text-xl lg:text-2xl font-black text-black">
-                                {product.basePrice || product.price || '0.00'} SEK
+                                {formatPrice(product.basePrice || product.price || 0)}
                               </span>
                               <Button 
                                 className="bg-black hover:bg-gray-800 text-white font-bold uppercase text-xs sm:text-sm w-full sm:w-auto" 
@@ -1009,7 +1112,7 @@ export default function DynamicHomepage() {
                                   window.location.href = `/design-tool?productId=${product._id || product.id}`
                                 }}
                               >
-                                Customize
+                                {t('homepage.customize')}
                               </Button>
                             </div>
                           </div>
@@ -1018,7 +1121,7 @@ export default function DynamicHomepage() {
                     ))
                   ) : (
                     <div className="text-center py-8 w-full">
-                      <p className="text-gray-500">No products in this section</p>
+                      <p className="text-gray-500">{t('homepage.noProductsInSection')}</p>
                     </div>
                   )}
                 </div>
@@ -1028,7 +1131,7 @@ export default function DynamicHomepage() {
                     href="/products" 
                     className="text-sm text-gray-500 dark:text-gray-400 hover:text-black dark:hover:text-white transition-colors inline-flex items-center gap-1"
                   >
-                    Browse all products
+                    {t('homepage.browseAllProducts')}
                     <ArrowRight className="h-3 w-3" />
                   </Link>
                 </div>

@@ -13,6 +13,7 @@ import { RootState } from "@/lib/redux/store"
 import Image from "next/image"
 import { SizeQuantityModal, SelectedSizeQuantity } from "../modals/size-quantity-modal"
 import { toast } from "sonner"
+import { useCurrency } from "@/contexts/CurrencyContext"
 
 // Type definition for product
 interface Product {
@@ -160,10 +161,8 @@ export function ProductPanel() {
     return 0
   }
 
-  // Format price without decimals, just "888 kr"
-  const formatPrice = (amount: number) => {
-    return `${Math.round(amount)} kr`
-  }
+  // Get formatPrice from currency context
+  const { formatPrice } = useCurrency()
 
   // Calculate TOTAL design area across ALL angles for the current product
   const calculateTotalDesignArea = () => {

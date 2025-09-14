@@ -8,8 +8,15 @@ import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Save, Plus, X, ArrowUp, ArrowDown, Loader2, Eye, EyeOff } from "lucide-react"
+import { Save, Plus, X, ArrowUp, ArrowDown, Loader2, Eye, EyeOff, Package, Layers } from "lucide-react"
 import { toast } from "sonner"
+import { ProductBrowserModal } from "./ProductBrowserModal"
+import { CollectionEditor } from "./CollectionEditor"
+import { Badge } from "@/components/ui/badge"
+import Image from "next/image"
+import { getProductImage } from "@/lib/utils/product-image"
+import { useCurrency } from "@/contexts/CurrencyContext"
+import { useTranslations } from "next-intl"
 
 interface SiteConfiguration {
   heroHeadline: {
@@ -31,10 +38,20 @@ interface SiteConfiguration {
     description: string
   }>
   featuredProducts: Array<{
-    productId: string
-    order: number
+    type?: 'product' | 'collection'
+    // For single products
+    productId?: string
     badge?: string
     badgeColor?: string
+    // For collections
+    collectionId?: string
+    collectionName?: string
+    collectionDescription?: string
+    collectionImage?: string
+    collectionBadge?: string
+    collectionBadgeColor?: string
+    products?: Array<{ _id: string; id: string; name: string; price: number; image?: string }>
+    order: number
   }>
   bestSellers: Array<{
     productId: string
@@ -136,11 +153,18 @@ const getDefaultConfig = (): SiteConfiguration => ({
 })
 
 export function SiteConfigPanel() {
+  const { formatPrice } = useCurrency()
+  const t = useTranslations()
   const [config, setConfig] = useState<SiteConfiguration | null>(getDefaultConfig())
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [products, setProducts] = useState<any[]>([])
   const [activeTab, setActiveTab] = useState("hero")
+  const [showProductBrowser, setShowProductBrowser] = useState(false)
+  const [showCollectionEditor, setShowCollectionEditor] = useState(false)
+  const [editingCollection, setEditingCollection] = useState<any>(null)
+  const [browserContext, setBrowserContext] = useState<'featured' | 'bestsellers' | 'section'>('featured')
+  const [currentSectionId, setCurrentSectionId] = useState<string | null>(null)
 
   useEffect(() => {
     fetchConfiguration()
@@ -306,15 +330,80 @@ export function SiteConfigPanel() {
   const addFeaturedProduct = () => {
     if (!config) return
     const newProduct = {
+      type: 'product' as const,
       productId: "",
       order: config.featuredProducts.length,
       badge: "",
       badgeColor: ""
     }
-    setConfig({ 
-      ...config, 
-      featuredProducts: [...config.featuredProducts, newProduct] 
+    setConfig({
+      ...config,
+      featuredProducts: [...config.featuredProducts, newProduct]
     })
+  }
+
+  const addFeaturedCollection = (collection: any) => {
+    if (!config) return
+    const newCollection = {
+      type: 'collection' as const,
+      collectionId: collection.id,
+      collectionName: collection.name,
+      collectionDescription: collection.description,
+      collectionImage: collection.image,
+      collectionBadge: collection.badge,
+      collectionBadgeColor: collection.badgeColor,
+      products: collection.products,
+      order: config.featuredProducts.length
+    }
+    setConfig({
+      ...config,
+      featuredProducts: [...config.featuredProducts, newCollection]
+    })
+  }
+
+  const handleProductsSelected = (selectedProducts: any[]) => {
+    if (!config) return
+
+    if (browserContext === 'featured') {
+      // Add products as individual featured products
+      const newFeaturedProducts = selectedProducts.map((product, index) => ({
+        type: 'product' as const,
+        productId: product._id || product.id,
+        order: config.featuredProducts.length + index,
+        badge: "",
+        badgeColor: ""
+      }))
+      setConfig({
+        ...config,
+        featuredProducts: [...config.featuredProducts, ...newFeaturedProducts]
+      })
+    } else if (browserContext === 'bestsellers') {
+      // Add products as best sellers
+      const newBestSellers = selectedProducts.map((product, index) => ({
+        productId: product._id || product.id,
+        order: config.bestSellers.length + index
+      }))
+      setConfig({
+        ...config,
+        bestSellers: [...config.bestSellers, ...newBestSellers]
+      })
+    } else if (browserContext === 'section' && currentSectionId) {
+      // Add products to custom section
+      const newSections = config.customSections.map(section => {
+        if (section.id === currentSectionId) {
+          const newProducts = selectedProducts.map((product, index) => ({
+            productId: product._id || product.id,
+            order: section.products.length + index
+          }))
+          return {
+            ...section,
+            products: [...section.products, ...newProducts]
+          }
+        }
+        return section
+      })
+      setConfig({ ...config, customSections: newSections })
+    }
   }
 
   const removeFeaturedProduct = (index: number) => {
@@ -711,29 +800,83 @@ export function SiteConfigPanel() {
         <TabsContent value="featured">
           <Card>
             <CardHeader>
-              <CardTitle>Featured Products</CardTitle>
+              <CardTitle>Featured Products & Collections</CardTitle>
               <CardDescription>
-                Select and order products to feature on the homepage. Currently featuring {config.featuredProducts.length} product{config.featuredProducts.length !== 1 ? 's' : ''}.
+                Add individual products or product collections to showcase on the homepage.
+                Currently featuring {config.featuredProducts.length} item{config.featuredProducts.length !== 1 ? 's' : ''}.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               {config.featuredProducts.length === 0 ? (
                 <div className="text-center py-8 bg-gray-50 rounded-lg">
-                  <p className="text-gray-500 mb-4">No featured products selected</p>
-                  <p className="text-sm text-gray-400">Add products to showcase them on your homepage</p>
+                  <p className="text-gray-500 mb-4">No featured items selected</p>
+                  <p className="text-sm text-gray-400">Add products or collections to showcase them on your homepage</p>
                 </div>
               ) : (
                 config.featuredProducts.map((fp, index) => {
-                  const selectedProduct = products.find(p => p._id === fp.productId)
+                  const isCollection = fp.type === 'collection'
+                  const selectedProduct = !isCollection ? products.find(p => p._id === fp.productId) : null
+
                   return (
                     <div key={index} className="p-4 border-2 rounded-lg space-y-3 bg-white hover:shadow-md transition-shadow">
                       <div className="flex justify-between items-start">
                         <div className="flex items-start gap-3 flex-1">
-                          {selectedProduct ? (
+                          {isCollection ? (
+                            <>
+                              <div className="flex items-center justify-center w-16 h-16 bg-gradient-to-br from-blue-100 to-blue-200 rounded-md">
+                                <Layers className="h-8 w-8 text-blue-600" />
+                              </div>
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2">
+                                  <Badge variant="secondary" className="text-xs">Collection</Badge>
+                                  <h4 className="font-semibold text-lg">{fp.collectionName || 'Unnamed Collection'}</h4>
+                                </div>
+                                <p className="text-sm text-gray-500">Position {index + 1}</p>
+                                {fp.collectionDescription && (
+                                  <p className="text-sm text-gray-600 mt-1">{fp.collectionDescription}</p>
+                                )}
+                                <p className="text-sm font-medium text-black mt-1">
+                                  {fp.products?.length || 0} products in collection
+                                </p>
+                                {fp.collectionBadge && (
+                                  <span className={`inline-block mt-1 px-2 py-1 text-xs rounded ${fp.collectionBadgeColor || 'bg-black text-white'}`}>
+                                    {fp.collectionBadge}
+                                  </span>
+                                )}
+                                {/* Show preview of products in collection */}
+                                {fp.products && fp.products.length > 0 && (
+                                  <div className="flex gap-1 mt-2">
+                                    {fp.products.slice(0, 4).map((p, idx) => (
+                                      <div key={idx} className="w-8 h-8 bg-gray-100 rounded border">
+                                        {p.image ? (
+                                          <Image
+                                            src={getProductImage(p)}
+                                            alt=""
+                                            width={32}
+                                            height={32}
+                                            className="object-contain p-0.5"
+                                          />
+                                        ) : (
+                                          <div className="w-full h-full flex items-center justify-center">
+                                            <Package className="h-4 w-4 text-gray-400" />
+                                          </div>
+                                        )}
+                                      </div>
+                                    ))}
+                                    {fp.products.length > 4 && (
+                                      <div className="w-8 h-8 bg-gray-200 rounded border flex items-center justify-center">
+                                        <span className="text-xs font-medium">+{fp.products.length - 4}</span>
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+                            </>
+                          ) : selectedProduct ? (
                             <>
                               {selectedProduct.image && (
-                                <img 
-                                  src={selectedProduct.image} 
+                                <img
+                                  src={selectedProduct.image}
                                   alt={selectedProduct.name}
                                   className="w-16 h-16 object-cover rounded-md border"
                                 />
@@ -742,7 +885,7 @@ export function SiteConfigPanel() {
                                 <h4 className="font-semibold text-lg">{selectedProduct.name}</h4>
                                 <p className="text-sm text-gray-500">Position {index + 1}</p>
                                 {selectedProduct.price && (
-                                  <p className="text-sm font-medium text-black">${selectedProduct.price}</p>
+                                  <p className="text-sm font-medium text-black">{formatPrice(selectedProduct.price)}</p>
                                 )}
                                 {fp.badge && (
                                   <span className={`inline-block mt-1 px-2 py-1 text-xs rounded ${fp.badgeColor || 'bg-black text-white'}`}>
@@ -789,83 +932,123 @@ export function SiteConfigPanel() {
                         </div>
                       </div>
                       
-                      <div className="border-t pt-3 space-y-3">
-                        <div>
-                          <Label>Change Product</Label>
-                          <Select
-                            value={fp.productId}
-                            onValueChange={(value) => {
-                              const newProducts = [...config.featuredProducts]
-                              newProducts[index].productId = value
-                              setConfig({ ...config, featuredProducts: newProducts })
+                      {/* Edit section - different for collections vs products */}
+                      {isCollection ? (
+                        <div className="border-t pt-3 space-y-3">
+                          <Button
+                            variant="outline"
+                            className="w-full"
+                            onClick={() => {
+                              setEditingCollection({
+                                id: fp.collectionId,
+                                name: fp.collectionName,
+                                description: fp.collectionDescription,
+                                image: fp.collectionImage,
+                                badge: fp.collectionBadge,
+                                badgeColor: fp.collectionBadgeColor,
+                                products: fp.products || []
+                              })
+                              setShowCollectionEditor(true)
                             }}
                           >
-                            <SelectTrigger className="bg-gray-50">
-                              <SelectValue placeholder="Select a product" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {products.map((product) => (
-                                <SelectItem key={product._id} value={product._id}>
-                                  {product.name} {product.price ? `($${product.price})` : ''}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                            Edit Collection
+                          </Button>
                         </div>
-                        
-                        <div className="grid grid-cols-2 gap-3">
+                      ) : (
+                        <div className="border-t pt-3 space-y-3">
                           <div>
-                            <Label>Badge Text (Optional)</Label>
-                            <Input
-                              value={fp.badge || ""}
-                              onChange={(e) => {
-                                const newProducts = [...config.featuredProducts]
-                                newProducts[index].badge = e.target.value
-                                setConfig({ ...config, featuredProducts: newProducts })
-                              }}
-                              placeholder="e.g., Best Seller, New, Sale"
-                              className="bg-gray-50"
-                            />
-                          </div>
-                          <div>
-                            <Label>Badge Style (Optional)</Label>
+                            <Label>Change Product</Label>
                             <Select
-                              value={fp.badgeColor || "default"}
+                              value={fp.productId}
                               onValueChange={(value) => {
                                 const newProducts = [...config.featuredProducts]
-                                newProducts[index].badgeColor = value === "default" ? "" : value
+                                newProducts[index].productId = value
                                 setConfig({ ...config, featuredProducts: newProducts })
                               }}
                             >
                               <SelectTrigger className="bg-gray-50">
-                                <SelectValue placeholder="Select badge style" />
+                                <SelectValue placeholder="Select a product" />
                               </SelectTrigger>
                               <SelectContent>
-                                <SelectItem value="default">Default (Black)</SelectItem>
-                                <SelectItem value="bg-red-500 text-white">Red (Sale)</SelectItem>
-                                <SelectItem value="bg-green-500 text-white">Green (New)</SelectItem>
-                                <SelectItem value="bg-blue-500 text-white">Blue (Popular)</SelectItem>
-                                <SelectItem value="bg-black text-white">Black (Premium)</SelectItem>
-                                <SelectItem value="bg-yellow-400 text-black">Yellow (Hot)</SelectItem>
-                                <SelectItem value="bg-gray-500 text-white">Gray (Limited)</SelectItem>
+                                {products.map((product) => (
+                                  <SelectItem key={product._id} value={product._id}>
+                                    {product.name} {product.price ? `(${formatPrice(product.price)})` : ''}
+                                  </SelectItem>
+                                ))}
                               </SelectContent>
                             </Select>
                           </div>
+
+                          <div className="grid grid-cols-2 gap-3">
+                            <div>
+                              <Label>Badge Text (Optional)</Label>
+                              <Input
+                                value={fp.badge || ""}
+                                onChange={(e) => {
+                                  const newProducts = [...config.featuredProducts]
+                                  newProducts[index].badge = e.target.value
+                                  setConfig({ ...config, featuredProducts: newProducts })
+                                }}
+                                placeholder="e.g., Best Seller, New, Sale"
+                                className="bg-gray-50"
+                              />
+                            </div>
+                            <div>
+                              <Label>Badge Style (Optional)</Label>
+                              <Select
+                                value={fp.badgeColor || "default"}
+                                onValueChange={(value) => {
+                                  const newProducts = [...config.featuredProducts]
+                                  newProducts[index].badgeColor = value === "default" ? "" : value
+                                  setConfig({ ...config, featuredProducts: newProducts })
+                                }}
+                              >
+                                <SelectTrigger className="bg-gray-50">
+                                  <SelectValue placeholder="Select badge style" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="default">Default (Black)</SelectItem>
+                                  <SelectItem value="bg-red-500 text-white">Red (Sale)</SelectItem>
+                                  <SelectItem value="bg-green-500 text-white">Green (New)</SelectItem>
+                                  <SelectItem value="bg-blue-500 text-white">Blue (Popular)</SelectItem>
+                                  <SelectItem value="bg-black text-white">Black (Premium)</SelectItem>
+                                  <SelectItem value="bg-yellow-400 text-black">Yellow (Hot)</SelectItem>
+                                  <SelectItem value="bg-gray-500 text-white">Gray (Limited)</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          </div>
                         </div>
-                      </div>
+                      )}
                     </div>
                   )
                 })
               )}
               
-              <Button 
-                onClick={addFeaturedProduct} 
-                variant="outline" 
-                className="w-full border-dashed border-2 hover:border-black hover:bg-gray-50"
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Add Featured Product
-              </Button>
+              <div className="flex gap-2">
+                <Button
+                  onClick={() => {
+                    setBrowserContext('featured')
+                    setShowProductBrowser(true)
+                  }}
+                  variant="outline"
+                  className="flex-1 border-dashed border-2 hover:border-black hover:bg-gray-50"
+                >
+                  <Package className="h-4 w-4 mr-2" />
+                  Add Products
+                </Button>
+                <Button
+                  onClick={() => {
+                    setEditingCollection(null)
+                    setShowCollectionEditor(true)
+                  }}
+                  variant="outline"
+                  className="flex-1 border-dashed border-2 hover:border-blue-500 hover:bg-blue-50"
+                >
+                  <Layers className="h-4 w-4 mr-2" />
+                  Create Collection
+                </Button>
+              </div>
               
               {config.featuredProducts.length > 0 && (
                 <div className="mt-4 p-3 bg-blue-50 rounded-lg">
@@ -1188,6 +1371,51 @@ export function SiteConfigPanel() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Product Browser Modal */}
+      <ProductBrowserModal
+        open={showProductBrowser}
+        onOpenChange={setShowProductBrowser}
+        onProductsSelected={handleProductsSelected}
+        multiSelect={true}
+        title="Select Products"
+      />
+
+      {/* Collection Editor Modal */}
+      <CollectionEditor
+        open={showCollectionEditor}
+        onOpenChange={(open) => {
+          setShowCollectionEditor(open)
+          if (!open) setEditingCollection(null)
+        }}
+        onSave={(collection) => {
+          if (editingCollection) {
+            // Update existing collection in featured products
+            const newFeaturedProducts = config.featuredProducts.map(fp => {
+              if (fp.type === 'collection' && fp.collectionId === collection.id) {
+                return {
+                  ...fp,
+                  collectionName: collection.name,
+                  collectionDescription: collection.description,
+                  collectionImage: collection.image,
+                  collectionBadge: collection.badge,
+                  collectionBadgeColor: collection.badgeColor,
+                  products: collection.products
+                }
+              }
+              return fp
+            })
+            setConfig({ ...config, featuredProducts: newFeaturedProducts })
+          } else {
+            // Add new collection
+            addFeaturedCollection(collection)
+          }
+          setShowCollectionEditor(false)
+          setEditingCollection(null)
+        }}
+        initialCollection={editingCollection}
+        allProducts={products}
+      />
     </div>
   )
 }

@@ -3,6 +3,7 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { ChevronRight, Home } from "lucide-react"
+import { useTranslations } from "next-intl"
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -25,6 +26,7 @@ interface BreadcrumbsProps {
 
 export function Breadcrumbs({ items, className = "" }: BreadcrumbsProps) {
   const pathname = usePathname()
+  const t = useTranslations()
   
   // Auto-generate breadcrumbs from pathname if items not provided
   const generateBreadcrumbs = (): BreadcrumbItem[] => {
@@ -34,7 +36,7 @@ export function Breadcrumbs({ items, className = "" }: BreadcrumbsProps) {
     const breadcrumbs: BreadcrumbItem[] = []
     
     // Always add home
-    breadcrumbs.push({ label: "Home", href: "/" })
+    breadcrumbs.push({ label: t("common.home"), href: "/" })
     
     // Build up the path
     let currentPath = ""
@@ -123,8 +125,9 @@ export function useBreadcrumbs(customItems?: BreadcrumbItem[]) {
     if (customItems) return customItems
     
     const paths = pathname.split('/').filter(Boolean)
+    const t = useTranslations()
     const breadcrumbs: BreadcrumbItem[] = [
-      { label: "Home", href: "/" }
+      { label: t("common.home"), href: "/" }
     ]
     
     let currentPath = ""

@@ -31,7 +31,6 @@ import {
   Package,
   Truck,
   Shield,
-  Star,
   Share2,
   Check
 } from "lucide-react"
@@ -299,20 +298,10 @@ export function ProductDetailView({
   const handleAddToCart = () => {
     console.log('Add to Cart clicked')
     console.log('Product:', product)
-    console.log('Available sizes:', availableSizes)
-    console.log('Selected size:', selectedSize)
     console.log('Current price:', currentPrice)
-    
-    // Check if size selection is required
-    if (availableSizes && availableSizes.length > 0 && !selectedSize) {
-      toast({
-        title: "Please select a size",
-        description: "Choose a size before adding to cart",
-        variant: "destructive"
-      })
-      return
-    }
-    
+
+    // No size selection required - add directly to cart
+
     // Create cart item with proper structure
     const cartItem: any = {
       ...product,
@@ -324,12 +313,7 @@ export function ProductDetailView({
       image: selectedVariant?.image || selectedVariant?.variant_image || product.image,
       name: product.name
     }
-    
-    // Add selected size if applicable
-    if (selectedSize) {
-      cartItem.selectedSize = selectedSize
-    }
-    
+
     // Add variant information if selected
     if (selectedVariant) {
       cartItem.selectedVariant = {
@@ -339,9 +323,9 @@ export function ProductDetailView({
         image: selectedVariant.variant_image || selectedVariant.image || selectedVariant.images?.[0]
       }
     }
-    
+
     console.log('Cart item being added:', cartItem)
-    
+
     try {
       // Dispatch to cart - add multiple times for quantity
       for (let i = 0; i < quantity; i++) {
@@ -418,7 +402,7 @@ export function ProductDetailView({
       </div>
       
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-16">
+      <div className="max-w-7xl mx-auto px-2 sm:px-4 md:px-6 lg:px-8 pb-16">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
           
           {/* Image Gallery */}
@@ -534,32 +518,18 @@ export function ProductDetailView({
           <div className="space-y-6">
             {/* Header */}
             <div>
-              <h1 className="text-xl sm:text-2xl lg:text-3xl font-black text-black dark:text-white uppercase">
+              <h1 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-black text-black dark:text-white uppercase break-words">
                 {product.name}
               </h1>
-              <div className="flex flex-wrap gap-4 mt-2 text-sm text-gray-500 dark:text-gray-400">
+              <div className="flex flex-wrap gap-2 sm:gap-4 mt-2 text-xs sm:text-sm text-gray-500 dark:text-gray-400">
                 {(product.sku || product.originalData?.articleNo) && (
-                  <span>SKU: {product.sku || product.originalData?.articleNo}</span>
+                  <span className="truncate max-w-[150px] sm:max-w-none">SKU: {product.sku || product.originalData?.articleNo}</span>
                 )}
                 {product.originalData?.articleNo && (
-                  <span>Article No: {product.originalData.articleNo}</span>
+                  <span className="truncate max-w-[150px] sm:max-w-none">Article No: {product.originalData.articleNo}</span>
                 )}
               </div>
-              
-              {/* Rating */}
-              <div className="flex items-center gap-2 mt-3">
-                <div className="flex">
-                  {[...Array(5)].map((_, i) => (
-                    <Star
-                      key={i}
-                      className={`h-5 w-5 ${
-                        i < 4 ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'
-                      }`}
-                    />
-                  ))}
-                </div>
-                <span className="text-sm text-gray-600 dark:text-gray-400">(24 reviews)</span>
-              </div>
+
             </div>
             
             {/* Price */}
@@ -643,33 +613,6 @@ export function ProductDetailView({
               </div>
             )}
             
-            {/* Size Selection */}
-            {availableSizes.length > 0 && (
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <Label className="font-bold">Size</Label>
-                  <button className="text-sm text-blue-600 hover:underline">
-                    Size Guide
-                  </button>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {availableSizes.map((size) => (
-                    <button
-                      key={size}
-                      onClick={() => setSelectedSize(size)}
-                      disabled={!product.inStock}
-                      className={`px-4 py-2 rounded-lg border-2 font-bold transition-all ${
-                        selectedSize === size
-                          ? 'border-black dark:border-white bg-black dark:bg-white text-white dark:text-black'
-                          : 'border-gray-300 dark:border-gray-600 hover:border-gray-500'
-                      } ${!product.inStock ? 'opacity-50 cursor-not-allowed' : ''}`}
-                    >
-                      {size}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
             
             {/* Quantity */}
             <div className="space-y-3">
@@ -759,27 +702,41 @@ export function ProductDetailView({
         </div>
         
         {/* Product Details Tabs */}
-        <div className="mt-16">
+        <div className="mt-8 sm:mt-16">
           <Tabs defaultValue="description" className="w-full">
-            <TabsList className="grid w-full grid-cols-4 border-2 border-black dark:border-white">
-              <TabsTrigger value="description" className="font-bold uppercase">Description</TabsTrigger>
-              <TabsTrigger value="specifications" className="font-bold uppercase">Specifications</TabsTrigger>
-              <TabsTrigger value="shipping" className="font-bold uppercase">Shipping</TabsTrigger>
-              <TabsTrigger value="reviews" className="font-bold uppercase">Reviews</TabsTrigger>
+            <TabsList className="flex w-full justify-between sm:grid sm:grid-cols-3 p-0 h-auto bg-transparent rounded-none border-b-2 border-gray-200 dark:border-gray-700">
+              <TabsTrigger
+                value="description"
+                className="flex-1 font-bold uppercase text-[11px] sm:text-sm px-2 sm:px-4 py-3 sm:py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black dark:data-[state=active]:border-white data-[state=active]:bg-transparent -mb-[2px]"
+              >
+                Description
+              </TabsTrigger>
+              <TabsTrigger
+                value="specifications"
+                className="flex-1 font-bold uppercase text-[11px] sm:text-sm px-2 sm:px-4 py-3 sm:py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black dark:data-[state=active]:border-white data-[state=active]:bg-transparent -mb-[2px]"
+              >
+                Specs
+              </TabsTrigger>
+              <TabsTrigger
+                value="shipping"
+                className="flex-1 font-bold uppercase text-[11px] sm:text-sm px-2 sm:px-4 py-3 sm:py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-black dark:data-[state=active]:border-white data-[state=active]:bg-transparent -mb-[2px]"
+              >
+                Shipping
+              </TabsTrigger>
             </TabsList>
             
-            <TabsContent value="description" className="mt-6 space-y-4">
-              <h3 className="text-xl font-black uppercase">Product Description</h3>
-              <p className="text-gray-600 dark:text-gray-400 leading-relaxed">
+            <TabsContent value="description" className="mt-4 sm:mt-6 space-y-3 sm:space-y-4 px-2 sm:px-0">
+              <h3 className="text-lg sm:text-xl font-black uppercase">Product Description</h3>
+              <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400 leading-relaxed break-words">
                 {product.description || "No description available for this product."}
               </p>
               {isDesignable && (
-                <div className="bg-gray-50 dark:bg-gray-800 p-6 rounded-xl border-2 border-black dark:border-white">
-                  <h4 className="font-black uppercase mb-2 flex items-center gap-2">
-                    <Palette className="h-5 w-5" />
+                <div className="bg-gray-50 dark:bg-gray-800 p-4 sm:p-6 rounded-xl border-2 border-black dark:border-white">
+                  <h4 className="font-black uppercase mb-2 flex items-center gap-2 text-sm sm:text-base">
+                    <Palette className="h-4 w-4 sm:h-5 sm:w-5" />
                     Customization Available
                   </h4>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                  <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
                     This product can be customized with your own design. Click the "Customize" button to start designing!
                   </p>
                   {category?.designableAreas && category.designableAreas.length > 0 && (
@@ -794,15 +751,15 @@ export function ProductDetailView({
               )}
             </TabsContent>
             
-            <TabsContent value="specifications" className="mt-6 space-y-4">
-              <h3 className="text-xl font-black uppercase">Specifications</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <TabsContent value="specifications" className="mt-4 sm:mt-6 space-y-3 sm:space-y-4 px-2 sm:px-0">
+              <h3 className="text-lg sm:text-xl font-black uppercase">Specifications</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2 sm:gap-4">
                 {/* Product specifications from Prendo import */}
                 {product.specifications && Object.entries(product.specifications).map(([key, value]) => (
                   <div key={key} className="py-2 border-b">
-                    <div className="flex justify-between">
-                      <span className="font-bold">{key}:</span>
-                      <span className="text-gray-600 dark:text-gray-400 text-right max-w-[60%]">{String(value)}</span>
+                    <div className="flex justify-between gap-2">
+                      <span className="font-bold text-sm sm:text-base">{key}:</span>
+                      <span className="text-gray-600 dark:text-gray-400 text-right max-w-[60%] text-sm sm:text-base break-words">{String(value)}</span>
                     </div>
                   </div>
                 ))}
@@ -870,8 +827,8 @@ export function ProductDetailView({
               </div>
             </TabsContent>
             
-            <TabsContent value="shipping" className="mt-6 space-y-4">
-              <h3 className="text-xl font-black uppercase">Shipping Information</h3>
+            <TabsContent value="shipping" className="mt-4 sm:mt-6 space-y-3 sm:space-y-4 px-2 sm:px-0">
+              <h3 className="text-lg sm:text-xl font-black uppercase">Shipping Information</h3>
               <div className="space-y-3">
                 <div className="flex items-start gap-3">
                   <Truck className="h-5 w-5 mt-0.5 flex-shrink-0" />
@@ -892,11 +849,6 @@ export function ProductDetailView({
                   </div>
                 </div>
               </div>
-            </TabsContent>
-            
-            <TabsContent value="reviews" className="mt-6 space-y-4">
-              <h3 className="text-xl font-black uppercase">Customer Reviews</h3>
-              <p className="text-gray-600 dark:text-gray-400">No reviews yet. Be the first to review this product!</p>
             </TabsContent>
           </Tabs>
         </div>

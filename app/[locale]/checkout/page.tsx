@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation"
 import { useAppSelector, useAppDispatch } from "@/lib/redux/hooks"
 import { createOrder } from "@/lib/redux/slices/ordersSlice"
 import { clearCart } from "@/lib/redux/slices/cartSlice"
-import { translations } from "@/lib/constants"
+import { useTranslations } from 'next-intl'
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
@@ -29,8 +29,9 @@ export default function CheckoutPage() {
   const router = useRouter()
   const { items: cart } = useAppSelector((state) => state.cart)
   const { data: session } = useSession()
-  const { language } = useAppSelector((state) => state.app)
-  const t = translations[language]
+  const t = useTranslations('checkout')
+  const tCommon = useTranslations('common')
+  const tValidation = useTranslations('validation')
   const { toast } = useToast()
   const { formatPrice, currency } = useCurrency()
   const [isClient, setIsClient] = useState(false)
@@ -121,13 +122,13 @@ useEffect(() => {
       setAppliedCoupon({ coupon: globalActiveCoupon, discountAmount: globalDiscountAmount })
       try {
         const { toast } = await import("@/hooks/use-toast")
-        toast({ title: "🎉 Coupon Applied", description: `${globalActiveCoupon.code} activated.` })
+        toast({ title: t('couponApplied'), description: t('couponActivated').replace('{code}', globalActiveCoupon.code) })
       } catch {}
       setCouponCode("")
       return
     }
     if (!couponCode.trim()) {
-      setCouponError("Please enter a coupon code")
+      setCouponError(tValidation('pleaseEnterCouponCode'))
       return
     }
 
@@ -151,19 +152,19 @@ useEffect(() => {
         setAppliedCoupon(result)
         try {
           const { toast } = await import("@/hooks/use-toast")
-          toast({ title: "🎉 Coupon Applied", description: `${result.coupon.code} activated.` })
+          toast({ title: t('couponApplied'), description: t('couponActivated').replace('{code}', result.coupon.code) })
         } catch {}
         toast({
-          title: "Coupon Applied!",
-          description: `You saved ${formatPrice(result.discountAmount)} with coupon "${couponCode.toUpperCase()}"`,
+          title: t('couponApplied'),
+          description: t('couponSaved').replace('{amount}', formatPrice(result.discountAmount)).replace('{code}', couponCode.toUpperCase()),
           variant: "success",
         })
         setCouponCode("")
       } else {
-        setCouponError(result.message || "Invalid coupon code")
+        setCouponError(result.message || tValidation('invalidCouponCode'))
       }
     } catch (error) {
-      setCouponError("Failed to apply coupon. Please try again.")
+      setCouponError(t('failedToApplyCoupon'))
     } finally {
       setCouponLoading(false)
     }
@@ -174,16 +175,16 @@ useEffect(() => {
     setCouponCode("")
     setCouponError("")
     toast({
-      title: "Coupon Removed",
-      description: "The coupon discount has been removed from your order.",
+      title: t('couponRemoved'),
+      description: t('couponRemovedDescription'),
     })
   }
 
   const handlePayment = async () => {
     if (cart.length === 0) {
       toast({
-        title: "Cart Empty",
-        description: "Your cart is empty. Please add products before checking out.",
+        title: t('cartEmpty'),
+        description: t('cartEmptyDescription'),
         variant: "destructive",
       })
       router.push("/products")
@@ -193,8 +194,8 @@ useEffect(() => {
     // Validate required fields
     if (!fullName || !email || !phone || !address || !city || !postalCode || !country) {
       toast({
-        title: "Missing Information",
-        description: "Please fill in all required billing and shipping information.",
+        title: t('missingInformation'),
+        description: t('missingInformationDescription'),
         variant: "destructive",
       })
       return
@@ -281,8 +282,8 @@ useEffect(() => {
       dispatch(clearCart())
       
       toast({
-        title: "Payment Successful",
-        description: "Your order has been placed successfully!",
+        title: tCommon('paymentSuccessful'),
+        description: tCommon('orderPlacedSuccessfully'),
         variant: "success",
       })
 
@@ -290,8 +291,8 @@ useEffect(() => {
     } catch (error) {
       console.error("Error creating order:", error)
       toast({
-        title: "Order Creation Failed",
-        description: "Payment was successful but order creation failed. Please contact support.",
+        title: tCommon('orderCreationFailed'),
+        description: tCommon('orderCreationFailedDescription'),
         variant: "destructive",
       })
     } finally {
@@ -320,10 +321,10 @@ useEffect(() => {
         <div className="absolute inset-0 bg-gradient-to-r from-green-500 via-yellow-500 via-orange-500 to-red-500 opacity-20" />
         <div className="relative max-w-7xl mx-auto text-center">
           <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black uppercase tracking-wider mb-1 sm:mb-2">
-            SECURE CHECKOUT
+            {t('secureCheckout')}
           </h1>
           <p className="text-xs sm:text-sm md:text-base opacity-90">
-            Complete your order securely
+            {t('completeOrderSecurely')}
           </p>
         </div>
       </div>
@@ -334,22 +335,22 @@ useEffect(() => {
           <Card className="border sm:border-2 border-black dark:border-white bg-white dark:bg-gray-900 rounded-lg sm:rounded-xl overflow-hidden">
             <CardHeader className="border-b sm:border-b-2 border-black dark:border-white bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 p-4 sm:pb-4">
               <CardTitle className="text-lg sm:text-xl md:text-2xl font-black uppercase text-black dark:text-white">
-                BILLING & SHIPPING INFORMATION
+                {t('billingAndShippingInformation')}
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4 sm:space-y-6 p-4 sm:p-6">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 <div className="space-y-1">
-                  <Label htmlFor="checkout-name">{t.fullName}</Label>
+                  <Label htmlFor="checkout-name">{tCommon('fullName')}</Label>
                   <Input
                     id="checkout-name"
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
-                    placeholder={t.fullName}
+                    placeholder={tCommon('fullName')}
                   />
                 </div>
                 <div className="space-y-1">
-                  <Label htmlFor="checkout-email">{t.email}</Label>
+                  <Label htmlFor="checkout-email">{tCommon('email')}</Label>
                   <Input
                     id="checkout-email"
                     type="email"
@@ -360,7 +361,7 @@ useEffect(() => {
                 </div>
               </div>
               <div className="space-y-1">
-                <Label htmlFor="checkout-phone">{t.phone}</Label>
+                <Label htmlFor="checkout-phone">{tCommon('phone')}</Label>
                 <Input
                   id="checkout-phone"
                   value={phone}
@@ -369,7 +370,7 @@ useEffect(() => {
                 />
               </div>
               <div className="space-y-1">
-                <Label htmlFor="checkout-address">{t.address}</Label>
+                <Label htmlFor="checkout-address">{tCommon('address')}</Label>
                 <Input
                   id="checkout-address"
                   value={address}
@@ -379,7 +380,7 @@ useEffect(() => {
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
                 <div className="space-y-1">
-                  <Label htmlFor="checkout-city">{t.city}</Label>
+                  <Label htmlFor="checkout-city">{tCommon('city')}</Label>
                   <Input
                     id="checkout-city"
                     value={city}
@@ -388,7 +389,7 @@ useEffect(() => {
                   />
                 </div>
                 <div className="space-y-1">
-                  <Label htmlFor="checkout-postal">{t.postalCode}</Label>
+                  <Label htmlFor="checkout-postal">{tCommon('postalCode')}</Label>
                   <Input
                     id="checkout-postal"
                     value={postalCode}
@@ -397,7 +398,7 @@ useEffect(() => {
                   />
                 </div>
                 <div className="space-y-1">
-                  <Label htmlFor="checkout-country">{t.country}</Label>
+                  <Label htmlFor="checkout-country">{tCommon('country')}</Label>
                   <Input
                     id="checkout-country"
                     value={country}
@@ -412,7 +413,7 @@ useEffect(() => {
           <Card className="border sm:border-2 border-black dark:border-white bg-white dark:bg-gray-900 rounded-lg sm:rounded-xl overflow-hidden">
             <CardHeader className="border-b sm:border-b-2 border-black dark:border-white bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 p-3 sm:p-4">
               <CardTitle className="text-base sm:text-lg md:text-xl lg:text-2xl font-black uppercase text-black dark:text-white">
-                SHIPPING METHOD
+                {t('shippingMethod')}
               </CardTitle>
             </CardHeader>
             <CardContent className="p-3 sm:p-4 md:p-6">
@@ -423,8 +424,8 @@ useEffect(() => {
                 >
                   <RadioGroupItem value="standard" id="std-shipping" className="border sm:border-2 border-black flex-shrink-0" />
                   <div className="flex flex-col min-w-0">
-                    <span className="font-bold text-black dark:text-white text-xs sm:text-sm md:text-base">STANDARD DELIVERY</span>
-                    <span className="text-gray-600 dark:text-gray-400 text-[10px] sm:text-xs md:text-sm">3-5 business days • {formatPrice(79)}</span>
+                    <span className="font-bold text-black dark:text-white text-xs sm:text-sm md:text-base">{t('deliveryOptions.standardDelivery')}</span>
+                    <span className="text-gray-600 dark:text-gray-400 text-[10px] sm:text-xs md:text-sm">{t('businessDays3to5')} • {formatPrice(79)}</span>
                   </div>
                 </Label>
                 <Label
@@ -433,8 +434,8 @@ useEffect(() => {
                 >
                   <RadioGroupItem value="express" id="exp-shipping" className="border sm:border-2 border-black flex-shrink-0" />
                   <div className="flex flex-col min-w-0">
-                    <span className="font-bold text-black dark:text-white text-xs sm:text-sm md:text-base">EXPRESS DELIVERY</span>
-                    <span className="text-gray-600 dark:text-gray-400 text-[10px] sm:text-xs md:text-sm">1-2 business days • {formatPrice(149)}</span>
+                    <span className="font-bold text-black dark:text-white text-xs sm:text-sm md:text-base">{t('deliveryOptions.expressDelivery')}</span>
+                    <span className="text-gray-600 dark:text-gray-400 text-[10px] sm:text-xs md:text-sm">{t('businessDays1to2')} • {formatPrice(149)}</span>
                   </div>
                 </Label>
               </RadioGroup>
@@ -445,7 +446,7 @@ useEffect(() => {
         <div className="lg:col-span-1 space-y-3 sm:space-y-4 md:space-y-6">
           <Card className="border sm:border-2 border-black dark:border-white bg-white dark:bg-gray-900 rounded-lg sm:rounded-xl overflow-hidden">
             <CardHeader className="border-b sm:border-b-2 border-black dark:border-white bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 p-3 sm:p-4">
-              <CardTitle className="text-base sm:text-lg md:text-xl lg:text-2xl font-black uppercase text-black dark:text-white">ORDER SUMMARY</CardTitle>
+              <CardTitle className="text-base sm:text-lg md:text-xl lg:text-2xl font-black uppercase text-black dark:text-white">{t('orderSummary')}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-2 sm:space-y-3 p-3 sm:p-4 md:p-6 text-xs sm:text-sm md:text-base">
               {cart.map((item) => (
@@ -454,7 +455,7 @@ useEffect(() => {
                     {/* Product Image with Design */}
                     <div className="relative w-10 h-10 sm:w-12 sm:h-12 md:w-16 md:h-16 flex-shrink-0">
                       <Image
-                        src={(item as any).designPreview || item.image || item.imageUrl || item.images?.[0]?.url || "/placeholder.svg"}
+                        src={(item as any).designPreview || item.image || (item as any).imageUrl || (item as any).images?.[0]?.url || "/placeholder.svg"}
                         alt={item.name}
                         width={64}
                         height={64}
@@ -480,7 +481,7 @@ useEffect(() => {
                             </p>
                           )}
                           <p className="text-[10px] sm:text-xs md:text-sm text-slate-600 dark:text-slate-400">
-                            Qty: {item.quantity}
+                            {t('qty')}: {item.quantity}
                           </p>
                         </div>
                         <span className="font-medium text-slate-900 dark:text-white">
@@ -507,26 +508,26 @@ useEffect(() => {
               ))}
               <Separator className="bg-gray-300 dark:bg-gray-700" />
               <div className="flex justify-between text-gray-700 dark:text-gray-300">
-                <span className="font-semibold">Subtotal:</span>
+                <span className="font-semibold">{t('subtotal')}</span>
                 <span className="font-semibold">{formatPrice(subtotal)}</span>
               </div>
               {appliedCoupon && (
                 <div className="flex justify-between text-green-600 dark:text-green-400">
-                  <span>Discount ({appliedCoupon.coupon.code}):</span>
+                  <span>{t('discount')} ({appliedCoupon.coupon.code}):</span>
                   <span>-{formatPrice(discountAmount)}</span>
                 </div>
               )}
               <div className="flex justify-between text-gray-700 dark:text-gray-300">
-                <span className="font-semibold">VAT (25%):</span>
+                <span className="font-semibold">{t('vatLabel')}</span>
                 <span className="font-semibold">{formatPrice(vatAmount)}</span>
               </div>
               <div className="flex justify-between text-gray-700 dark:text-gray-300">
-                <span className="font-semibold">Shipping:</span>
+                <span className="font-semibold">{t('shippingLabel')}</span>
                 <span className="font-semibold">{formatPrice(shippingCost)}</span>
               </div>
               <Separator className="bg-gray-300 dark:bg-gray-700" />
               <div className="flex justify-between font-black text-base sm:text-lg md:text-xl lg:text-2xl text-black dark:text-white">
-                <span>TOTAL:</span>
+                <span>{t('totalLabel')}</span>
                 <span>{formatPrice(grandTotal)}</span>
               </div>
             </CardContent>
@@ -535,7 +536,7 @@ useEffect(() => {
           {/* Coupon Code Section */}
           <Card className="border sm:border-2 border-black dark:border-white bg-white dark:bg-gray-900 rounded-lg sm:rounded-xl overflow-hidden">
             <CardHeader className="border-b sm:border-b-2 border-black dark:border-white bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 p-3 sm:p-4">
-              <CardTitle className="text-base sm:text-lg md:text-xl lg:text-2xl font-black uppercase text-black dark:text-white">PROMO CODE</CardTitle>
+              <CardTitle className="text-base sm:text-lg md:text-xl lg:text-2xl font-black uppercase text-black dark:text-white">{t('promoCode')}</CardTitle>
             </CardHeader>
             <CardContent className="p-3 sm:p-4 md:p-6">
               {appliedCoupon ? (
@@ -547,11 +548,11 @@ useEffect(() => {
                           {appliedCoupon.coupon.code}
                         </span>
                         <Badge className="bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100">
-                          Applied
+                          {tCommon('applied')}
                         </Badge>
                       </div>
                       <p className="text-sm text-green-700 dark:text-green-300 mt-1">
-                        You're saving {formatPrice(discountAmount)} on this order!
+                        {t('youAreSaving').replace('{amount}', formatPrice(discountAmount))}
                       </p>
                     </div>
                     <Button
@@ -560,7 +561,7 @@ useEffect(() => {
                       onClick={handleRemoveCoupon}
                       className="text-red-600 border-red-200 hover:bg-red-50 dark:text-red-400 dark:border-red-800 dark:hover:bg-red-900/20"
                     >
-                      Remove
+                      {t('remove')}
                     </Button>
                   </div>
                 </div>
@@ -569,7 +570,7 @@ useEffect(() => {
                   <div className="flex gap-2">
                     <div className="flex-1">
                       <Input
-                        placeholder="Enter coupon code"
+                        placeholder={t('enterCouponCode')}
                         value={couponCode}
                         onChange={(e) => {
                           setCouponCode(e.target.value.toUpperCase())
@@ -589,14 +590,14 @@ useEffect(() => {
                       disabled={couponLoading || !couponCode.trim()}
                       className="bg-black hover:bg-gray-800 text-white dark:bg-white dark:hover:bg-gray-200 dark:text-black font-bold border-2 border-black dark:border-white"
                     >
-                      {couponLoading ? "Applying..." : "Apply"}
+                      {couponLoading ? t('applying') : t('apply')}
                     </Button>
                   </div>
                   {couponError && (
                     <p className="text-sm text-red-600 dark:text-red-400">{couponError}</p>
                   )}
                   <p className="text-xs text-slate-500 dark:text-slate-400">
-                    Have a coupon code? Enter it above to apply your discount.
+                    {t('haveCouponCode')}
                   </p>
                 </div>
               )}
@@ -605,7 +606,7 @@ useEffect(() => {
 
           <Card className="border sm:border-2 border-black dark:border-white bg-white dark:bg-gray-900 rounded-lg sm:rounded-xl overflow-hidden">
             <CardHeader className="border-b sm:border-b-2 border-black dark:border-white bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 p-3 sm:p-4">
-              <CardTitle className="text-base sm:text-lg md:text-xl lg:text-2xl font-black uppercase text-black dark:text-white">PAYMENT METHOD</CardTitle>
+              <CardTitle className="text-base sm:text-lg md:text-xl lg:text-2xl font-black uppercase text-black dark:text-white">{t('paymentMethod')}</CardTitle>
             </CardHeader>
             <CardContent className="p-3 sm:p-4 md:p-6">
               <Tabs value={paymentMethod} onValueChange={setPaymentMethod} className="w-full">
@@ -615,23 +616,23 @@ useEffect(() => {
                     className="font-bold uppercase text-[10px] sm:text-xs md:text-sm data-[state=active]:bg-black data-[state=active]:text-white dark:data-[state=active]:bg-white dark:data-[state=active]:text-black data-[state=active]:shadow-sm py-1.5 sm:py-2"
                   >
                     <CreditCard className="h-3 w-3 sm:h-4 sm:w-4 mr-0.5 sm:mr-1 md:mr-2" />
-                    <span className="hidden xs:inline">CARD</span>
-                    <span className="xs:hidden">CARD</span>
+                    <span className="hidden xs:inline">{t('card')}</span>
+                    <span className="xs:hidden">{t('card')}</span>
                   </TabsTrigger>
                   <TabsTrigger
                     value="swish"
                     className="font-bold uppercase text-[10px] sm:text-xs md:text-sm data-[state=active]:bg-black data-[state=active]:text-white dark:data-[state=active]:bg-white dark:data-[state=active]:text-black data-[state=active]:shadow-sm py-1.5 sm:py-2"
                   >
                     <Smartphone className="h-3 w-3 sm:h-4 sm:w-4 mr-0.5 sm:mr-1 md:mr-2" />
-                    <span className="hidden xs:inline">SWISH</span>
-                    <span className="xs:hidden">SWISH</span>
+                    <span className="hidden xs:inline">{t('swish')}</span>
+                    <span className="xs:hidden">{t('swish')}</span>
                   </TabsTrigger>
                   <TabsTrigger
                     value="klarna"
                     className="font-bold uppercase text-[10px] sm:text-xs md:text-sm data-[state=active]:bg-black data-[state=active]:text-white dark:data-[state=active]:bg-white dark:data-[state=active]:text-black data-[state=active]:shadow-sm py-1.5 sm:py-2"
                   >
                     <KlarnaIcon className="h-3 w-3 sm:h-4 sm:w-4 mr-0.5 sm:mr-1 md:mr-2" />
-                    <span className="hidden xs:inline">KLARNA</span>
+                    <span className="hidden xs:inline">{t('klarna')}</span>
                     <span className="xs:hidden">KLA</span>
                   </TabsTrigger>
                 </TabsList>
@@ -642,14 +643,14 @@ useEffect(() => {
                   <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
                     <div className="flex items-center gap-2 mb-3">
                       <ShieldCheck className="h-5 w-5 text-green-600" />
-                      <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">SECURE PAYMENT</span>
+                      <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">{t('securePayment')}</span>
                     </div>
                     <p className="text-sm text-gray-600 dark:text-gray-400">
-                      Your payment information is encrypted and processed securely through Stripe.
+                      {t('yourPaymentInfoEncrypted')}
                     </p>
                     <div className="flex gap-2 mt-3">
-                      <Badge variant="outline" className="text-xs">256-bit SSL</Badge>
-                      <Badge variant="outline" className="text-xs">PCI Compliant</Badge>
+                      <Badge variant="outline" className="text-xs">{t('256bitSSL')}</Badge>
+                      <Badge variant="outline" className="text-xs">{t('pciCompliant')}</Badge>
                     </div>
                   </div>
                 </TabsContent>
@@ -660,13 +661,13 @@ useEffect(() => {
                   <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
                     <div className="flex items-center gap-2 mb-3">
                       <Smartphone className="h-5 w-5 text-blue-600" />
-                      <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">SWISH PAYMENT</span>
+                      <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">{t('swishPayment')}</span>
                     </div>
                     <p className="text-sm text-gray-600 dark:text-gray-400">
-                      Pay instantly with Swish. You'll receive a payment request to your registered mobile number.
+                      {t('payInstantlySwish')}
                     </p>
                     <div className="mt-3">
-                      <Label htmlFor="swish-phone" className="text-sm font-semibold">Mobile Number</Label>
+                      <Label htmlFor="swish-phone" className="text-sm font-semibold">{t('mobileNumber')}</Label>
                       <Input
                         id="swish-phone"
                         type="tel"
@@ -683,29 +684,86 @@ useEffect(() => {
                   <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
                     <div className="flex items-center gap-2 mb-3">
                       <KlarnaIcon className="h-5 w-5 text-pink-600" />
-                      <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">KLARNA CHECKOUT</span>
+                      <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">{t('klarnaCheckout')}</span>
                     </div>
                     <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
-                      Shop now, pay later with Klarna. Choose your preferred payment option at checkout.
+                      {t('shopNowPayLater')}
                     </p>
                     <div className="space-y-2">
                       <div className="flex items-center gap-2">
                         <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                        <span className="text-xs text-gray-600 dark:text-gray-400">Pay in 30 days</span>
+                        <span className="text-xs text-gray-600 dark:text-gray-400">{t('payIn30Days')}</span>
                       </div>
                       <div className="flex items-center gap-2">
                         <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                        <span className="text-xs text-gray-600 dark:text-gray-400">3 interest-free installments</span>
+                        <span className="text-xs text-gray-600 dark:text-gray-400">{t('interestFreeInstallments')}</span>
                       </div>
                       <div className="flex items-center gap-2">
                         <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                        <span className="text-xs text-gray-600 dark:text-gray-400">Financing up to 24 months</span>
+                        <span className="text-xs text-gray-600 dark:text-gray-400">{t('financingUp24Months')}</span>
                       </div>
                     </div>
                   </div>
                 </TabsContent>
               </Tabs>
             </CardContent>
+
+            {/* Payment Methods */}
+            <div className="px-4 sm:px-6 pb-4">
+              <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
+                <p className="text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-400 mb-3 text-center">
+                  {t('acceptedPaymentMethods') || "Accepted Payment Methods"}
+                </p>
+                <div className="flex items-center gap-2 sm:gap-3 flex-wrap justify-center">
+                  {/* Visa */}
+                  <div className="bg-gray-50 dark:bg-gray-800 rounded px-2 py-1 border border-gray-200 dark:border-gray-700">
+                    <svg className="h-6 w-auto" viewBox="0 0 50 16" fill="none">
+                      <path d="M20 5L18 11H16.5L14.5 5H16L17.25 9L18.5 5H20Z" fill="#1A1F71"/>
+                      <path d="M21 11V5H22.5V11H21Z" fill="#1A1F71"/>
+                      <path d="M26 6.5C26 5.7 25.5 5.3 24.8 5.3C24.2 5.3 23.7 5.6 23.5 6L22.5 5.3C22.9 4.6 23.7 4.2 24.8 4.2C26.3 4.2 27.5 5.1 27.5 6.5V11H26V10.5C25.6 10.9 25 11.2 24.3 11.2C23 11.2 22 10.4 22 9.2C22 8 23 7.2 24.3 7.2C25 7.2 25.6 7.5 26 7.9V6.5Z" fill="#1A1F71"/>
+                    </svg>
+                  </div>
+
+                  {/* Mastercard */}
+                  <div className="bg-gray-50 dark:bg-gray-800 rounded px-2 py-1 border border-gray-200 dark:border-gray-700">
+                    <svg className="h-6 w-auto" viewBox="0 0 50 16" fill="none">
+                      <circle cx="16" cy="8" r="6" fill="#EB001B"/>
+                      <circle cx="26" cy="8" r="6" fill="#F79E1B"/>
+                      <path d="M21 4C22 5 22.5 6.5 22.5 8C22.5 9.5 22 11 21 12C20 11 19.5 9.5 19.5 8C19.5 6.5 20 5 21 4Z" fill="#FF5F00"/>
+                    </svg>
+                  </div>
+
+                  {/* Swish */}
+                  <div className="bg-gray-50 dark:bg-gray-800 rounded px-2 py-1 border border-gray-200 dark:border-gray-700">
+                    <span className="text-xs font-bold" style={{ color: '#00A9E0' }}>Swish</span>
+                  </div>
+
+                  {/* Klarna */}
+                  <div className="bg-gray-50 dark:bg-gray-800 rounded px-2 py-1 border border-gray-200 dark:border-gray-700">
+                    <span className="text-xs font-bold" style={{ color: '#FFB3C7' }}>Klarna</span>
+                  </div>
+
+                  {/* PayPal */}
+                  <div className="bg-gray-50 dark:bg-gray-800 rounded px-2 py-1 border border-gray-200 dark:border-gray-700">
+                    <span className="text-xs font-bold" style={{ color: '#003087' }}>PayPal</span>
+                  </div>
+
+                  {/* Apple Pay */}
+                  <div className="bg-gray-50 dark:bg-gray-800 rounded px-2 py-1 border border-gray-200 dark:border-gray-700">
+                    <span className="text-xs font-bold text-black dark:text-white">Pay</span>
+                  </div>
+
+                  {/* Google Pay */}
+                  <div className="bg-gray-50 dark:bg-gray-800 rounded px-2 py-1 border border-gray-200 dark:border-gray-700">
+                    <span className="text-xs font-bold">
+                      <span style={{ color: '#4285F4' }}>G</span>
+                      <span style={{ color: '#EA4335' }}>Pay</span>
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
             <CardFooter className="p-3 sm:p-4 md:p-6 pt-0">
               <Button
                 size="lg"
@@ -714,7 +772,7 @@ useEffect(() => {
                 disabled={loading}
               >
                 <ShieldCheck className="mr-1 sm:mr-2 h-4 w-4 sm:h-5 sm:w-5" />
-                {loading ? "PROCESSING..." : `COMPLETE ORDER • ${formatPrice(grandTotal)}`}
+                {loading ? t('processing') : `${t('completeOrder')} • ${formatPrice(grandTotal)}`}
               </Button>
             </CardFooter>
           </Card>
@@ -726,17 +784,17 @@ useEffect(() => {
         <div className="flex flex-wrap justify-center items-center gap-3 sm:gap-4 md:gap-6 p-3 sm:p-4 md:p-6 bg-gray-50 dark:bg-gray-900 rounded-lg sm:rounded-xl border sm:border-2 border-gray-200 dark:border-gray-800">
           <div className="flex items-center gap-1 sm:gap-2">
             <ShieldCheck className="h-4 w-4 sm:h-5 sm:w-5 text-green-600" />
-            <span className="text-[10px] sm:text-xs md:text-sm font-semibold text-gray-700 dark:text-gray-300">SSL SECURED</span>
+            <span className="text-[10px] sm:text-xs md:text-sm font-semibold text-gray-700 dark:text-gray-300">{t('sslSecured')}</span>
           </div>
           <div className="flex items-center gap-1 sm:gap-2">
             <CreditCard className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600" />
-            <span className="text-[10px] sm:text-xs md:text-sm font-semibold text-gray-700 dark:text-gray-300">PCI COMPLIANT</span>
+            <span className="text-[10px] sm:text-xs md:text-sm font-semibold text-gray-700 dark:text-gray-300">{t('pciCompliant')}</span>
           </div>
           <div className="flex items-center gap-1 sm:gap-2">
-            <Badge className="bg-black text-white dark:bg-white dark:text-black text-[10px] sm:text-xs">STRIPE VERIFIED</Badge>
+            <Badge className="bg-black text-white dark:bg-white dark:text-black text-[10px] sm:text-xs">{t('stripeVerified')}</Badge>
           </div>
           <div className="flex items-center gap-1 sm:gap-2">
-            <Badge className="bg-black text-white dark:bg-white dark:text-black text-[10px] sm:text-xs">SECURE CHECKOUT</Badge>
+            <Badge className="bg-black text-white dark:bg-white dark:text-black text-[10px] sm:text-xs">{t('secureCheckoutBadge')}</Badge>
           </div>
         </div>
       </div>

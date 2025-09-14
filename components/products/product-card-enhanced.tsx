@@ -275,8 +275,8 @@ function ProductCardEnhancedComponent({ product }: ProductCardEnhancedProps) {
   const currentPrice = selectedVariation?.price || product.price
 
   return (
-    <Card className={`overflow-hidden group transition-all duration-300 flex flex-col h-full border border-black sm:border-2 dark:border-white bg-white dark:bg-gray-900 rounded-lg ${
-      product.inStock ? 'hover:scale-102' : 'opacity-60'
+    <Card className={`overflow-hidden group transition-all duration-300 flex flex-col h-full border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-lg hover:shadow-xl ${
+      product.inStock ? 'hover:scale-[1.02]' : 'opacity-60'
     }`}>
       <div 
         className="relative w-full aspect-[4/3] overflow-hidden bg-gray-100 dark:bg-gray-800 flex-shrink-0"
@@ -312,14 +312,14 @@ function ProductCardEnhancedComponent({ product }: ProductCardEnhancedProps) {
           <>
             <button
               onClick={handlePrevAngle}
-              className="absolute left-2 top-1/2 -translate-y-1/2 bg-white/90 dark:bg-black/90 rounded-full p-1 z-20 hover:scale-110 transition-transform"
+              className="absolute left-2 top-1/2 -translate-y-1/2 bg-white/95 dark:bg-black/95 rounded-full p-1.5 shadow-md z-20 hover:scale-110 transition-transform"
               aria-label="Previous angle"
             >
               <ChevronLeft className="h-4 w-4" />
             </button>
             <button
               onClick={handleNextAngle}
-              className="absolute right-2 top-1/2 -translate-y-1/2 bg-white/90 dark:bg-black/90 rounded-full p-1 z-20 hover:scale-110 transition-transform"
+              className="absolute right-2 top-1/2 -translate-y-1/2 bg-white/95 dark:bg-black/95 rounded-full p-1.5 shadow-md z-20 hover:scale-110 transition-transform"
               aria-label="Next angle"
             >
               <ChevronRight className="h-4 w-4" />
@@ -416,20 +416,20 @@ function ProductCardEnhancedComponent({ product }: ProductCardEnhancedProps) {
         </div>
       </CardContent>
       
-      <CardFooter className="p-2 sm:p-3 pt-0 border-t border-black sm:border-t-2 dark:border-white">
-        <div className="flex gap-1.5 sm:gap-2 w-full">
+      <CardFooter className="p-2 sm:p-3 pt-0 border-t border-gray-200 dark:border-gray-700 mt-auto">
+        <div className="flex gap-1.5 sm:gap-2 w-full items-stretch">
           <Button
-            className={`${isCustomizable ? 'flex-1' : 'w-full'} min-h-[36px] sm:min-h-[40px] bg-black text-white dark:bg-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200 font-bold uppercase text-[10px] sm:text-xs transition-all px-2 sm:px-3`}
+            className={`${isCustomizable ? 'flex-1' : 'w-full'} h-[36px] sm:h-[40px] bg-black text-white dark:bg-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200 font-bold uppercase text-[10px] sm:text-xs transition-all px-2 sm:px-3 flex items-center justify-center`}
             onClick={handleAddToCart}
             disabled={!product.inStock}
           >
-            <ShoppingCart className="h-3 w-3 mr-0.5 sm:mr-1" />
+            <ShoppingCart className="h-3 w-3 mr-0.5 sm:mr-1 flex-shrink-0" />
             <span className="hidden xs:inline">{t.addToCart}</span>
             <span className="xs:hidden">Add</span>
           </Button>
           {isCustomizable && (
             <Button
-              className="w-[36px] sm:w-[40px] min-h-[36px] sm:min-h-[40px] border border-black sm:border-2 dark:border-white bg-transparent text-black dark:text-white hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black transition-all"
+              className="w-[36px] sm:w-[40px] h-[36px] sm:h-[40px] border border-black dark:border-white bg-transparent text-black dark:text-white hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black transition-all flex items-center justify-center p-0"
               onClick={handleDesignThisProduct}
               disabled={!product.inStock}
               title={t.designThisProduct}

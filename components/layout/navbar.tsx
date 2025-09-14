@@ -315,7 +315,7 @@ export function Navbar() {
                     <Menu className="h-4 w-4 sm:h-5 sm:w-5" />
                   </Button>
                 </SheetTrigger>
-            <SheetContent side="right" className="w-full sm:w-[400px] max-w-[100vw] p-4 overflow-y-auto">
+            <SheetContent side="right" className="w-[280px] sm:w-[350px] p-4 overflow-y-auto">
               <SheetHeader className="pb-4">
                 <SheetTitle className="text-left text-base sm:text-lg">{tCommon('platformName')}</SheetTitle>
               </SheetHeader>

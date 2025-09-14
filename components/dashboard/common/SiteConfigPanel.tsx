@@ -20,22 +20,22 @@ import { useTranslations } from "next-intl"
 
 interface SiteConfiguration {
   heroHeadline: {
-    line1: string
-    line2: string
-    subtitle: string
+    line1: string | { en: string; sv: string }
+    line2: string | { en: string; sv: string }
+    subtitle: string | { en: string; sv: string }
   }
   stats: Array<{
     id: string
     value: number
     suffix: string
-    label: string
+    label: string | { en: string; sv: string }
     duration: number
   }>
   features: Array<{
     id: string
     iconType: string
-    title: string
-    description: string
+    title: string | { en: string; sv: string }
+    description: string | { en: string; sv: string }
   }>
   featuredProducts: Array<{
     type?: 'product' | 'collection'
@@ -76,16 +76,16 @@ interface SiteConfiguration {
     secondaryButtonText: string
     secondaryButtonLink: string
   }
-  bestSellersTitle: string
-  bestSellersSubtitle: string
-  featuresTitle: string
+  bestSellersTitle: string | { en: string; sv: string }
+  bestSellersSubtitle: string | { en: string; sv: string }
+  featuresTitle: string | { en: string; sv: string }
 }
 
 const getDefaultConfig = (): SiteConfiguration => ({
   heroHeadline: {
-    line1: "Create Custom",
-    line2: "Products",
-    subtitle: "Design and print custom t-shirts, business cards, stickers, and more. Professional quality, delivered fast."
+    line1: { en: "Create Custom", sv: "Skapa Anpassade" },
+    line2: { en: "Products", sv: "Produkter" },
+    subtitle: { en: "Design and print custom t-shirts, business cards, stickers, and more. Professional quality, delivered fast.", sv: "Designa och tryck anpassade t-shirts, visitkort, klistermärken och mer. Professionell kvalitet, snabb leverans." }
   },
   stats: [
     {
@@ -163,6 +163,7 @@ export function SiteConfigPanel() {
   const [showProductBrowser, setShowProductBrowser] = useState(false)
   const [showCollectionEditor, setShowCollectionEditor] = useState(false)
   const [editingCollection, setEditingCollection] = useState<any>(null)
+  const [currentLanguage, setCurrentLanguage] = useState<'en' | 'sv'>('en')
   const [browserContext, setBrowserContext] = useState<'featured' | 'bestsellers' | 'section'>('featured')
   const [currentSectionId, setCurrentSectionId] = useState<string | null>(null)
 
@@ -595,31 +596,82 @@ export function SiteConfigPanel() {
               <CardDescription>Edit the main headline and subtitle</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
+              <div className="mb-4">
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    variant={currentLanguage === 'en' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setCurrentLanguage('en')}
+                  >
+                    English
+                  </Button>
+                  <Button
+                    type="button"
+                    variant={currentLanguage === 'sv' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setCurrentLanguage('sv')}
+                  >
+                    Svenska
+                  </Button>
+                </div>
+              </div>
+
               <div>
-                <Label htmlFor="headline1">Headline Line 1</Label>
+                <Label htmlFor="headline1">Headline Line 1 ({currentLanguage === 'en' ? 'English' : 'Svenska'})</Label>
                 <Input
                   id="headline1"
-                  value={config.heroHeadline.line1}
-                  onChange={(e) => updateConfig("heroHeadline.line1", e.target.value)}
-                  placeholder="Create Custom"
+                  value={
+                    typeof config.heroHeadline.line1 === 'string'
+                      ? config.heroHeadline.line1
+                      : config.heroHeadline.line1[currentLanguage]
+                  }
+                  onChange={(e) => {
+                    const currentVal = config.heroHeadline.line1
+                    const newVal = typeof currentVal === 'string'
+                      ? { en: currentLanguage === 'en' ? e.target.value : currentVal, sv: currentLanguage === 'sv' ? e.target.value : currentVal }
+                      : { ...currentVal, [currentLanguage]: e.target.value }
+                    updateConfig("heroHeadline.line1", newVal)
+                  }}
+                  placeholder={currentLanguage === 'en' ? "Create Custom" : "Skapa Anpassade"}
                 />
               </div>
               <div>
-                <Label htmlFor="headline2">Headline Line 2</Label>
+                <Label htmlFor="headline2">Headline Line 2 ({currentLanguage === 'en' ? 'English' : 'Svenska'})</Label>
                 <Input
                   id="headline2"
-                  value={config.heroHeadline.line2}
-                  onChange={(e) => updateConfig("heroHeadline.line2", e.target.value)}
-                  placeholder="Products"
+                  value={
+                    typeof config.heroHeadline.line2 === 'string'
+                      ? config.heroHeadline.line2
+                      : config.heroHeadline.line2[currentLanguage]
+                  }
+                  onChange={(e) => {
+                    const currentVal = config.heroHeadline.line2
+                    const newVal = typeof currentVal === 'string'
+                      ? { en: currentLanguage === 'en' ? e.target.value : currentVal, sv: currentLanguage === 'sv' ? e.target.value : currentVal }
+                      : { ...currentVal, [currentLanguage]: e.target.value }
+                    updateConfig("heroHeadline.line2", newVal)
+                  }}
+                  placeholder={currentLanguage === 'en' ? "Products" : "Produkter"}
                 />
               </div>
               <div>
-                <Label htmlFor="subtitle">Subtitle</Label>
+                <Label htmlFor="subtitle">Subtitle ({currentLanguage === 'en' ? 'English' : 'Svenska'})</Label>
                 <Textarea
                   id="subtitle"
-                  value={config.heroHeadline.subtitle}
-                  onChange={(e) => updateConfig("heroHeadline.subtitle", e.target.value)}
-                  placeholder="Design and print custom..."
+                  value={
+                    typeof config.heroHeadline.subtitle === 'string'
+                      ? config.heroHeadline.subtitle
+                      : config.heroHeadline.subtitle[currentLanguage]
+                  }
+                  onChange={(e) => {
+                    const currentVal = config.heroHeadline.subtitle
+                    const newVal = typeof currentVal === 'string'
+                      ? { en: currentLanguage === 'en' ? e.target.value : currentVal, sv: currentLanguage === 'sv' ? e.target.value : currentVal }
+                      : { ...currentVal, [currentLanguage]: e.target.value }
+                    updateConfig("heroHeadline.subtitle", newVal)
+                  }}
+                  placeholder={currentLanguage === 'en' ? "Design and print custom..." : "Designa och tryck anpassade..."}
                   rows={3}
                 />
               </div>

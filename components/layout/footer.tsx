@@ -4,7 +4,7 @@ import { useAppSelector } from "@/lib/redux/hooks"
 import { useTranslations } from "next-intl"
 import Link from "next/link"
 import Image from "next/image"
-import { Instagram, Facebook, Mail, MapPin, Phone, LinkedinIcon } from "lucide-react"
+import { Instagram, Facebook, Mail, MapPin, Phone, LinkedinIcon, CreditCard, Shield, Lock } from "lucide-react"
 
 export function Footer() {
   const t = useTranslations()
@@ -39,15 +39,15 @@ export function Footer() {
                 </a>
               </div>
             </address>
-            <div className="flex items-center space-x-3 sm:space-x-4 pt-2">
-              <Link href="https://www.instagram.com/mr.merch.se?igsh=bnkxMXI4azhqNHlz" aria-label="Instagram" className="bg-primary/10 hover:bg-primary/20 p-1.5 sm:p-2 rounded-full transition-colors touch-manipulation">
-                <Instagram size={16} className="sm:text-[18px] text-primary" />
+            <div className="flex items-center justify-center sm:justify-start space-x-3 sm:space-x-4 pt-2">
+              <Link href="https://www.instagram.com/mr.merch.se?igsh=bnkxMXI4azhqNHlz" aria-label="Instagram" className="bg-primary/10 hover:bg-primary/20 w-8 h-8 sm:w-10 sm:h-10 rounded-full transition-colors touch-manipulation flex items-center justify-center">
+                <Instagram className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
               </Link>
-              <Link href="https://www.facebook.com/share/1ANBooptVJ/?mibextid=wwXIfr" aria-label="Facebook" className="bg-primary/10 hover:bg-primary/20 p-1.5 sm:p-2 rounded-full transition-colors touch-manipulation">
-                <Facebook size={16} className="sm:text-[18px] text-primary" />
+              <Link href="https://www.facebook.com/share/1ANBooptVJ/?mibextid=wwXIfr" aria-label="Facebook" className="bg-primary/10 hover:bg-primary/20 w-8 h-8 sm:w-10 sm:h-10 rounded-full transition-colors touch-manipulation flex items-center justify-center">
+                <Facebook className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
               </Link>
-              <Link href="https://www.linkedin.com/company/mr.merch/" aria-label="LinkedIn" className="bg-primary/10 hover:bg-primary/20 p-1.5 sm:p-2 rounded-full transition-colors touch-manipulation">
-                <LinkedinIcon size={16} className="sm:text-[18px] text-primary" />
+              <Link href="https://www.linkedin.com/company/mr.merch/" aria-label="LinkedIn" className="bg-primary/10 hover:bg-primary/20 w-8 h-8 sm:w-10 sm:h-10 rounded-full transition-colors touch-manipulation flex items-center justify-center">
+                <LinkedinIcon className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
               </Link>
             </div>
           </div>

@@ -176,11 +176,37 @@ export const useFabricCanvas = (canvasId: string, scaleOptions?: { isMobile?: bo
       if ((window as any).fabricCanvas && !(window as any).fabricCanvas.disposed) {
         console.log('✅ Using existing window.fabricCanvas')
         fabricCanvasRef.current = (window as any).fabricCanvas
-        return true
+
+        // Make sure the canvas is properly bound to the element
+        if (fabricCanvasRef.current.lowerCanvasEl !== canvasElement) {
+          console.log('🔄 Re-binding canvas to element')
+          fabricCanvasRef.current.lowerCanvasEl = canvasElement
+          fabricCanvasRef.current.setDimensions({
+            width: canvasElement.width || 600,
+            height: canvasElement.height || 600
+          })
+        }
+
+        return fabricCanvasRef.current
       }
 
-      // Otherwise, clean up the old elements and allow new initialization
+      // Otherwise, try to properly dispose and recreate
       console.log('🧹 Cleaning up orphaned canvas elements')
+
+      // Try to find and dispose any existing fabric instance
+      const existingCanvas = (canvasElement as any).__fabric ||
+                           (canvasElement as any).fabric ||
+                           (lowerCanvas as any)?.__fabric ||
+                           (upperCanvas as any)?.__fabric
+
+      if (existingCanvas && typeof existingCanvas.dispose === 'function') {
+        console.log('🗑️ Disposing existing canvas instance')
+        try {
+          existingCanvas.dispose()
+        } catch (e) {
+          console.warn('Failed to dispose canvas:', e)
+        }
+      }
 
       // Remove the orphaned Fabric.js created elements
       if (upperCanvas) {
@@ -193,6 +219,7 @@ export const useFabricCanvas = (canvasId: string, scaleOptions?: { isMobile?: bo
       // Clear any fabric properties
       delete (canvasElement as any).__fabric
       delete (canvasElement as any).fabric
+      delete (window as any).fabricCanvas
 
       console.log('✅ Cleaned up old canvas elements, proceeding with new initialization')
       return false // Return false to allow new initialization
@@ -243,6 +270,29 @@ export const useFabricCanvas = (canvasId: string, scaleOptions?: { isMobile?: bo
       }
     } catch (error) {
       console.error('Error initializing Fabric canvas:', error)
+      // Try one more time with a delay
+      setTimeout(() => {
+        try {
+          const retryCanvas = new fabric.Canvas(canvasElement, {
+            width: 600,
+            height: 600,
+            backgroundColor: "transparent",
+            selection: true,
+            preserveObjectStacking: true,
+            enableRetinaScaling: false,
+            imageSmoothingEnabled: true,
+            renderOnAddRemove: true,
+            stopContextMenu: true,
+            fireRightClick: false,
+            controlsAboveOverlay: true,
+          })
+          fabricCanvasRef.current = retryCanvas
+          ;(window as any).fabricCanvas = retryCanvas
+          console.log('✅ Canvas initialized on retry')
+        } catch (retryError) {
+          console.error('Failed to initialize canvas on retry:', retryError)
+        }
+      }, 100)
       return false
     }
 

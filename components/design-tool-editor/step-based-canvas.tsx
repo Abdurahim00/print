@@ -242,26 +242,50 @@ export function StepBasedCanvas({ product, stepNumber, angle }: StepBasedCanvasP
     }
     
     // Fall back to individual angle images
-    const angleImageMap = {
+    const angleImageMap: { [key: string]: string | undefined } = {
       'front': product.frontImage || product.image,
-      'back': product.backImage,
-      'left': product.leftImage,
-      'right': product.rightImage
+      'back': product.backImage || product.image,
+      'left': product.leftImage || product.image,
+      'right': product.rightImage || product.image
     }
-    
+
     let imageUrl = angleImageMap[angle] || product.image || ""
-    
-    // If still no image found, use a placeholder
+
+    // If we have a product image but no specific angle, use the main image
+    if ((!imageUrl || imageUrl.trim() === '') && product.image) {
+      imageUrl = product.image
+      console.log('🖼️ Using main product image as fallback:', imageUrl)
+    }
+
+    // If still no image found, check for any available image in the product
+    if (!imageUrl || imageUrl.trim() === '') {
+      const availableImages = [
+        product.image,
+        product.frontImage,
+        product.backImage,
+        product.leftImage,
+        product.rightImage
+      ].filter(img => img && img.trim() !== '')
+
+      if (availableImages.length > 0) {
+        imageUrl = availableImages[0]
+        console.log('🖼️ Using first available image:', imageUrl)
+      }
+    }
+
+    // Last resort: use a placeholder
     if (!imageUrl || imageUrl.trim() === '') {
       // Use different placeholders based on product type
       if (product.type?.toLowerCase().includes('shirt') || product.name?.toLowerCase().includes('shirt')) {
         imageUrl = '/tshirt1.png'
+      } else if (product.type?.toLowerCase().includes('mug') || product.name?.toLowerCase().includes('mug')) {
+        imageUrl = 'https://via.placeholder.com/600x600/f3f4f6/6b7280?text=Mug'
       } else {
-        imageUrl = '/placeholder.jpg'
+        imageUrl = 'https://via.placeholder.com/600x600/f3f4f6/6b7280?text=Product'
       }
       console.log('🖼️ Using placeholder image:', imageUrl)
     }
-    
+
     console.log('🖼️ Final image URL for', angle, ':', imageUrl)
     return imageUrl
   }, [product, angle, productColor])

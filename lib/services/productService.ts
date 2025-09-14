@@ -137,7 +137,7 @@ export class ProductService {
     console.log('[ProductService] Filter received:', JSON.stringify(filter, null, 2))
     
     // Build MongoDB query
-    const query: any = {}
+    let query: any = {}
     
     // Category filter - products now have categoryId stored as strings
     if (filter.categoryId) {
@@ -178,23 +178,32 @@ export class ProductService {
     
     // Filter for designable products only
     if (filter.designableOnly) {
+      // Look for products that are either:
+      // 1. Marked as designable (isDesignable: true)
+      // 2. Have a design cost per cm2 set
+      // 3. Belong to designable categories
       const designableCategoryIds = await getDesignableCategoryIds()
+
+      const designableConditions = [
+        { isDesignable: true },
+        { designCostPerCm2: { $exists: true, $gt: 0 } }
+      ]
+
+      // Add category condition if designable categories exist
       if (designableCategoryIds.length > 0) {
-        // Use string IDs directly
-        
-        // Add category filter to existing query
-        if (query.categoryId) {
-          // If there's already a category filter, combine with AND
-          query.$and = [
-            { categoryId: query.categoryId },
-            { categoryId: { $in: designableCategoryIds } }
+        designableConditions.push({ categoryId: { $in: designableCategoryIds } })
+      }
+
+      // Combine with existing query
+      if (Object.keys(query).length > 0) {
+        query = {
+          $and: [
+            query,
+            { $or: designableConditions }
           ]
-        } else {
-          query.categoryId = { $in: designableCategoryIds }
         }
       } else {
-        // No designable categories found, return empty result
-        return { products: [], total: 0 }
+        query.$or = designableConditions
       }
     }
     

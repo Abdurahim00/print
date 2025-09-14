@@ -66,14 +66,16 @@ const cartSlice = createSlice({
     
     // Add to cart with size information
     addToCartWithSizes: (state, action: PayloadAction<{
-      product: Product, 
+      product: Product,
       selectedSizes: CartItemSize[],
       designPreview?: string,
       designId?: string,
       designContext?: any,
-      designCanvasJSON?: any
+      designCanvasJSON?: any,
+      stepDesignAreas?: { [step: number]: number },
+      designCosts?: any
     }>) => {
-      const { product, selectedSizes, designPreview, designId, designContext, designCanvasJSON } = action.payload
+      const { product, selectedSizes, designPreview, designId, designContext, designCanvasJSON, stepDesignAreas, designCosts } = action.payload
       
       // Log the data being added to cart
       console.log('🛒 [CartSlice] Adding to cart with sizes:', {
@@ -117,7 +119,7 @@ const cartSlice = createSlice({
       // Calculate total quantity across all sizes
       const totalQuantity = selectedSizes.reduce((sum, size) => sum + size.quantity, 0)
       
-      // Create cart item with size information
+      // Create cart item with size information and design costs
       const newItem: CartItem = {
         ...product,
         id: uniqueId,
@@ -127,7 +129,9 @@ const cartSlice = createSlice({
         designPreview,
         designId,
         designContext,
-        designCanvasJSON
+        designCanvasJSON,
+        stepDesignAreas,
+        designCosts
       }
       
       console.log('🛒 [CartSlice] Created cart item:', {
@@ -141,6 +145,11 @@ const cartSlice = createSlice({
           selectedSizesCount: newItem.selectedSizes?.length || 0,
           hasDesignPreview: !!newItem.designPreview,
           hasDesignContext: !!newItem.designContext,
+          designCosts: designCosts ? {
+            totalCost: designCosts.totalCost,
+            totalAreaCm2: designCosts.totalAreaCm2,
+            stepsWithDesign: Object.keys(stepDesignAreas || {}).length
+          } : null,
           designContextDetails: newItem.designContext ? {
             viewMode: newItem.designContext.viewMode,
             productColor: newItem.designContext.productColor,
@@ -167,9 +176,11 @@ const cartSlice = createSlice({
       designPreview?: string,
       designId?: string,
       designContext?: any,
-      designCanvasJSON?: any
+      designCanvasJSON?: any,
+      stepDesignAreas?: { [step: number]: number },
+      designCosts?: any
     }>) => {
-      const { product, quantity = 1, designPreview, designId, designContext, designCanvasJSON } = action.payload
+      const { product, quantity = 1, designPreview, designId, designContext, designCanvasJSON, stepDesignAreas, designCosts } = action.payload
 
       // Unique composite id per product+design
       const uniqueId = designId ? `${product.id}-${designId}` : `${product.id}-${Date.now()}`
@@ -183,6 +194,8 @@ const cartSlice = createSlice({
         designId,
         designContext,
         designCanvasJSON,
+        stepDesignAreas,
+        designCosts
       }
 
       state.items.push(newItem)

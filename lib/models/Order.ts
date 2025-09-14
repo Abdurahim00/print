@@ -18,6 +18,13 @@ export interface OrderDocument {
     designContext?: any
     designCanvasJSON?: any
     productId?: string
+    stepDesignAreas?: { [step: number]: number }
+    designCosts?: {
+      totalCost: number
+      totalAreaCm2: number
+      costPerCm2: number
+      breakdown?: any
+    }
   }>
   shippingOption: "standard" | "express"
   paymentMethod: "card" | "swish" | "klarna"
@@ -51,6 +58,13 @@ export interface Order {
     designContext?: any
     designCanvasJSON?: any
     productId?: string
+    stepDesignAreas?: { [step: number]: number }
+    designCosts?: {
+      totalCost: number
+      totalAreaCm2: number
+      costPerCm2: number
+      breakdown?: any
+    }
   }>
   shippingOption: "standard" | "express"
   paymentMethod: "card" | "swish" | "klarna"

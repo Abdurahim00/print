@@ -19,7 +19,8 @@ import { Minus, Plus, ShoppingCart, ChevronRight, AlertTriangle, Info } from "lu
 import { RootState } from "@/lib/redux/store"
 import { SizePrice } from "@/lib/models/Product"
 import { composeProductAndDesign } from "@/lib/utils/imageCompose"
-import { calculateDesignElementCosts, formatDesignPrice } from "@/lib/utils/designPricing"
+import { calculateDesignCostsFromSteps } from "@/lib/utils/pricingUtils"
+import { formatPrice as formatDesignPrice } from "@/lib/utils/designPricing"
 import { useCurrency } from "@/contexts/CurrencyContext"
 
 interface SizeQuantityModalProps {
@@ -36,7 +37,7 @@ export interface SelectedSizeQuantity {
 
 export function SizeQuantityModal({ open, onOpenChange, onAddToCart }: SizeQuantityModalProps) {
   const dispatch = useDispatch()
-  const { selectedProduct, productColor, viewMode, selectedTemplate } = useSelector((state: RootState) => state.design)
+  const { selectedProduct, productColor, viewMode, selectedTemplate, stepDesignAreas } = useSelector((state: RootState) => state.design)
   const { fabricCanvas } = useSelector((state: RootState) => state.canvas)
   
   // State for selected sizes and quantities
@@ -345,10 +346,19 @@ export function SizeQuantityModal({ open, onOpenChange, onAddToCart }: SizeQuant
         }))
       )
       
-      // Calculate design element costs
-      if (selectedTemplate || fabricCanvas) {
-        const costs = calculateDesignElementCosts(selectedTemplate, fabricCanvas)
+      // Calculate design costs from step-based design areas
+      if (stepDesignAreas && Object.keys(stepDesignAreas).length > 0) {
+        const costPerCm2 = (selectedProduct as any).designCostPerCm2 || 0.5
+        const costs = calculateDesignCostsFromSteps(stepDesignAreas, costPerCm2)
         setDesignCosts(costs)
+        console.log('💰 [SizeQuantityModal] Design costs calculated:', {
+          stepAreas: stepDesignAreas,
+          costPerCm2,
+          totalCost: costs.totalCost,
+          breakdown: costs.breakdown
+        })
+      } else {
+        setDesignCosts(null)
       }
     }
   }, [open, selectedProduct, productColor, selectedTemplate, fabricCanvas])
@@ -390,11 +400,12 @@ export function SizeQuantityModal({ open, onOpenChange, onAddToCart }: SizeQuant
     const baseTotal = selectedSizes.reduce((total, item) => {
       return total + (item.price * item.quantity)
     }, 0)
-    
-    // Add design costs if any
-    const designCost = designCosts ? designCosts.totalCost * calculateTotalQuantity() : 0
-    
-    return baseTotal + designCost
+
+    // Add design costs if any (total cost is per item, multiply by quantity)
+    const designCostPerItem = designCosts ? designCosts.totalCost : 0
+    const totalDesignCost = designCostPerItem * calculateTotalQuantity()
+
+    return baseTotal + totalDesignCost
   }
   
   // Calculate total quantity
@@ -760,6 +771,8 @@ export function SizeQuantityModal({ open, onOpenChange, onAddToCart }: SizeQuant
       designPreview,
       designCanvasJSON: currentViewCanvasJSON, // Use the current view's canvas data
       designContext: completeDesignContext, // Pass the complete design context
+      stepDesignAreas: stepDesignAreas || {}, // Pass step-based design areas
+      designCosts: designCosts, // Pass calculated design costs
       // If we have a saved design, we could include its ID here
       // designId: savedDesignId
     }))
@@ -824,9 +837,11 @@ export function SizeQuantityModal({ open, onOpenChange, onAddToCart }: SizeQuant
           <Alert className="mb-4">
             <Info className="h-4 w-4" />
             <AlertDescription>
-              <strong>Design Elements:</strong> {designCosts.breakdown.template.name} ({formatDesignPrice(designCosts.breakdown.template.cost)})
-              {designCosts.breakdown.elements.length > 0 && (
-                <span> + {designCosts.breakdown.elements.length} premium elements</span>
+              <strong>Design Cost:</strong> {formatPrice(designCosts.totalCost)} per item
+              {designCosts.breakdown && (
+                <div className="text-xs mt-1">
+                  Design area: {designCosts.totalAreaCm2?.toFixed(1)} cm² across {Object.keys(stepDesignAreas || {}).length} views
+                </div>
               )}
             </AlertDescription>
           </Alert>
@@ -931,7 +946,7 @@ export function SizeQuantityModal({ open, onOpenChange, onAddToCart }: SizeQuant
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-500">Design Elements ({calculateTotalQuantity()} × {formatDesignPrice(designCosts.totalCost)}):</span>
+                <span className="text-gray-500">Design Cost ({calculateTotalQuantity()} × {formatPrice(designCosts.totalCost)}):</span>
                 <span className="font-medium">
                   {formatPrice(designCosts.totalCost * calculateTotalQuantity())}
                 </span>

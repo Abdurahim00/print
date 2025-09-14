@@ -50,14 +50,9 @@ export default function DesignToolPage() {
         const data = await response.json()
         // Check if data is an array, if not try data.products
         const productsArray = Array.isArray(data) ? data : (data.products || [])
-        
-        // Additional filter to ensure only products with design customization are shown
-        const designableProducts = productsArray.filter((p: Product) => 
-          (p.designCostPerCm2 !== undefined && p.designCostPerCm2 > 0) || 
-          p.isDesignable === true ||
-          p.designable === true
-        )
-        setProducts(designableProducts)
+
+        // Trust the API to return only designable products
+        setProducts(productsArray)
       } catch (err) {
         console.error('Error loading products:', err)
         setError('Failed to load products')

@@ -139,9 +139,17 @@ export class ProductService {
     // Build MongoDB query
     let query: any = {}
     
-    // Category filter - products now have categoryId stored as strings
-    if (filter.categoryId) {
-      query.categoryId = filter.categoryId
+    // Category filter - handle both ObjectId and slug formats
+    if (filter.categoryId || filter.categorySlug) {
+      const categoryValue = filter.categoryId || filter.categorySlug
+      // Try to find products by either the ObjectId or by slug
+      // Some products might have categoryId as ObjectId, others as slug
+      query.$or = [
+        { categoryId: categoryValue }, // ObjectId string
+        { category: categoryValue }, // In case it's stored as 'category'
+        { categorySlug: categoryValue } // In case it's stored as slug
+      ]
+      console.log('[ProductService] Adding category filter:', categoryValue)
     }
     
     // Subcategory filter - convert to ObjectId for proper matching
@@ -247,7 +255,10 @@ export class ProductService {
     const findOptions: any = {
       projection: Object.keys(projection).length === 0 ? undefined : projection
     }
-    
+
+    // Log the final query
+    console.log('[ProductService] Final MongoDB query:', JSON.stringify(query, null, 2))
+
     // Create cursor with proper options
     const cursor = collection.find(query, findOptions)
     
@@ -263,11 +274,11 @@ export class ProductService {
     // Apply pagination
     cursor.skip(skip).limit(limit)
     
-    const [products, total] = await Promise.all([
+    let [products, total] = await Promise.all([
       cursor.toArray(),
       collection.countDocuments(query)
     ])
-    
+
     console.log(`[ProductService] Query results: ${products.length} products found, ${total} total`)
     console.log('[ProductService] First product:', products[0] ? { name: products[0].name, id: products[0]._id } : 'No products')
     

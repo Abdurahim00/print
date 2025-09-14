@@ -206,7 +206,7 @@ useEffect(() => {
       items: cart.map((item) => {
         // Calculate correct price for the item
         let itemPrice;
-        
+
         if (item.selectedSizes && item.selectedSizes.length > 0) {
           // For items with size variations, use the size-based price
           itemPrice = item.selectedSizes.reduce((total, size) => total + (size.price * size.quantity), 0) / item.quantity;
@@ -218,7 +218,7 @@ useEffect(() => {
         } else {
           itemPrice = 0;
         }
-        
+
           return {
             name: item.name,
             quantity: item.quantity,
@@ -230,7 +230,17 @@ useEffect(() => {
             selectedVariant: (item as any).selectedVariant,
             designContext: (item as any).designContext,
             designCanvasJSON: (item as any).designCanvasJSON,
+            stepDesignAreas: (item as any).stepDesignAreas,
+            designCosts: (item as any).designCosts,
+            hasCustomDesign: !!(item as any).designContext || !!(item as any).designCanvasJSON,
             productId: (item as any).productId || item.id,
+            productName: (item as any).productName || item.name,
+            productImage: (item as any).productImage || item.image,
+            // Include design data if present
+            designs: (item as any).designs,
+            totalDesignArea: (item as any).totalDesignArea,
+            hasDesign: (item as any).hasDesign,
+            designAreaPercentage: (item as any).designAreaPercentage,
           };
       }),
       shippingOption: shippingOption as "standard" | "express",

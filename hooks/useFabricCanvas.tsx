@@ -178,78 +178,24 @@ export const useFabricCanvas = (canvasId: string, scaleOptions?: { isMobile?: bo
         fabricCanvasRef.current = (window as any).fabricCanvas
         return true
       }
-      
-      // Otherwise, try to recover the canvas
-      console.log('🧹 Trying to recover orphaned canvas elements')
-      
-      // Try to find the canvas from the lower canvas element
-      const lowerCanvasEl = lowerCanvas as HTMLCanvasElement
-      console.log('Lower canvas element:', lowerCanvasEl, '__fabric:', (lowerCanvasEl as any)?.__fabric)
-      
-      if (lowerCanvasEl && (lowerCanvasEl as any).__fabric) {
-        const orphanedCanvas = (lowerCanvasEl as any).__fabric
-        console.log('Found canvas on lower element, disposed:', orphanedCanvas?.disposed)
-        if (orphanedCanvas && !orphanedCanvas.disposed) {
-          console.log('✅ Found orphaned but working canvas, reusing it')
-          fabricCanvasRef.current = orphanedCanvas
-          ;(window as any).fabricCanvas = orphanedCanvas
-          ;(canvasElement as any).fabric = orphanedCanvas
-          return orphanedCanvas
-        }
+
+      // Otherwise, clean up the old elements and allow new initialization
+      console.log('🧹 Cleaning up orphaned canvas elements')
+
+      // Remove the orphaned Fabric.js created elements
+      if (upperCanvas) {
+        upperCanvas.remove()
       }
-      
-      // Also check if lower canvas has a fabric property
-      if (lowerCanvasEl && (lowerCanvasEl as any).fabric) {
-        const orphanedCanvas = (lowerCanvasEl as any).fabric
-        console.log('Found canvas via .fabric property, disposed:', orphanedCanvas?.disposed)
-        if (orphanedCanvas && !orphanedCanvas.disposed) {
-          console.log('✅ Found working canvas via .fabric property')
-          fabricCanvasRef.current = orphanedCanvas
-          ;(window as any).fabricCanvas = orphanedCanvas
-          ;(canvasElement as any).fabric = orphanedCanvas
-          return orphanedCanvas
-        }
+      if (lowerCanvas && lowerCanvas !== canvasElement) {
+        lowerCanvas.remove()
       }
-      
-      // Try alternative recovery methods
-      // Check if upper canvas has reference
-      const upperCanvasEl = upperCanvas as HTMLCanvasElement
-      if (upperCanvasEl && (upperCanvasEl as any).__fabric) {
-        const orphanedCanvas = (upperCanvasEl as any).__fabric
-        if (orphanedCanvas && !orphanedCanvas.disposed) {
-          console.log('✅ Found canvas via upper canvas element')
-          fabricCanvasRef.current = orphanedCanvas
-          ;(window as any).fabricCanvas = orphanedCanvas
-          ;(canvasElement as any).fabric = orphanedCanvas
-          return orphanedCanvas
-        }
-      }
-      
-      // Last resort - check parent element for canvas instance
-      const parentEl = canvasElement.parentElement
-      if (parentEl && (parentEl as any).__fabricCanvas) {
-        const orphanedCanvas = (parentEl as any).__fabricCanvas
-        if (orphanedCanvas && !orphanedCanvas.disposed) {
-          console.log('✅ Found canvas via parent element')
-          fabricCanvasRef.current = orphanedCanvas
-          ;(window as any).fabricCanvas = orphanedCanvas
-          ;(canvasElement as any).fabric = orphanedCanvas
-          return orphanedCanvas
-        }
-      }
-      
-      // If we still can't find it but window.fabricCanvas exists, use that
-      if ((window as any).fabricCanvas && !(window as any).fabricCanvas.disposed) {
-        console.log('✅ Using window.fabricCanvas as fallback')
-        const canvas = (window as any).fabricCanvas
-        fabricCanvasRef.current = canvas
-        ;(canvasElement as any).fabric = canvas
-        return canvas
-      }
-      
-      // If no working canvas found, return false to prevent initialization
-      console.log('⚠️ Cannot recover canvas - all recovery attempts failed')
-      return false
+
+      // Clear any fabric properties
+      delete (canvasElement as any).__fabric
+      delete (canvasElement as any).fabric
+
+      console.log('✅ Cleaned up old canvas elements, proceeding with new initialization')
+      return false // Return false to allow new initialization
     }
     
     // Initialize Fabric.js canvas with error handling

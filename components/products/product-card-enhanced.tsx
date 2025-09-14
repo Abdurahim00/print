@@ -15,8 +15,6 @@ import { useMemo, memo, useState, useEffect, useCallback } from "react"
 import { useCurrency } from "@/contexts/CurrencyContext"
 import { addToCart } from "@/lib/redux/slices/cartSlice"
 import { useToast } from "@/hooks/use-toast"
-import { SizeSelectionModal } from "./size-selection-modal"
-import { QuantityModal } from "./quantity-modal"
 import { fetchCategories } from "@/lib/redux/slices/categoriesSlice"
 
 interface ProductCardEnhancedProps {
@@ -29,8 +27,6 @@ function ProductCardEnhancedComponent({ product }: ProductCardEnhancedProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { toast } = useToast()
-  const [sizeModalOpen, setSizeModalOpen] = useState(false)
-  const [quantityModalOpen, setQuantityModalOpen] = useState(false)
   const { language } = useAppSelector((state) => state.app)
   const t = translations[language]
   
@@ -228,16 +224,12 @@ function ProductCardEnhancedComponent({ product }: ProductCardEnhancedProps) {
         cartImage: currentImage || getProductImage(product)
       }
       
-      // Check if product needs size selection
-      if (product.categoryId === 'apparel' || product.hasVariations) {
-        setSizeModalOpen(true)
-      } else {
-        dispatch(addToCart(cartItem))
-        toast({
-          title: t.addedToCart,
-          description: `${product.name} ${t.hasBeenAddedToCart}`,
-        })
-      }
+      // Always add directly to cart without size selection
+      dispatch(addToCart(cartItem))
+      toast({
+        title: t.addedToCart,
+        description: `${product.name} ${t.hasBeenAddedToCart}`,
+      })
     } catch (error) {
       console.error('Error adding to cart:', error)
       toast({
@@ -447,20 +439,6 @@ function ProductCardEnhancedComponent({ product }: ProductCardEnhancedProps) {
           )}
         </div>
       </CardFooter>
-      
-      {/* Size Selection Modal */}
-      <SizeSelectionModal
-        open={sizeModalOpen}
-        onOpenChange={setSizeModalOpen}
-        product={{...product, selectedVariation}}
-      />
-      
-      {/* Quantity Modal */}
-      <QuantityModal
-        open={quantityModalOpen}
-        onOpenChange={setQuantityModalOpen}
-        product={{...product, selectedVariation}}
-      />
     </Card>
   )
 }

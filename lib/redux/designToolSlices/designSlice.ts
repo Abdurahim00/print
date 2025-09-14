@@ -101,14 +101,21 @@ const designSlice = createSlice({
                 variation: firstVariation,
                 product: action.payload.name
               })
-              // Don't use #000000 as fallback - it causes all variations to share the same ID
-              // Generate a unique color based on the variation index or properties
-              const variationIndex = action.payload.variations.indexOf(firstVariation)
-              const fallbackColor = firstVariation?.id || 
-                                   firstVariation?.sku || 
-                                   `var${variationIndex}_${action.payload.id?.slice(-6) || Math.random().toString(36).slice(2, 8)}`
-              state.productColor = fallbackColor
-              console.warn('⚠️ [DesignSlice] Using fallback color for variation:', fallbackColor)
+              
+              // Try to find any variation with a valid color
+              const variationWithColor = action.payload.variations.find((v: any) => v.color?.hex_code)
+              if (variationWithColor?.color?.hex_code) {
+                state.productColor = variationWithColor.color.hex_code
+                console.warn('⚠️ [DesignSlice] Using color from different variation:', variationWithColor.color.hex_code)
+              } else {
+                // Generate a unique color based on the variation index or properties
+                const variationIndex = action.payload.variations.indexOf(firstVariation)
+                const fallbackColor = firstVariation?.id || 
+                                     firstVariation?.sku || 
+                                     `var${variationIndex}_${action.payload.id?.slice(-6) || Math.random().toString(36).slice(2, 8)}`
+                state.productColor = fallbackColor
+                console.warn('⚠️ [DesignSlice] Using fallback color for variation:', fallbackColor)
+              }
             } else {
               state.productColor = firstVariationColor
             }

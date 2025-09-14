@@ -22,6 +22,7 @@ export async function GET(request: NextRequest) {
     
     // Filter parameters
     const categoryId = searchParams.get('categoryId')
+    const categorySlug = searchParams.get('categorySlug')
     const subcategoryId = searchParams.get('subcategoryId')
     const search = searchParams.get('search')
     const sortBy = searchParams.get('sortBy') || 'featured'
@@ -32,6 +33,7 @@ export async function GET(request: NextRequest) {
     // Build filter object
     const filter: any = {}
     if (categoryId) filter.categoryId = categoryId
+    if (categorySlug) filter.categorySlug = categorySlug
     if (subcategoryId) filter.subcategoryId = subcategoryId
     if (search) filter.search = search
     if (minPrice || maxPrice) {

@@ -204,10 +204,17 @@ export function StepBasedCanvas({ product, stepNumber, angle }: StepBasedCanvasP
     })
     
     // Check if product has variations
-    if (product.hasVariations && product.variations) {
+    if (product.hasVariations && product.variations && product.variations.length > 0) {
       console.log('🖼️ Product has variations:', product.variations.length)
-      const currentVariation = product.variations[0] // Use first variation for now
-      if (currentVariation?.images) {
+      
+      // Try to find variation with current color first
+      const currentVariation = product.variations.find((v: any) => 
+        v.color?.hex_code === productColor
+      ) || product.variations[0] // Fallback to first variation
+      
+      console.log('🖼️ Using variation:', currentVariation?.color?.hex_code || 'no color')
+      
+      if (currentVariation?.images && Array.isArray(currentVariation.images)) {
         console.log('🖼️ Variation images:', currentVariation.images)
         const angleImage = currentVariation.images.find((img: any) => 
           img.angle === angle && img.url && img.url.trim() !== ''
@@ -216,6 +223,21 @@ export function StepBasedCanvas({ product, stepNumber, angle }: StepBasedCanvasP
           console.log('🖼️ Found variation image:', angleImage.url)
           return angleImage.url
         }
+        
+        // If no specific angle image, try to find any image from this variation
+        const anyImage = currentVariation.images.find((img: any) => 
+          img.url && img.url.trim() !== ''
+        )
+        if (anyImage) {
+          console.log('🖼️ Using any variation image:', anyImage.url)
+          return anyImage.url
+        }
+      }
+      
+      // Check if variation has a swatch image
+      if (currentVariation?.color?.swatch_image) {
+        console.log('🖼️ Using variation swatch image:', currentVariation.color.swatch_image)
+        return currentVariation.color.swatch_image
       }
     }
     
@@ -227,17 +249,29 @@ export function StepBasedCanvas({ product, stepNumber, angle }: StepBasedCanvasP
       'right': product.rightImage
     }
     
-    const imageUrl = angleImageMap[angle] || product.image || ""
+    let imageUrl = angleImageMap[angle] || product.image || ""
+    
+    // If still no image found, use a placeholder
+    if (!imageUrl || imageUrl.trim() === '') {
+      // Use different placeholders based on product type
+      if (product.type?.toLowerCase().includes('shirt') || product.name?.toLowerCase().includes('shirt')) {
+        imageUrl = '/tshirt1.png'
+      } else {
+        imageUrl = '/placeholder.jpg'
+      }
+      console.log('🖼️ Using placeholder image:', imageUrl)
+    }
+    
     console.log('🖼️ Final image URL for', angle, ':', imageUrl)
     return imageUrl
-  }, [product, angle])
+  }, [product, angle, productColor])
   
   // Get design frames for current angle
   const getCurrentFrames = useCallback(() => {
     if (!product) return []
     
     // Use product-level frames
-    if (product.designFrames) {
+    if (product.designFrames && product.designFrames.length > 0) {
       const frames = product.designFrames.filter((frame: any) => 
         frame.angle === angle || frame.position === angle
       )
@@ -245,9 +279,24 @@ export function StepBasedCanvas({ product, stepNumber, angle }: StepBasedCanvasP
       return frames
     }
     
+    // Check if variations have frames
+    if (product.hasVariations && product.variations && product.variations.length > 0) {
+      const currentVariation = product.variations.find((v: any) => 
+        v.color?.hex_code === productColor
+      ) || product.variations[0]
+      
+      if (currentVariation?.designFrames && currentVariation.designFrames.length > 0) {
+        const frames = currentVariation.designFrames.filter((frame: any) => 
+          frame.angle === angle || frame.position === angle
+        )
+        console.log('📐 Using variation frames:', frames)
+        return frames
+      }
+    }
+    
     console.log('📐 No frames found for angle:', angle)
     return []
-  }, [product, angle])
+  }, [product, angle, productColor])
   
   // Load saved design for this step
   const loadStepDesign = useCallback(() => {

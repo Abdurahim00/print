@@ -4,11 +4,12 @@ import { useParams, useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { ArrowLeft, ShoppingCart, Edit, Download, Check } from "lucide-react"
+import { ArrowLeft, ShoppingCart, Edit, Download, Check, FileDown } from "lucide-react"
 import Link from "next/link"
 import { useAppDispatch } from "@/lib/redux/hooks"
 import { addToCart } from "@/lib/redux/slices/cartSlice"
 import { useToast } from "@/components/ui/use-toast"
+import { PrintFileService } from "@/lib/services/printFileService"
 
 interface DesignData {
   stepNumber: number
@@ -110,14 +111,20 @@ export default function ReviewPage() {
     setIsAddingToCart(true)
     
     try {
-      // Combine all designs into cart item
-      const cartItem = {
+      // Combine all designs into cart item as Product type
+      const cartItem: any = {
         id: `${productId}_${Date.now()}`,
+        name: product.name,
+        image: product.frontImage || product.image,
+        price: calculateTotalPrice(), // Use calculated price with design cost
+        categoryId: product.categoryId || '',
+        inStock: true,
+        quantity: 1,
+        // Store original product info
         productId: product.id,
         productName: product.name,
         productImage: product.frontImage || product.image,
-        price: product.price,
-        quantity: 1,
+        // Store design data
         designs: designs.map(design => ({
           angle: design.angle,
           stepNumber: design.stepNumber,
@@ -126,9 +133,10 @@ export default function ReviewPage() {
           designAreaPercentage: design.designAreaPercentage
         })),
         totalDesignArea: designs.reduce((sum, d) => sum + d.designAreaCm2, 0),
-        totalPrice: calculateTotalPrice()
+        hasDesign: true,
+        designAreaPercentage: designs.reduce((sum, d) => sum + d.designAreaPercentage, 0) / designs.length,
       }
-      
+
       // Add to cart
       dispatch(addToCart(cartItem))
       
@@ -172,6 +180,54 @@ export default function ReviewPage() {
     // This would export the design as an image
     console.log('Downloading design:', design)
     // Implementation would use fabric.js to render and export
+  }
+
+  // Handle generate print file
+  const handleGeneratePrintFile = async () => {
+    if (!product || designs.length === 0) {
+      toast({
+        title: "No designs to export",
+        description: "Please create at least one design before generating print file.",
+        variant: "destructive",
+        duration: 3000,
+      })
+      return
+    }
+
+    try {
+      await PrintFileService.generatePrintFile({
+        product: {
+          id: product.id,
+          name: product.name,
+          frontImage: product.frontImage,
+          backImage: product.backImage,
+          leftImage: product.leftImage,
+          rightImage: product.rightImage,
+          image: product.image,
+          price: product.price,
+        },
+        designs: designs,
+        orderId: `PREVIEW-${Date.now()}`,
+        customerName: 'Preview',
+        includeIndividualElements: true,
+        includeMockups: true,
+        format: 'zip',
+      })
+
+      toast({
+        title: "Print file generated!",
+        description: "Your print file has been downloaded successfully.",
+        duration: 3000,
+      })
+    } catch (error) {
+      console.error('Error generating print file:', error)
+      toast({
+        title: "Error",
+        description: "Failed to generate print file. Please try again.",
+        variant: "destructive",
+        duration: 3000,
+      })
+    }
   }
   
   if (loading) {
@@ -404,24 +460,35 @@ export default function ReviewPage() {
             <ArrowLeft className="mr-2 h-4 w-4" />
             Continue Designing
           </Button>
-          
-          <Button
-            size="lg"
-            onClick={handleAddToCart}
-            disabled={designs.length === 0 || isAddingToCart}
-          >
-            {isAddingToCart ? (
-              <>
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
-                Adding to Cart...
-              </>
-            ) : (
-              <>
-                <ShoppingCart className="mr-2 h-5 w-5" />
-                Add to Cart
-              </>
-            )}
-          </Button>
+
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={handleGeneratePrintFile}
+              disabled={designs.length === 0}
+            >
+              <FileDown className="mr-2 h-4 w-4" />
+              Generate Print File
+            </Button>
+
+            <Button
+              size="lg"
+              onClick={handleAddToCart}
+              disabled={designs.length === 0 || isAddingToCart}
+            >
+              {isAddingToCart ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
+                  Adding to Cart...
+                </>
+              ) : (
+                <>
+                  <ShoppingCart className="mr-2 h-5 w-5" />
+                  Add to Cart
+                </>
+              )}
+            </Button>
+          </div>
         </div>
       </div>
     </div>

@@ -26,7 +26,7 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb"
 
-export function ProductsView({ categorySlug, subcategorySlug, collectionId }: { categorySlug?: string; subcategorySlug?: string; collectionId?: string }) {
+export function ProductsView({ categorySlug, subcategorySlug, collectionId, designableOnly = false }: { categorySlug?: string; subcategorySlug?: string; collectionId?: string; designableOnly?: boolean }) {
   const dispatch = useAppDispatch()
   const router = useRouter()
   const pathname = usePathname()
@@ -92,7 +92,7 @@ export function ProductsView({ categorySlug, subcategorySlug, collectionId }: { 
   const [sortBy, setSortBy] = useState(searchParams.get('sortBy') || "featured")
   const [selectedCategoryFilter, setSelectedCategoryFilter] = useState<string | null>(searchParams.get('filterCategory'))
   const [selectedSubcategoryFilter, setSelectedSubcategoryFilter] = useState<string | null>(searchParams.get('filterSubcategory'))
-  const [showDesignableOnly, setShowDesignableOnly] = useState(searchParams.get('designable') === 'true')
+  const [showDesignableOnly, setShowDesignableOnly] = useState(designableOnly || searchParams.get('designable') === 'true')
   const [expandedCategories, setExpandedCategories] = useState<string[]>([])
   const [priceRange, setPriceRange] = useState({ 
     min: parseInt(searchParams.get('minPrice') || '0'), 
@@ -135,116 +135,103 @@ export function ProductsView({ categorySlug, subcategorySlug, collectionId }: { 
     }
   }, [router])
   
-  // Initial load with parallel fetching
+  // Initial load - fetch categories and subcategories
   useEffect(() => {
-    const loadData = async () => {
+    const loadInitialData = async () => {
       try {
-        // Load all data in parallel for better performance
+        // Load categories and subcategories
         const promises = [
           dispatch(fetchCategories({ locale })),
           dispatch(fetchSubcategories({ locale }))
         ]
-        
+
         // Only fetch category counts once
         if (!countsFetched) {
           promises.push(dispatch(fetchCategoryCounts({})))
           setCountsFetched(true)
         }
-        
-        // Only fetch products if we don't have categories yet
-        // Otherwise wait for categories to load first
-        if (cats.length > 0 || !categorySlug) {
-          const category = categorySlug ? cats.find((c: any) => c.slug === categorySlug) : null
-          const subcategory = subcategorySlug && category ? subs.find((s: any) => {
-            // Handle both full paths (profilklader/byxor) and simple slugs (byxor)
-            return (s.slug === subcategorySlug || 
-                    s.slug.endsWith('/' + subcategorySlug) || 
-                    s.slug === `${categorySlug}/${subcategorySlug}`) && 
-                   s.categoryId === category.id
-          }) : null
-          promises.push(
-            dispatch(fetchProducts({ 
-              page: currentPage, 
-              limit: 20,
-              categoryId: category?.id || selectedCategoryFilter || undefined,
-              subcategoryId: subcategory?.id || selectedSubcategoryFilter || undefined,
-              search: searchTerm || undefined,
-              sortBy: sortBy,
-              minPrice: priceRange.min > 0 ? priceRange.min : undefined,
-              maxPrice: priceRange.max < 10000 ? priceRange.max : undefined,
-              designableOnly: showDesignableOnly || undefined,
-              locale: locale
-            }))
-          )
-        }
-        
+
         await Promise.all(promises)
-        
-        // If we had a category slug but no categories loaded yet, load products now
-        if (categorySlug && cats.length === 0) {
-          await dispatch(fetchProducts({ 
-            page: currentPage, 
-            limit: 20,
-            locale: locale
-          }))
+      } catch (err) {
+        console.error('Failed to load initial data:', err)
+      }
+    }
+    loadInitialData()
+  }, [dispatch, locale, countsFetched])
+
+  // Fetch products when categories are loaded or filters change
+  useEffect(() => {
+    // Don't fetch products until categories are loaded if we need to filter by category
+    if (categorySlug && cats.length === 0) {
+      console.log('[ProductsView] Waiting for categories to load...')
+      return
+    }
+
+    const loadProducts = async () => {
+      try {
+        setLoadTimeout(false) // Reset timeout when making a new request
+
+        // Get the category and subcategory from URL if present
+        const category = categorySlug ? cats.find((c: any) => c.slug === categorySlug) : null
+
+        // Debug logging
+        if (categorySlug) {
+          console.log('[ProductsView] Looking for category slug:', categorySlug)
+          console.log('[ProductsView] Categories loaded:', cats.length, 'categories')
+          console.log('[ProductsView] Found category:', category ? { id: category.id, slug: category.slug, name: category.name } : 'NOT FOUND')
+          console.log('[ProductsView] Available categories:', cats.map((c: any) => ({ id: c.id, slug: c.slug, name: c.name })))
         }
+
+        const subcategory = subcategorySlug && category ? subs.find((s: any) => {
+          // Handle both full paths (profilklader/byxor) and simple slugs (byxor)
+          return (s.slug === subcategorySlug ||
+                  s.slug.endsWith('/' + subcategorySlug) ||
+                  s.slug === `${categorySlug}/${subcategorySlug}`) &&
+                 s.categoryId === category.id
+        }) : null
+
+        const fetchParams = {
+          page: currentPage,
+          limit: 20,
+          categoryId: category?.id || selectedCategoryFilter || undefined,
+          categorySlug: !category?.id && categorySlug ? categorySlug : undefined, // Also pass slug if no ID found
+          subcategoryId: subcategory?.id || selectedSubcategoryFilter || undefined,
+          search: searchTerm || undefined,
+          sortBy: sortBy,
+          minPrice: priceRange.min > 0 ? priceRange.min : undefined,
+          maxPrice: priceRange.max < 10000 ? priceRange.max : undefined,
+          designableOnly: showDesignableOnly || undefined,
+          locale: locale
+        }
+
+        console.log('[ProductsView] Fetching products with params:', fetchParams)
+
+        await dispatch(fetchProducts(fetchParams))
       } catch (err) {
         console.error('Failed to load products:', err)
       }
     }
-    loadData()
-    
-    // Set timeout to show error after 10 seconds (reduced from 15)
-    const timer = setTimeout(() => {
+
+    // Only debounce search, apply other filters immediately
+    const shouldDebounce = searchTerm !== ""
+    const debounceDelay = shouldDebounce ? 200 : 0 // Reduced debounce
+
+    const debounceTimer = setTimeout(() => {
+      loadProducts()
+    }, debounceDelay)
+
+    // Set timeout to show error after 10 seconds
+    const errorTimer = setTimeout(() => {
       if (loading) {
         setLoadTimeout(true)
       }
     }, 10000)
-    
-    return () => clearTimeout(timer)
-  }, [dispatch, categorySlug]) // Only re-run if categorySlug changes
-  
-  
-  // Handle filter changes with optimized debouncing
-  useEffect(() => {
-    const loadFilteredProducts = async () => {
-      setLoadTimeout(false) // Reset timeout when making a new request
-      
-      // Get the category and subcategory from URL if present
-      const category = categorySlug ? cats.find((c: any) => c.slug === categorySlug) : null
-      const subcategory = subcategorySlug && category ? subs.find((s: any) => {
-        // Handle both full paths (profilklader/byxor) and simple slugs (byxor)
-        return (s.slug === subcategorySlug || 
-                s.slug.endsWith('/' + subcategorySlug) || 
-                s.slug === `${categorySlug}/${subcategorySlug}`) && 
-               s.categoryId === category.id
-      }) : null
-      
-      // Fetch products only - category counts remain static
-      await dispatch(fetchProducts({
-        page: currentPage,
-        limit: 20,
-        categoryId: category?.id || selectedCategoryFilter || undefined,
-        subcategoryId: subcategory?.id || selectedSubcategoryFilter || undefined,
-        search: searchTerm || undefined,
-        sortBy: sortBy,
-        minPrice: priceRange.min > 0 ? priceRange.min : undefined,
-        maxPrice: priceRange.max < 10000 ? priceRange.max : undefined,
-        designableOnly: showDesignableOnly || undefined,
-        locale: locale
-      }))
+
+    return () => {
+      clearTimeout(debounceTimer)
+      clearTimeout(errorTimer)
     }
-    
-    // Only debounce search, apply other filters immediately
-    const shouldDebounce = searchTerm !== ""
-    const debounceDelay = shouldDebounce ? 200 : 0 // Reduced debounce
-    
-    const debounceTimer = setTimeout(() => {
-      loadFilteredProducts()
-    }, debounceDelay)
-    
-    return () => clearTimeout(debounceTimer)
-  }, [dispatch, currentPage, selectedCategoryFilter, selectedSubcategoryFilter, searchTerm, sortBy, priceRange.min, priceRange.max, showDesignableOnly, categorySlug, subcategorySlug, cats, subs])
+  }, [dispatch, cats, subs, categorySlug, subcategorySlug, currentPage, selectedCategoryFilter, selectedSubcategoryFilter, searchTerm, sortBy, priceRange.min, priceRange.max, showDesignableOnly, locale])
   
   // Save scroll position before navigating away
   useEffect(() => {

@@ -594,7 +594,7 @@ export function OperationsDashboard() {
                               {(item as any).designContext?.selectedVariation && (
                                 <span className="ml-2 text-sm font-normal text-slate-600 dark:text-slate-400">
                                   ({(() => {
-                                    const variation = (item as any).designContext.selectedVariation;
+                                    const variation = (item as any).designContext?.selectedVariation;
                                     if (typeof variation.colorName === 'string') return variation.colorName;
                                     if (typeof variation.color?.name === 'string') return variation.color.name;
                                     if (typeof variation.color === 'string') return variation.color;
@@ -702,7 +702,7 @@ export function OperationsDashboard() {
                                 )}
 
                         {/* Variation Details */}
-                        {(item as any).designContext.selectedVariation && (
+                        {(item as any).designContext?.selectedVariation && (
                           <div className="bg-gradient-to-r from-orange-50 to-amber-50 dark:from-orange-900/20 dark:to-amber-900/20 rounded-lg p-4 border border-orange-200 dark:border-orange-800">
                             <h6 className="font-semibold text-orange-900 dark:text-orange-100 mb-3">Variation Details</h6>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -710,7 +710,7 @@ export function OperationsDashboard() {
                                 <p className="text-sm font-medium text-orange-700 dark:text-orange-300">Color Name</p>
                                 <p className="text-lg font-semibold text-orange-900 dark:text-orange-100">
                                   {(() => {
-                                    const variation = (item as any).designContext.selectedVariation;
+                                    const variation = (item as any).designContext?.selectedVariation;
                                     if (typeof variation.colorName === 'string') return variation.colorName;
                                     if (typeof variation.color?.name === 'string') return variation.color.name;
                                     if (typeof variation.color === 'string') return variation.color;
@@ -723,13 +723,13 @@ export function OperationsDashboard() {
                                   <div className="flex items-center gap-2">
                                   <div 
                                     className="w-6 h-6 rounded-full border border-orange-300"
-                                    style={{ backgroundColor: (item as any).designContext.selectedVariation.colorHexCode || 
-                                             (item as any).designContext.selectedVariation.color?.hex_code || 
+                                    style={{ backgroundColor: (item as any).designContext?.selectedVariation?.colorHexCode ||
+                                             (item as any).designContext?.selectedVariation?.color?.hex_code || 
                                              '#000000' }}
                                   />
                                   <span className="text-lg font-semibold text-orange-900 dark:text-orange-100">
                                     {(() => {
-                                      const variation = (item as any).designContext.selectedVariation;
+                                      const variation = (item as any).designContext?.selectedVariation;
                                       if (typeof variation.colorHexCode === 'string') return variation.colorHexCode;
                                       if (typeof variation.color?.hex_code === 'string') return variation.color.hex_code;
                                       return '#000000';
@@ -740,7 +740,7 @@ export function OperationsDashboard() {
                             </div>
                             
                             {/* All Available Angles with Designs */}
-                            {(item as any).designContext.selectedVariation.variationImages && (item as any).designContext.selectedVariation.variationImages.length > 0 && (
+                            {(item as any).designContext?.selectedVariation?.variationImages && (item as any).designContext?.selectedVariation?.variationImages.length > 0 && (
                               <div className="mt-4">
                                 <h6 className="font-semibold text-orange-900 dark:text-orange-100 mb-3">All Product Angles with Applied Designs</h6>
                                 
@@ -749,7 +749,7 @@ export function OperationsDashboard() {
                                   // Show all designed angles with their rendered designs
                                   <div className="space-y-6">
                                     {(item as any).designContext.allDesignedAngles.map((designedAngle: any, angleIdx: number) => {
-                                      const angleImage = (item as any).designContext.selectedVariation.variationImages.find((img: any) => img.angle === designedAngle.angle)
+                                      const angleImage = (item as any).designContext?.selectedVariation?.variationImages?.find((img: any) => img.angle === designedAngle.angle)
                                       const isCurrentView = designedAngle.angle === (item as any).designContext.viewMode
                                       const hasDesign = designedAngle.hasDesign
                                       const hasCanvasData = !!designedAngle.canvasJSON
@@ -935,7 +935,7 @@ export function OperationsDashboard() {
                                 ) : (
                                   // Fallback to old display method
                                   <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
-                                    {(item as any).designContext.selectedVariation.variationImages.map((img: any, imgIdx: number) => (
+                                    {(item as any).designContext?.selectedVariation?.variationImages?.map((img: any, imgIdx: number) => (
                                       <div key={imgIdx} className="relative">
                                         <div className={`w-full aspect-square rounded-lg border-2 overflow-hidden ${
                                           img.angle === (item as any).designContext.viewMode 
@@ -1142,7 +1142,7 @@ export function OperationsDashboard() {
                                 variant="ghost"
                                 onClick={async () => {
                                   try {
-                                    const productImage = (item as any).designContext.selectedVariation.variationImages.find(
+                                    const productImage = (item as any).designContext?.selectedVariation?.variationImages?.find(
                                       (img: any) => img.angle === (item as any).designContext.viewMode
                                     )?.url
                                     

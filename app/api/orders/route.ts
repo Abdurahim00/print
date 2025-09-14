@@ -25,6 +25,18 @@ export async function POST(request: NextRequest) {
   try {
     const orderData = await request.json()
 
+    // Debug logging to check design data
+    console.log('📦 Order API - Received order with items:', orderData.items?.length)
+    orderData.items?.forEach((item: any, index: number) => {
+      console.log(`Item ${index + 1}:`, {
+        name: item.name,
+        hasDesignContext: !!item.designContext,
+        hasDesignCanvas: !!item.designCanvasJSON,
+        hasCustomDesign: item.hasCustomDesign,
+        designContextKeys: item.designContext ? Object.keys(item.designContext) : [],
+      })
+    })
+
     // Calculate total from items if not provided
     let total = orderData.total
     if (!total && orderData.items && Array.isArray(orderData.items)) {
@@ -36,6 +48,38 @@ export async function POST(request: NextRequest) {
     }
 
     const orderId = `ORD-${String(Date.now()).slice(-6)}` // Simple unique ID
+
+    // Process items to extract design data
+    const processedItems = orderData.items?.map((item: any) => {
+      const processedItem = { ...item }
+
+      // Check for design data in multiple formats
+      // New format: designContext and designCanvasJSON
+      if (item.designContext || item.designCanvasJSON) {
+        processedItem.hasCustomDesign = true
+        processedItem.designContext = item.designContext
+        processedItem.designCanvasJSON = item.designCanvasJSON
+        processedItem.designPreview = item.designPreview
+        processedItem.stepDesignAreas = item.stepDesignAreas
+        processedItem.designCosts = item.designCosts
+      }
+      // Old format: designs array
+      else if (item.designs && Array.isArray(item.designs)) {
+        processedItem.hasCustomDesign = true
+        processedItem.designData = {
+          designs: item.designs,
+          totalDesignArea: item.totalDesignArea,
+          productDetails: {
+            id: item.productId,
+            name: item.productName,
+            image: item.productImage,
+          },
+        }
+      }
+
+      return processedItem
+    })
+
     const newOrder = await OrderService.createOrder({
       orderId,
       date: new Date().toISOString().split("T")[0],
@@ -43,6 +87,7 @@ export async function POST(request: NextRequest) {
       customer: orderData.customer || orderData.customerName || 'Guest',
       total: total || 0,
       ...orderData,
+      items: processedItems || orderData.items,
     })
 
     return NextResponse.json(newOrder, { status: 201 })

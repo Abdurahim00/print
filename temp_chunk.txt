@@ -1,0 +1,19 @@
+s/st": "1 561.25",
+        "Artikelnummer": "SONO-U_DarkNavy",
+        "Material": "Material: 100% Bomull, twill (plaggtvättad)",
+        "Modell": "Unisex",
+        "Storleksguide": "Ladda ner Storleksguide",
+        "Detaljer": "" Öppna sidofickor\\n" Knäppning i ärmslut\\n" Ton-i-ton sömnad\\n" Ton-i-ton knappar",
+        "Ursprungsland": "Turkey",
+        "Prisinformation": "Alla priser är SEK inkl. moms."
+    },
+    "variants_dict": [
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/501404162-1230327/sonoma-unisex",
+            "variant_name": "Olive",
+            "variant_image": "https://static.unpr.io/itemimage/1599/products/full/IMAGE-67993e9748a9f.jpg"
+        },
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/501404162-1606978/sonoma-unisex",
+            "variant_name": "Dark navy",
+            "variant_image": "https://static.unpr.io/itemimage/1599/prod

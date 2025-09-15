@@ -4,13 +4,31 @@ import { useParams, useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { ArrowLeft, ShoppingCart, Edit, Download, Check } from "lucide-react"
+import { ArrowLeft, ShoppingCart, Edit, Download, Check, Trash2, X } from "lucide-react"
 import Link from "next/link"
 import { useAppDispatch } from "@/lib/redux/hooks"
 import { addToCart, setCart, clearCart } from "@/lib/redux/slices/cartSlice"
 import { useToast } from "@/components/ui/use-toast"
 import type { CartItem } from "@/types"
 import { DesignCanvasRenderer } from "@/components/DesignCanvasRenderer"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 
 // Helper function to calculate design area from canvas objects (same logic as design tool)
 const calculateDesignAreaFromCanvas = (canvasJSON: any): number => {
@@ -82,6 +100,8 @@ export default function ReviewPage() {
   const [loading, setLoading] = useState(true)
   const [isAddingToCart, setIsAddingToCart] = useState(false)
   const [refreshKey, setRefreshKey] = useState(0)
+  const [removingDesign, setRemovingDesign] = useState<number | null>(null)
+  const [showRemoveDialog, setShowRemoveDialog] = useState(false)
   
   // Load product and all designs
   useEffect(() => {
@@ -523,6 +543,59 @@ export default function ReviewPage() {
     console.log('Downloading design:', design)
     // Implementation would use fabric.js to render and export
   }
+
+  // Handle remove design
+  const handleRemoveDesign = (stepNumber: number) => {
+    setRemovingDesign(stepNumber)
+    setShowRemoveDialog(true)
+  }
+
+  // Confirm remove design
+  const confirmRemoveDesign = async () => {
+    if (removingDesign === null) return
+
+    try {
+      const stepNumber = removingDesign
+      
+      // Remove from localStorage
+      const storageKey = `design_${productId}_step_${stepNumber}`
+      const areaKey = `design_${productId}_step_${stepNumber}_area`
+      const totalKey = `design_${productId}_step_${stepNumber}_total`
+      
+      localStorage.removeItem(storageKey)
+      localStorage.removeItem(areaKey)
+      localStorage.removeItem(totalKey)
+      
+      console.log(`🗑️ Removed design data for step ${stepNumber}`)
+      
+      // Update local state
+      setDesigns(prevDesigns => prevDesigns.filter(design => design.stepNumber !== stepNumber))
+      
+      toast({
+        title: "Design Removed",
+        description: `The ${getAngleName(stepNumber)} design has been successfully removed.`,
+        duration: 3000,
+      })
+      
+    } catch (error) {
+      console.error('Error removing design:', error)
+      toast({
+        title: "Error",
+        description: "Failed to remove design. Please try again.",
+        variant: "destructive",
+        duration: 3000,
+      })
+    } finally {
+      setShowRemoveDialog(false)
+      setRemovingDesign(null)
+    }
+  }
+
+  // Get angle name from step number
+  const getAngleName = (stepNumber: number): string => {
+    const angleMap = { 1: 'front', 2: 'back', 3: 'left', 4: 'right' }
+    return angleMap[stepNumber as keyof typeof angleMap] || 'design'
+  }
   
   if (loading) {
     return (
@@ -625,9 +698,20 @@ export default function ReviewPage() {
                 <CardHeader>
                   <CardTitle className="flex items-center justify-between">
                     <span>{design.angle.toUpperCase()} Design</span>
-                    <span className="text-sm font-normal text-gray-600 dark:text-gray-400">
-                      Step {design.stepNumber}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-normal text-gray-600 dark:text-gray-400">
+                        Step {design.stepNumber}
+                      </span>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 w-6 p-0 text-red-500 hover:text-red-700 hover:bg-red-50"
+                        onClick={() => handleRemoveDesign(design.stepNumber)}
+                        title={`Remove ${design.angle} design`}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -805,6 +889,15 @@ export default function ReviewPage() {
                       <Download className="mr-2 h-4 w-4" />
                       Download
                     </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="px-3 text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200 hover:border-red-300"
+                      onClick={() => handleRemoveDesign(design.stepNumber)}
+                      title={`Remove ${design.angle} design`}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
                   </div>
                 </CardContent>
               </Card>
@@ -899,6 +992,34 @@ export default function ReviewPage() {
           </Button>
         </div>
       </div>
+
+      {/* Remove Design Confirmation Dialog */}
+      <AlertDialog open={showRemoveDialog} onOpenChange={setShowRemoveDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <Trash2 className="h-5 w-5 text-red-600" />
+              Remove Design
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to remove the {getAngleName(removingDesign || 1)} design? 
+              This action cannot be undone and will permanently delete your design from this product angle.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setShowRemoveDialog(false)}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmRemoveDesign}
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              <Trash2 className="mr-2 h-4 w-4" />
+              Remove Design
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

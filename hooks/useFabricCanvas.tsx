@@ -74,16 +74,18 @@ export const useFabricCanvas = (canvasId: string, scaleOptions?: { isMobile?: bo
         } as any)
         
         canvas.add(rect)
-        // Use sendToBack only if it's available
-        if (typeof canvas.sendToBack === 'function') {
-          canvas.sendToBack(rect)
-        } else if (canvas.getObjects && typeof canvas.moveTo === 'function') {
-          // Fallback: move to back using canvas.moveTo
+        // Move rect to back using canvas methods
+        try {
+          // Use canvas methods to move object to back
           const objects = canvas.getObjects()
           const rectIndex = objects.indexOf(rect)
           if (rectIndex > 0) {
-            canvas.moveTo(rect, 0)
+            // Move to back by removing and re-adding at the beginning
+            canvas.remove(rect)
+            canvas.insertAt(0, rect)
           }
+        } catch (error) {
+          console.warn('Could not move boundary indicator to back:', error)
         }
       } catch (error) {
         console.error('Error adding boundary indicator:', error)
@@ -110,7 +112,7 @@ export const useFabricCanvas = (canvasId: string, scaleOptions?: { isMobile?: bo
     
     // Update ref if we found element by ID
     if (!canvasRef.current && canvasElement) {
-      canvasRef.current = canvasElement
+      ;(canvasRef as any).current = canvasElement
     }
 
     // Check if we already have a working canvas
@@ -121,7 +123,7 @@ export const useFabricCanvas = (canvasId: string, scaleOptions?: { isMobile?: bo
       
       // Ensure canvas element ref is set
       if (!canvasRef.current) {
-        canvasRef.current = canvasElement
+        ;(canvasRef as any).current = canvasElement
       }
       
       // Store reference on element
@@ -176,53 +178,80 @@ export const useFabricCanvas = (canvasId: string, scaleOptions?: { isMobile?: bo
       if ((window as any).fabricCanvas && !(window as any).fabricCanvas.disposed) {
         console.log('✅ Using existing window.fabricCanvas')
         fabricCanvasRef.current = (window as any).fabricCanvas
-
-        // Make sure the canvas is properly bound to the element
-        if (fabricCanvasRef.current.lowerCanvasEl !== canvasElement) {
-          console.log('🔄 Re-binding canvas to element')
-          fabricCanvasRef.current.lowerCanvasEl = canvasElement
-          fabricCanvasRef.current.setDimensions({
-            width: canvasElement.width || 600,
-            height: canvasElement.height || 600
-          })
-        }
-
-        return fabricCanvasRef.current
+        return true
       }
-
-      // Otherwise, try to properly dispose and recreate
-      console.log('🧹 Cleaning up orphaned canvas elements')
-
-      // Try to find and dispose any existing fabric instance
-      const existingCanvas = (canvasElement as any).__fabric ||
-                           (canvasElement as any).fabric ||
-                           (lowerCanvas as any)?.__fabric ||
-                           (upperCanvas as any)?.__fabric
-
-      if (existingCanvas && typeof existingCanvas.dispose === 'function') {
-        console.log('🗑️ Disposing existing canvas instance')
-        try {
-          existingCanvas.dispose()
-        } catch (e) {
-          console.warn('Failed to dispose canvas:', e)
+      
+      // Otherwise, try to recover the canvas
+      console.log('🧹 Trying to recover orphaned canvas elements')
+      
+      // Try to find the canvas from the lower canvas element
+      const lowerCanvasEl = lowerCanvas as HTMLCanvasElement
+      console.log('Lower canvas element:', lowerCanvasEl, '__fabric:', (lowerCanvasEl as any)?.__fabric)
+      
+      if (lowerCanvasEl && (lowerCanvasEl as any).__fabric) {
+        const orphanedCanvas = (lowerCanvasEl as any).__fabric
+        console.log('Found canvas on lower element, disposed:', orphanedCanvas?.disposed)
+        if (orphanedCanvas && !orphanedCanvas.disposed) {
+          console.log('✅ Found orphaned but working canvas, reusing it')
+          fabricCanvasRef.current = orphanedCanvas
+          ;(window as any).fabricCanvas = orphanedCanvas
+          ;(canvasElement as any).fabric = orphanedCanvas
+          return orphanedCanvas
         }
       }
-
-      // Remove the orphaned Fabric.js created elements
-      if (upperCanvas) {
-        upperCanvas.remove()
+      
+      // Also check if lower canvas has a fabric property
+      if (lowerCanvasEl && (lowerCanvasEl as any).fabric) {
+        const orphanedCanvas = (lowerCanvasEl as any).fabric
+        console.log('Found canvas via .fabric property, disposed:', orphanedCanvas?.disposed)
+        if (orphanedCanvas && !orphanedCanvas.disposed) {
+          console.log('✅ Found working canvas via .fabric property')
+          fabricCanvasRef.current = orphanedCanvas
+          ;(window as any).fabricCanvas = orphanedCanvas
+          ;(canvasElement as any).fabric = orphanedCanvas
+          return orphanedCanvas
+        }
       }
-      if (lowerCanvas && lowerCanvas !== canvasElement) {
-        lowerCanvas.remove()
+      
+      // Try alternative recovery methods
+      // Check if upper canvas has reference
+      const upperCanvasEl = upperCanvas as HTMLCanvasElement
+      if (upperCanvasEl && (upperCanvasEl as any).__fabric) {
+        const orphanedCanvas = (upperCanvasEl as any).__fabric
+        if (orphanedCanvas && !orphanedCanvas.disposed) {
+          console.log('✅ Found canvas via upper canvas element')
+          fabricCanvasRef.current = orphanedCanvas
+          ;(window as any).fabricCanvas = orphanedCanvas
+          ;(canvasElement as any).fabric = orphanedCanvas
+          return orphanedCanvas
+        }
       }
-
-      // Clear any fabric properties
-      delete (canvasElement as any).__fabric
-      delete (canvasElement as any).fabric
-      delete (window as any).fabricCanvas
-
-      console.log('✅ Cleaned up old canvas elements, proceeding with new initialization')
-      return false // Return false to allow new initialization
+      
+      // Last resort - check parent element for canvas instance
+      const parentEl = canvasElement.parentElement
+      if (parentEl && (parentEl as any).__fabricCanvas) {
+        const orphanedCanvas = (parentEl as any).__fabricCanvas
+        if (orphanedCanvas && !orphanedCanvas.disposed) {
+          console.log('✅ Found canvas via parent element')
+          fabricCanvasRef.current = orphanedCanvas
+          ;(window as any).fabricCanvas = orphanedCanvas
+          ;(canvasElement as any).fabric = orphanedCanvas
+          return orphanedCanvas
+        }
+      }
+      
+      // If we still can't find it but window.fabricCanvas exists, use that
+      if ((window as any).fabricCanvas && !(window as any).fabricCanvas.disposed) {
+        console.log('✅ Using window.fabricCanvas as fallback')
+        const canvas = (window as any).fabricCanvas
+        fabricCanvasRef.current = canvas
+        ;(canvasElement as any).fabric = canvas
+        return canvas
+      }
+      
+      // If no working canvas found, return false to prevent initialization
+      console.log('⚠️ Cannot recover canvas - all recovery attempts failed')
+      return false
     }
     
     // Initialize Fabric.js canvas with error handling
@@ -270,29 +299,6 @@ export const useFabricCanvas = (canvasId: string, scaleOptions?: { isMobile?: bo
       }
     } catch (error) {
       console.error('Error initializing Fabric canvas:', error)
-      // Try one more time with a delay
-      setTimeout(() => {
-        try {
-          const retryCanvas = new fabric.Canvas(canvasElement, {
-            width: 600,
-            height: 600,
-            backgroundColor: "transparent",
-            selection: true,
-            preserveObjectStacking: true,
-            enableRetinaScaling: false,
-            imageSmoothingEnabled: true,
-            renderOnAddRemove: true,
-            stopContextMenu: true,
-            fireRightClick: false,
-            controlsAboveOverlay: true,
-          })
-          fabricCanvasRef.current = retryCanvas
-          ;(window as any).fabricCanvas = retryCanvas
-          console.log('✅ Canvas initialized on retry')
-        } catch (retryError) {
-          console.error('Failed to initialize canvas on retry:', retryError)
-        }
-      }, 100)
       return false
     }
 
@@ -677,7 +683,11 @@ export const useFabricCanvas = (canvasId: string, scaleOptions?: { isMobile?: bo
 
     // Check if canvas has any design elements and calculate area coverage
     const checkDesignElements = () => {
-      const objects = canvas.getObjects()
+      const objects = canvas.getObjects().filter(obj => 
+        !obj.excludeFromExport && 
+        obj.visible &&
+        !(obj as any).isBoundaryIndicator
+      )
       const hasDesign = objects.length > 0
       dispatch(setHasDesignElements(hasDesign))
       
@@ -697,7 +707,7 @@ export const useFabricCanvas = (canvasId: string, scaleOptions?: { isMobile?: bo
         
         objects.forEach((obj) => {
           // Get the bounding rect of the object (includes transformations)
-          const boundingRect = obj.getBoundingRect(true, true)
+          const boundingRect = obj.getBoundingRect()
           const objectArea = boundingRect.width * boundingRect.height
           const objectAreaCm2 = objectArea * PIXELS_TO_CM2
           
@@ -991,6 +1001,25 @@ export const useFabricCanvas = (canvasId: string, scaleOptions?: { isMobile?: bo
       e.e.stopPropagation()
       return false
     })
+
+    // Add comprehensive event monitoring for real-time pricing updates
+    const additionalEvents = [
+      'object:skewing',
+      'object:rotating', 
+      'path:created',
+      'text:editing:entered',
+      'text:editing:exited'
+    ]
+
+    additionalEvents.forEach(event => {
+      canvas.on(event as any, () => {
+        console.log(`🎨 Additional canvas event: ${event}`)
+        // Update design elements and pricing with a small delay
+        setTimeout(() => {
+          checkDesignElements()
+        }, 10)
+      })
+    })
     
     // Set the fabric canvas in Redux
     dispatch({ type: 'canvas/setFabricCanvas', payload: canvas });
@@ -1128,9 +1157,15 @@ export const useFabricCanvas = (canvasId: string, scaleOptions?: { isMobile?: bo
 
       setTimeout(() => {
         try {
-          if (textObj && !textObj.isDisposed && textObj.canvas && textObj.enterEditing) {
-            textObj.enterEditing()
-            textObj.selectAll()
+          if (textObj && textObj.canvas && textObj.enterEditing) {
+            // Check if object is disposed using a safer method
+            try {
+              textObj.getCoords()
+              textObj.enterEditing()
+              textObj.selectAll()
+            } catch (disposeError) {
+              console.warn('[useFabricCanvas] Text object is disposed or invalid:', disposeError)
+            }
           }
         } catch (error) {
           console.warn('[useFabricCanvas] Could not enter text editing mode:', error)
@@ -1581,11 +1616,11 @@ export const useFabricCanvas = (canvasId: string, scaleOptions?: { isMobile?: bo
         return false
       }
       
-      // Update ref if we found element by ID
-      if (!canvasRef.current && canvasElement) {
-        console.log('🔧 [useFabricCanvas] Setting canvas ref from DOM element')
-        canvasRef.current = canvasElement
-      }
+    // Update ref if we found element by ID
+    if (!canvasRef.current && canvasElement) {
+      console.log('🔧 [useFabricCanvas] Setting canvas ref from DOM element')
+      ;(canvasRef as any).current = canvasElement
+    }
       
       // Initialize canvas
       const canvas = initCanvas()

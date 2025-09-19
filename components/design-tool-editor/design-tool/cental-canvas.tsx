@@ -7,7 +7,6 @@ import { setViewMode, setSelectedProduct, setProductColor, setSelectedTemplate, 
 import { Button } from "@/components/ui/button"
 import { RootState } from "@/lib/redux/store"
 import { ProductAnglesSelector } from "@/components/dashboard/common/ProductAnglesSelector"
-import { LoadSavedDesign } from "./load-saved-design"
 import { useVariationDesignPersistence } from "@/hooks/useVariationDesignPersistence"
 import { VariationSelector, getVariationFrames } from "./components/VariationSelector"
 
@@ -1310,9 +1309,6 @@ export function CentralCanvas() {
 
   return (
     <div className="flex-1 flex flex-col bg-gradient-to-br from-gray-50 via-white to-gray-50 overflow-hidden relative">
-      {/* Load saved design component */}
-      <LoadSavedDesign onDesignLoaded={handleDesignLoaded} />
-      
       {/* Loading Overlay */}
       {isLoadingProduct && (
         <div className="absolute inset-0 z-50 bg-white/95 backdrop-blur-sm flex items-center justify-center">

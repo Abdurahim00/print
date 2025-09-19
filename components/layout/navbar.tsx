@@ -124,24 +124,10 @@ export function Navbar() {
             // Mark merged to prevent repeat merges during this session
             sessionStorage.setItem(hasMergedKey, "1")
           } else {
-            // Check if localStorage cart is newer than DB cart
-            const localStorageCart = SafeStorage.getItem("cart")
-            const localStorageCartData = localStorageCart ? JSON.parse(localStorageCart) : []
-            
-            // If localStorage has items and DB cart is empty or different, prefer localStorage
-            if (localStorageCartData.length > 0 && (dbCart.length === 0 || 
-                JSON.stringify(localStorageCartData) !== JSON.stringify(dbCart))) {
-              console.log('🛒 Using localStorage cart (newer than DB cart)')
-              dispatch(setCart(localStorageCartData))
-              // Update DB with localStorage cart
-              await persistUserCart(localStorageCartData)
-            } else {
-              // Hydrate from DB only
-              console.log('🛒 Using DB cart')
-              dispatch(setCart(dbCart))
-              // Ensure localStorage cart mirrors user cart while logged in
-              SafeStorage.setItem("cart", JSON.stringify(dbCart))
-            }
+            // Hydrate from DB only
+            dispatch(setCart(dbCart))
+            // Ensure localStorage cart mirrors user cart while logged in
+            SafeStorage.setItem("cart", JSON.stringify(dbCart))
           }
         })()
       } catch (e) {
@@ -329,7 +315,7 @@ export function Navbar() {
                     <Menu className="h-4 w-4 sm:h-5 sm:w-5" />
                   </Button>
                 </SheetTrigger>
-            <SheetContent side="right" className="w-full sm:w-[400px] max-w-[100vw] p-4 overflow-y-auto">
+            <SheetContent side="right" className="w-[280px] sm:w-[350px] p-4 overflow-y-auto">
               <SheetHeader className="pb-4">
                 <SheetTitle className="text-left text-base sm:text-lg">{tCommon('platformName')}</SheetTitle>
               </SheetHeader>

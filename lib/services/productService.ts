@@ -137,11 +137,19 @@ export class ProductService {
     console.log('[ProductService] Filter received:', JSON.stringify(filter, null, 2))
     
     // Build MongoDB query
-    const query: any = {}
+    let query: any = {}
     
-    // Category filter - products now have categoryId stored as strings
-    if (filter.categoryId) {
-      query.categoryId = filter.categoryId
+    // Category filter - handle both ObjectId and slug formats
+    if (filter.categoryId || filter.categorySlug) {
+      const categoryValue = filter.categoryId || filter.categorySlug
+      // Try to find products by either the ObjectId or by slug
+      // Some products might have categoryId as ObjectId, others as slug
+      query.$or = [
+        { categoryId: categoryValue }, // ObjectId string
+        { category: categoryValue }, // In case it's stored as 'category'
+        { categorySlug: categoryValue } // In case it's stored as slug
+      ]
+      console.log('[ProductService] Adding category filter:', categoryValue)
     }
     
     // Subcategory filter - convert to ObjectId for proper matching
@@ -178,23 +186,32 @@ export class ProductService {
     
     // Filter for designable products only
     if (filter.designableOnly) {
+      // Look for products that are either:
+      // 1. Marked as designable (isDesignable: true)
+      // 2. Have a design cost per cm2 set
+      // 3. Belong to designable categories
       const designableCategoryIds = await getDesignableCategoryIds()
+
+      const designableConditions = [
+        { isDesignable: true },
+        { designCostPerCm2: { $exists: true, $gt: 0 } }
+      ]
+
+      // Add category condition if designable categories exist
       if (designableCategoryIds.length > 0) {
-        // Use string IDs directly
-        
-        // Add category filter to existing query
-        if (query.categoryId) {
-          // If there's already a category filter, combine with AND
-          query.$and = [
-            { categoryId: query.categoryId },
-            { categoryId: { $in: designableCategoryIds } }
+        designableConditions.push({ categoryId: { $in: designableCategoryIds } })
+      }
+
+      // Combine with existing query
+      if (Object.keys(query).length > 0) {
+        query = {
+          $and: [
+            query,
+            { $or: designableConditions }
           ]
-        } else {
-          query.categoryId = { $in: designableCategoryIds }
         }
       } else {
-        // No designable categories found, return empty result
-        return { products: [], total: 0 }
+        query.$or = designableConditions
       }
     }
     
@@ -238,7 +255,10 @@ export class ProductService {
     const findOptions: any = {
       projection: Object.keys(projection).length === 0 ? undefined : projection
     }
-    
+
+    // Log the final query
+    console.log('[ProductService] Final MongoDB query:', JSON.stringify(query, null, 2))
+
     // Create cursor with proper options
     const cursor = collection.find(query, findOptions)
     
@@ -254,11 +274,11 @@ export class ProductService {
     // Apply pagination
     cursor.skip(skip).limit(limit)
     
-    const [products, total] = await Promise.all([
+    let [products, total] = await Promise.all([
       cursor.toArray(),
       collection.countDocuments(query)
     ])
-    
+
     console.log(`[ProductService] Query results: ${products.length} products found, ${total} total`)
     console.log('[ProductService] First product:', products[0] ? { name: products[0].name, id: products[0]._id } : 'No products')
     

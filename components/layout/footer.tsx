@@ -1,14 +1,13 @@
 "use client"
 
 import { useAppSelector } from "@/lib/redux/hooks"
-import { translations } from "@/lib/constants"
+import { useTranslations } from "next-intl"
 import Link from "next/link"
 import Image from "next/image"
-import { Instagram, Facebook, Mail, MapPin, Phone, LinkedinIcon } from "lucide-react"
+import { Instagram, Facebook, Mail, MapPin, Phone, LinkedinIcon, CreditCard, Shield, Lock } from "lucide-react"
 
 export function Footer() {
-  const { language } = useAppSelector((state) => state.app)
-  const t = translations[language]
+  const t = useTranslations()
 
   return (
     <footer className="border-t border-primary/20 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300">
@@ -21,7 +20,7 @@ export function Footer() {
               <div className="relative h-10 w-28 sm:h-12 sm:w-36">
                 <Image 
                   src="/logo.png" 
-                  alt={t.platformName} 
+                  alt="MR MERCH" 
                   fill 
                   className="object-contain" 
                   style={{ filter: "none" }}
@@ -40,41 +39,41 @@ export function Footer() {
                 </a>
               </div>
             </address>
-            <div className="flex items-center space-x-3 sm:space-x-4 pt-2">
-              <Link href="https://www.instagram.com/mr.merch.se?igsh=bnkxMXI4azhqNHlz" aria-label="Instagram" className="bg-primary/10 hover:bg-primary/20 p-1.5 sm:p-2 rounded-full transition-colors touch-manipulation">
-                <Instagram size={16} className="sm:text-[18px] text-primary" />
+            <div className="flex items-center justify-center sm:justify-start space-x-3 sm:space-x-4 pt-2">
+              <Link href="https://www.instagram.com/mr.merch.se?igsh=bnkxMXI4azhqNHlz" aria-label="Instagram" className="bg-primary/10 hover:bg-primary/20 w-8 h-8 sm:w-10 sm:h-10 rounded-full transition-colors touch-manipulation flex items-center justify-center">
+                <Instagram className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
               </Link>
-              <Link href="https://www.facebook.com/share/1ANBooptVJ/?mibextid=wwXIfr" aria-label="Facebook" className="bg-primary/10 hover:bg-primary/20 p-1.5 sm:p-2 rounded-full transition-colors touch-manipulation">
-                <Facebook size={16} className="sm:text-[18px] text-primary" />
+              <Link href="https://www.facebook.com/share/1ANBooptVJ/?mibextid=wwXIfr" aria-label="Facebook" className="bg-primary/10 hover:bg-primary/20 w-8 h-8 sm:w-10 sm:h-10 rounded-full transition-colors touch-manipulation flex items-center justify-center">
+                <Facebook className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
               </Link>
-              <Link href="https://www.linkedin.com/company/mr.merch/" aria-label="LinkedIn" className="bg-primary/10 hover:bg-primary/20 p-1.5 sm:p-2 rounded-full transition-colors touch-manipulation">
-                <LinkedinIcon size={16} className="sm:text-[18px] text-primary" />
+              <Link href="https://www.linkedin.com/company/mr.merch/" aria-label="LinkedIn" className="bg-primary/10 hover:bg-primary/20 w-8 h-8 sm:w-10 sm:h-10 rounded-full transition-colors touch-manipulation flex items-center justify-center">
+                <LinkedinIcon className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
               </Link>
             </div>
           </div>
 
           {/* Information Links */}
           <div>
-            <h3 className="font-bold text-base sm:text-lg mb-3 sm:mb-4 text-primary">Information</h3>
+            <h3 className="font-bold text-base sm:text-lg mb-3 sm:mb-4 text-primary">{t("footer.information")}</h3>
             <ul className="space-y-2 sm:space-y-3 text-xs sm:text-sm">
               <li>
                 <Link href="/privacy-policy" className="hover:text-primary transition-colors inline-block py-0.5">
-                  Privacy Policy
+                  {t("footer.privacyPolicy")}
                 </Link>
               </li>
               <li>
                 <Link href="/shipping-returns" className="hover:text-primary transition-colors inline-block py-0.5">
-                  Shipping & Return Policy
+                  {t("footer.shippingReturns")}
                 </Link>
               </li>
               <li>
                 <Link href="/terms" className="hover:text-primary transition-colors inline-block py-0.5">
-                  Terms of Purchase
+                  {t("footer.termsOfPurchase")}
                 </Link>
               </li>
               <li>
                 <Link href="/gift-card" className="hover:text-primary transition-colors inline-block py-0.5">
-                  Gift Card
+                  {t("footer.giftCard")}
                 </Link>
               </li>
             </ul>
@@ -82,26 +81,26 @@ export function Footer() {
 
           {/* Services Links */}
           <div>
-            <h3 className="font-bold text-base sm:text-lg mb-3 sm:mb-4 text-primary">Services</h3>
+            <h3 className="font-bold text-base sm:text-lg mb-3 sm:mb-4 text-primary">{t("footer.services")}</h3>
             <ul className="space-y-2 sm:space-y-3 text-xs sm:text-sm">
               <li>
                 <Link href="/locations" className="hover:text-primary transition-colors inline-block py-0.5">
-                  Place
+                  {t("footer.place")}
                 </Link>
               </li>
               <li>
                 <Link href="/contact" className="hover:text-primary transition-colors inline-block py-0.5">
-                  Contact us
+                  {t("footer.contactUs")}
                 </Link>
               </li>
               <li>
                 <Link href="/support" className="hover:text-primary transition-colors inline-block py-0.5">
-                  Support
+                  {t("footer.support")}
                 </Link>
               </li>
               <li>
                 <Link href="/faqs" className="hover:text-primary transition-colors inline-block py-0.5">
-                  FAQs
+                  {t("footer.faqs")}
                 </Link>
               </li>
             </ul>
@@ -109,15 +108,15 @@ export function Footer() {
 
           {/* Newsletter Signup */}
           <div className="sm:col-span-2 lg:col-span-1">
-            <h3 className="font-bold text-base sm:text-lg mb-3 sm:mb-4 text-primary">Sign up for email</h3>
+            <h3 className="font-bold text-base sm:text-lg mb-3 sm:mb-4 text-primary">{t("footer.signUpEmail")}</h3>
             <p className="mb-3 sm:mb-4 text-xs sm:text-sm">
-              Sign up to get first impressions on new arrivals, sales, exclusive content, events and more!
+              {t("footer.emailSignupDesc")}
             </p>
             <form className="space-y-2">
               <div className="relative">
                 <input 
                   type="email" 
-                  placeholder="Your email address" 
+                  placeholder={t("footer.yourEmailAddress")} 
                   className="w-full px-3 sm:px-4 py-2 text-sm rounded-md border border-slate-300 dark:border-slate-600 focus:outline-none focus:ring-2 focus:ring-primary/50 bg-white dark:bg-slate-800"
                   required
                 />
@@ -126,7 +125,7 @@ export function Footer() {
                 type="submit" 
                 className="w-full bg-primary hover:bg-primary/90 text-white font-medium py-2 px-3 sm:px-4 rounded-md transition-colors text-sm min-h-[40px] sm:min-h-[44px] touch-manipulation"
               >
-                Subscribe
+                {t("footer.subscribe")}
               </button>
             </form>
           </div>

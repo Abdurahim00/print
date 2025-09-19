@@ -182,77 +182,58 @@ export function UserDashboard({ defaultTab = "orders" }: { defaultTab?: string }
 
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-black">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* Hero Section */}
-      <div className="relative bg-black text-white py-12 px-4 mb-8">
-        <div className="absolute inset-0 bg-gradient-to-r from-green-500 via-yellow-500 via-orange-500 to-red-500 opacity-20" />
-        <div className="relative max-w-7xl mx-auto">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+      <div className="bg-white dark:bg-gray-800 py-6 sm:py-8 px-4 mb-0 border-b border-gray-200 dark:border-gray-700">
+        <div className="max-w-7xl mx-auto">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div>
-              <h1 className="text-4xl font-black uppercase tracking-wider mb-2">
-                {t.clientDashboard || "Client Dashboard"}
+              <h1 className="text-xl sm:text-2xl font-medium text-gray-900 dark:text-gray-100">
+                {t.clientDashboard || "My Account"}
               </h1>
-              <p className="text-lg opacity-90">
-                {t.customerNumber || "Customer Number"}: 
-                <span className="font-mono font-bold ml-2 text-xl text-black dark:text-white">
-                  {user?.customerNumber}
-                </span>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                {t.customerNumber || "Customer #"}: {user?.customerNumber}
               </p>
             </div>
-            
+
             {/* Stats Cards */}
-            <div className="grid grid-cols-2 gap-4">
-              <motion.div 
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border-2 border-white/20"
-              >
-                <div className="flex items-center gap-2 mb-1">
-                  <ShoppingBag className="h-4 w-4" />
-                  <span className="text-sm opacity-80">{t.totalOrders || "Total Orders"}</span>
-                </div>
-                <div className="text-3xl font-black">{userOrders.length}</div>
-              </motion.div>
-              
-              <motion.div 
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1 }}
-                className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border-2 border-white/20"
-              >
-                <div className="flex items-center gap-2 mb-1">
-                  <Palette className="h-4 w-4" />
-                  <span className="text-sm opacity-80">{t.savedDesigns || "Saved Designs"}</span>
-                </div>
-                <div className="text-3xl font-black">{userDesigns.length}</div>
-              </motion.div>
-              
+            <div className="flex gap-6">
+              <div className="text-center">
+                <div className="text-2xl font-semibold text-gray-900 dark:text-gray-100">{userOrders.length}</div>
+                <div className="text-xs text-gray-600 dark:text-gray-400">{t.totalOrders || "Orders"}</div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-semibold text-gray-900 dark:text-gray-100">{userDesigns.length}</div>
+                <div className="text-xs text-gray-600 dark:text-gray-400">{t.savedDesigns || "Designs"}</div>
+              </div>
             </div>
           </div>
         </div>
       </div>
       
-      <div className="max-w-7xl mx-auto px-4 pb-8">
+      <div className="max-w-7xl mx-auto px-0 sm:px-4 pb-8">
 
         <Tabs defaultValue={defaultTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-3 h-auto bg-white dark:bg-gray-900 border-2 border-black dark:border-white rounded-xl p-1">
-            <TabsTrigger 
-              value="orders" 
-              className="flex items-center gap-2 py-3 font-bold uppercase data-[state=active]:bg-black data-[state=active]:text-white dark:data-[state=active]:bg-white dark:data-[state=active]:text-black rounded-lg transition-all"
+          <TabsList className="grid w-full grid-cols-3 h-auto bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 rounded-none p-0">
+            <TabsTrigger
+              value="orders"
+              className="flex items-center justify-center gap-2 py-3 px-4 text-sm font-medium text-gray-600 dark:text-gray-400 data-[state=active]:text-black dark:data-[state=active]:text-white data-[state=active]:border-b-2 data-[state=active]:border-black dark:data-[state=active]:border-white rounded-none transition-all relative"
             >
               <FileText className="h-4 w-4" />
-              <span>{t.orderHistory || "Order History"}</span>
+              <span className="hidden sm:inline">{t.orderHistory || "Order History"}</span>
+              <span className="sm:hidden">Orders</span>
             </TabsTrigger>
-            <TabsTrigger 
-              value="designs" 
-              className="flex items-center gap-2 py-3 font-bold uppercase data-[state=active]:bg-black data-[state=active]:text-white dark:data-[state=active]:bg-white dark:data-[state=active]:text-black rounded-lg transition-all"
+            <TabsTrigger
+              value="designs"
+              className="flex items-center justify-center gap-2 py-3 px-4 text-sm font-medium text-gray-600 dark:text-gray-400 data-[state=active]:text-black dark:data-[state=active]:text-white data-[state=active]:border-b-2 data-[state=active]:border-black dark:data-[state=active]:border-white rounded-none transition-all relative"
             >
               <Palette className="h-4 w-4" />
-              <span>{t.savedDesigns || "Saved Designs"}</span>
+              <span className="hidden sm:inline">{t.savedDesigns || "Saved Designs"}</span>
+              <span className="sm:hidden">Designs</span>
             </TabsTrigger>
-            <TabsTrigger 
-              value="profile" 
-              className="flex items-center gap-2 py-3 font-bold uppercase data-[state=active]:bg-black data-[state=active]:text-white dark:data-[state=active]:bg-white dark:data-[state=active]:text-black rounded-lg transition-all"
+            <TabsTrigger
+              value="profile"
+              className="flex items-center justify-center gap-2 py-3 px-4 text-sm font-medium text-gray-600 dark:text-gray-400 data-[state=active]:text-black dark:data-[state=active]:text-white data-[state=active]:border-b-2 data-[state=active]:border-black dark:data-[state=active]:border-white rounded-none transition-all relative"
             >
               <User className="h-4 w-4" />
               <span>{t.profile || "Profile"}</span>
@@ -263,18 +244,18 @@ export function UserDashboard({ defaultTab = "orders" }: { defaultTab?: string }
           {/* Order History Tab */}
           <TabsContent value="orders" className="mt-6">
             <Card className="bg-white dark:bg-gray-900 border-2 border-black dark:border-white rounded-2xl overflow-hidden">
-              <CardHeader className="border-b-2 border-black dark:border-white bg-black dark:bg-white p-6">
-                <CardTitle className="flex items-center justify-between">
-                  <div className="flex items-center gap-2 text-white text-2xl font-black uppercase">
-                    <FileText className="h-6 w-6" />
+              <CardHeader className="border-b-2 border-black dark:border-white bg-black dark:bg-white p-4 sm:p-6">
+                <CardTitle className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                  <div className="flex items-center gap-2 text-white text-lg sm:text-2xl font-black uppercase">
+                    <FileText className="h-5 w-5 sm:h-6 sm:w-6" />
                     {t.orderHistory || "Order History"}
                   </div>
-                  <Badge className="bg-white/20 text-white border-2 border-white px-3 py-1 font-bold">
+                  <Badge className="bg-white/20 text-white border-2 border-white px-3 py-1 font-bold w-fit">
                     {userOrders.length} Orders
                   </Badge>
                 </CardTitle>
               </CardHeader>
-              <CardContent className="p-6">
+              <CardContent className="p-4 sm:p-6">
                 {ordersLoading ? (
                   <OrderHistorySkeleton />
                 ) : userOrders.length > 0 ? (
@@ -287,11 +268,11 @@ export function UserDashboard({ defaultTab = "orders" }: { defaultTab?: string }
                         transition={{ delay: index * 0.05 }}
                         className="bg-gray-50 dark:bg-gray-800 rounded-xl p-4 border-2 border-gray-200 dark:border-gray-700 hover:border-black dark:hover:border-white transition-all group"
                       >
-                        <div className="flex justify-between items-center">
-                          <div className="space-y-1">
-                            <div className="flex items-center gap-3">
-                              <span className="font-mono font-black text-lg">{order.id}</span>
-                              <Badge className={`${getStatusColor(order.status)} font-bold px-3 py-1 rounded-full text-xs`}>
+                        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+                          <div className="space-y-2">
+                            <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
+                              <span className="font-mono font-black text-sm sm:text-lg break-all">{order.id}</span>
+                              <Badge className={`${getStatusColor(order.status)} font-bold px-3 py-1 rounded-full text-xs w-fit`}>
                                 {order.status}
                               </Badge>
                             </div>
@@ -299,14 +280,14 @@ export function UserDashboard({ defaultTab = "orders" }: { defaultTab?: string }
                               {order.date}
                             </p>
                           </div>
-                          <div className="text-right">
-                            <p className="text-2xl font-black text-black dark:text-white">
+                          <div className="flex flex-row sm:flex-col items-center sm:items-end justify-between sm:justify-start gap-2">
+                            <p className="text-xl sm:text-2xl font-black text-black dark:text-white">
                               {order.total.toLocaleString()}
                             </p>
-                            <Button 
-                              size="sm" 
-                              variant="ghost" 
-                              className="mt-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="sm:mt-1 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity"
                             >
                               View Details <ArrowUpRight className="h-3 w-3 ml-1" />
                             </Button>
@@ -316,11 +297,11 @@ export function UserDashboard({ defaultTab = "orders" }: { defaultTab?: string }
                     ))}
                   </div>
                 ) : (
-                  <div className="text-center py-12">
-                    <Package className="h-16 w-16 text-gray-400 dark:text-gray-500 mx-auto mb-4" />
-                    <h3 className="text-xl font-black uppercase mb-2">{t.noOrdersYet || "No Orders Yet"}</h3>
-                    <p className="text-gray-500 dark:text-gray-400 mb-6">{t.startShopping || "Start shopping to see your orders here"}</p>
-                    <Button className="bg-black text-white dark:bg-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200 font-bold uppercase px-6 py-3">
+                  <div className="text-center py-8 sm:py-12">
+                    <Package className="h-12 w-12 sm:h-16 sm:w-16 text-gray-400 dark:text-gray-500 mx-auto mb-4" />
+                    <h3 className="text-lg sm:text-xl font-black uppercase mb-2">{t.noOrdersYet || "No Orders Yet"}</h3>
+                    <p className="text-sm sm:text-base text-gray-500 dark:text-gray-400 mb-6 px-4">{t.startShopping || "Start shopping to see your orders here"}</p>
+                    <Button className="bg-black text-white dark:bg-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200 font-bold uppercase px-4 sm:px-6 py-2 sm:py-3 text-sm sm:text-base">
                       <a href="/products">{t.browseProducts || "Browse Products"}</a>
                     </Button>
                   </div>
@@ -332,17 +313,19 @@ export function UserDashboard({ defaultTab = "orders" }: { defaultTab?: string }
           {/* My Designs Tab */}
           <TabsContent value="designs" className="mt-6">
             <Card className="bg-white dark:bg-gray-900 border-2 border-black dark:border-white rounded-2xl overflow-hidden">
-              <CardHeader className="flex flex-row items-center justify-between border-b-2 border-black dark:border-white bg-black dark:bg-white p-6">
-                <CardTitle className="flex items-center gap-2 text-white text-2xl font-black uppercase">
-                  <Palette className="h-6 w-6" />
-                  {t.savedDesigns || "Saved Designs"}
+              <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between border-b-2 border-black dark:border-white bg-black dark:bg-white p-4 sm:p-6 gap-3">
+                <CardTitle className="flex items-center gap-2 text-white text-lg sm:text-2xl font-black uppercase">
+                  <Palette className="h-5 w-5 sm:h-6 sm:w-6" />
+                  <span className="hidden sm:inline">{t.savedDesigns || "Saved Designs"}</span>
+                  <span className="sm:hidden">{t.designs || "Designs"}</span>
                 </CardTitle>
-                <Button 
-                  className="bg-white/20 backdrop-blur-sm text-white border-2 border-white hover:bg-white hover:text-black font-bold uppercase transition-all"
+                <Button
+                  className="bg-white/20 backdrop-blur-sm text-white border-2 border-white hover:bg-white hover:text-black font-bold uppercase transition-all text-xs sm:text-sm px-3 py-2 sm:px-4 sm:py-2.5 w-full sm:w-auto"
                   onClick={() => window.location.href = '/design-tool'}
                 >
-                  <Palette className="h-4 w-4 mr-2" />
-                  {t.createNewDesign || "Create New"}
+                  <Palette className="h-3 w-3 sm:h-4 sm:w-4 mr-1.5 sm:mr-2" />
+                  <span className="hidden sm:inline">{t.createNewDesign || "Create New Design"}</span>
+                  <span className="sm:hidden">{t.createNew || "Create"}</span>
                 </Button>
               </CardHeader>
               <CardContent className="p-6">

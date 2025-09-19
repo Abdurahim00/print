@@ -16,7 +16,9 @@ import { ShieldCheck, CreditCard, X, Loader2 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 
 // Load Stripe outside of component to avoid recreating on every render
-const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!)
+const stripePromise = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY 
+  ? loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY)
+  : null
 
 interface StripePaymentModalProps {
   isOpen: boolean
@@ -192,6 +194,27 @@ export default function StripePaymentModal({
   const [clientSecret, setClientSecret] = useState("")
   const [isLoading, setIsLoading] = useState(false)
 
+  // Check if Stripe is configured
+  if (!process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY) {
+    return (
+      <Dialog open={isOpen} onOpenChange={onClose}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Payment Not Available</DialogTitle>
+          </DialogHeader>
+          <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+            <p className="text-yellow-800">
+              Payment processing is not configured. Please contact support or try again later.
+            </p>
+            <Button onClick={onClose} className="mt-4">
+              Close
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    )
+  }
+
   useEffect(() => {
     if (isOpen && amount > 0) {
       createPaymentIntent()
@@ -262,7 +285,7 @@ export default function StripePaymentModal({
                   </span>
                 </div>
               </div>
-            ) : clientSecret ? (
+            ) : clientSecret && stripePromise ? (
               <Elements
                 stripe={stripePromise}
                 options={{

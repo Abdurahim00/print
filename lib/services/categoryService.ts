@@ -27,7 +27,7 @@ function toCategory(doc: CategoryDocument): Category {
 function toSubcategory(doc: SubcategoryDocument): Subcategory {
   return {
     id: doc._id!.toString(),
-    categoryId: doc.categoryId.toString(),
+    categoryId: typeof doc.categoryId === 'string' ? doc.categoryId : doc.categoryId.toString(),
     name: doc.name,
     swedishName: doc.swedishName,
     slug: doc.slug,
@@ -98,7 +98,12 @@ export async function deleteCategory(id: string): Promise<boolean> {
   const db = await getDatabase()
   const categories = db.collection<CategoryDocument>(CATEGORIES)
   const subcategories = db.collection<SubcategoryDocument>(SUBCATEGORIES)
-  await subcategories.deleteMany({ categoryId: new ObjectId(id) })
+  await subcategories.deleteMany({
+    $or: [
+      { categoryId: id },
+      { categoryId: new ObjectId(id) }
+    ]
+  })
   const res = await categories.deleteOne({ _id: new ObjectId(id) })
   return res.deletedCount === 1
 }
@@ -106,11 +111,18 @@ export async function deleteCategory(id: string): Promise<boolean> {
 export async function createSubcategory(data: Omit<Subcategory, "id" | "createdAt" | "updatedAt">): Promise<Subcategory> {
   const db = await getDatabase()
   const collection = db.collection<SubcategoryDocument>(SUBCATEGORIES)
-  // Uniqueness by slug within category
-  const exists = await collection.findOne({ slug: data.slug, categoryId: new ObjectId(data.categoryId) })
+  // Uniqueness by slug within category - handle both string and ObjectId
+  const exists = await collection.findOne({
+    slug: data.slug,
+    $or: [
+      { categoryId: data.categoryId },
+      { categoryId: new ObjectId(data.categoryId) }
+    ]
+  })
   if (exists) throw new Error("Subcategory slug already exists in this category")
   const now = new Date()
-  const doc: SubcategoryDocument = { ...data, categoryId: new ObjectId(data.categoryId), createdAt: now, updatedAt: now } as any
+  // Keep categoryId as string
+  const doc: SubcategoryDocument = { ...data, categoryId: data.categoryId, createdAt: now, updatedAt: now } as any
   const res = await collection.insertOne(doc)
   const inserted = await collection.findOne({ _id: res.insertedId })
   return toSubcategory(inserted!)
@@ -119,7 +131,13 @@ export async function createSubcategory(data: Omit<Subcategory, "id" | "createdA
 export async function getSubcategories(categoryId?: string): Promise<Subcategory[]> {
   const db = await getDatabase()
   const collection = db.collection<SubcategoryDocument>(SUBCATEGORIES)
-  const filter = categoryId ? { categoryId: new ObjectId(categoryId) } : {}
+  let filter: any = {}
+
+  if (categoryId) {
+    // Simply use string matching since our subcategories store categoryId as string
+    filter = { categoryId: categoryId }
+  }
+
   const docs = await collection.find(filter).sort({ name: 1 }).toArray()
   return docs.map(toSubcategory)
 }
@@ -146,10 +164,15 @@ export async function updateSubcategory(id: string, data: Partial<Subcategory>):
   const db = await getDatabase()
   const collection = db.collection<SubcategoryDocument>(SUBCATEGORIES)
   const payload: any = { ...data }
-  if (payload.categoryId) payload.categoryId = new ObjectId(payload.categoryId)
+  // Keep categoryId as string
   if (payload.slug) {
     const filter: any = { slug: payload.slug, _id: { $ne: new ObjectId(id) } }
-    if (payload.categoryId) filter.categoryId = payload.categoryId
+    if (payload.categoryId) {
+      filter.$or = [
+        { categoryId: payload.categoryId },
+        { categoryId: new ObjectId(payload.categoryId) }
+      ]
+    }
     const exists = await collection.findOne(filter)
     if (exists) throw new Error("Subcategory slug already exists")
   }

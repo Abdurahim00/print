@@ -5,6 +5,7 @@ interface FetchProductsParams {
   page?: number
   limit?: number
   categoryId?: string
+  categorySlug?: string
   subcategoryId?: string
   search?: string
   sortBy?: string
@@ -74,10 +75,11 @@ export const fetchProducts = createAsyncThunk(
       
       // Add pagination params - fetch products in reasonable chunks
       queryParams.append('page', (params.page || 1).toString())
-      queryParams.append('limit', (params.limit || 1000).toString()) // Fetch 1000 products per page for performance
+      queryParams.append('limit', (params.limit || 20).toString()) // Fetch 20 products per page for performance
       
       // Add filter params
       if (params.categoryId) queryParams.append('categoryId', params.categoryId)
+      if (params.categorySlug) queryParams.append('categorySlug', params.categorySlug)
       if (params.subcategoryId) queryParams.append('subcategoryId', params.subcategoryId)
       if (params.search) queryParams.append('search', params.search)
       if (params.sortBy) queryParams.append('sortBy', params.sortBy)

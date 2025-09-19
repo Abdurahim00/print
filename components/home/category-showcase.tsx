@@ -4,17 +4,23 @@ import { useEffect, useRef, useState } from "react"
 import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks"
 import { fetchCategories } from "@/lib/redux/slices/categoriesSlice"
 import { ChevronLeft, ChevronRight } from "lucide-react"
+import { getCategoryIcon } from "../home/category-icons"
 import Link from "next/link"
 import { motion, AnimatePresence } from "framer-motion"
+import { Button } from "@/components/ui/button"
+import { useTranslations } from "next-intl"
 
 export function CategoryShowcase() {
   const dispatch = useAppDispatch()
   const scrollContainerRef = useRef<HTMLDivElement>(null)
   const categories = useAppSelector((state: any) => state.categories.categories)
   const { language } = useAppSelector((state) => state.app)
+  const t = useTranslations()
   const [isVisible, setIsVisible] = useState(false)
-  const [showArrows, setShowArrows] = useState(false)
+  const [showLeftButton, setShowLeftButton] = useState(false)
+  const [showRightButton, setShowRightButton] = useState(false)
   const [showAll, setShowAll] = useState(false)
+  const [isMobile, setIsMobile] = useState(false)
   const usedIconsRef = useRef(new Set<string>())
 
   useEffect(() => {
@@ -24,31 +30,61 @@ export function CategoryShowcase() {
     }
   }, [dispatch, categories.length])
 
+  const activeCategories = categories.filter((cat: any) => cat.isActive)
+
+  // Check if screen is mobile
+  useEffect(() => {
+    const checkScreenSize = () => {
+      setIsMobile(window.innerWidth < 768) // Consider mobile/tablet below 768px
+    }
+
+    checkScreenSize()
+    window.addEventListener('resize', checkScreenSize)
+    return () => window.removeEventListener('resize', checkScreenSize)
+  }, [])
+
   useEffect(() => {
     // Trigger animation when categories are loaded
     if (categories.length > 0) {
       setIsVisible(true)
-      // Check if scrolling is needed
-      const checkOverflow = () => {
-        if (scrollContainerRef.current) {
-          const hasOverflow = scrollContainerRef.current.scrollWidth > scrollContainerRef.current.clientWidth
-          setShowArrows(hasOverflow)
-        }
-      }
-      
-      setTimeout(checkOverflow, 100)
-      
-      // Check on resize
-      window.addEventListener('resize', checkOverflow)
-      return () => window.removeEventListener('resize', checkOverflow)
     }
   }, [categories])
 
+  // Check scroll position to show/hide arrows (desktop only)
+  useEffect(() => {
+    if (isMobile) return // Skip on mobile
+
+    const checkScroll = () => {
+      if (!scrollContainerRef.current) return
+
+      const { scrollLeft, scrollWidth, clientWidth } = scrollContainerRef.current
+      setShowLeftButton(scrollLeft > 0)
+      setShowRightButton(scrollLeft < scrollWidth - clientWidth - 10)
+    }
+
+    const container = scrollContainerRef.current
+    if (container) {
+      container.addEventListener('scroll', checkScroll)
+      checkScroll() // Initial check
+    }
+
+    return () => {
+      if (container) {
+        container.removeEventListener('scroll', checkScroll)
+      }
+    }
+  }, [isVisible, isMobile, activeCategories])
+
   const scroll = (direction: 'left' | 'right') => {
     if (!scrollContainerRef.current) return
-    const scrollAmount = 320
-    scrollContainerRef.current.scrollBy({
-      left: direction === 'left' ? -scrollAmount : scrollAmount,
+
+    const scrollAmount = 300
+    const currentScroll = scrollContainerRef.current.scrollLeft
+
+    scrollContainerRef.current.scrollTo({
+      left: direction === 'left'
+        ? currentScroll - scrollAmount
+        : currentScroll + scrollAmount,
       behavior: 'smooth'
     })
   }
@@ -57,191 +93,15 @@ export function CategoryShowcase() {
   useEffect(() => {
     usedIconsRef.current.clear()
   }, [categories])
-  
-  // Minimalistic icon mapping using iconify CDN with tabler/carbon icons (similar to flaticon style)
-  // These are black and white minimalistic icons
-  const iconMap: { [key: string]: { iconUrl: string, gradient: string } } = {
-    // Apparel
-    't-shirt': { iconUrl: "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/shirt.svg", gradient: "from-gray-50 to-white" },
-    'apparel': { iconUrl: "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/shirt.svg", gradient: "from-gray-50 to-white" },
-    'clothing': { iconUrl: "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/shirt.svg", gradient: "from-gray-50 to-white" },
-    'hoodie': { iconUrl: "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/shirt.svg", gradient: "from-gray-50 to-white" },
-    'cap': { iconUrl: "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/hat.svg", gradient: "from-gray-50 to-white" },
 
-    // Drinkware
-    'mug': { iconUrl: "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/coffee.svg", gradient: "from-gray-50 to-white" },
-    'drinkware': { iconUrl: "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/glass-water.svg", gradient: "from-gray-50 to-white" },
-    'bottle': { iconUrl: "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/bottle.svg", gradient: "from-gray-50 to-white" },
-    'tumbler': { iconUrl: "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/glass-water.svg", gradient: "from-gray-50 to-white" },
-
-    // Bags & Accessories
-    'bag': { iconUrl: "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/shopping-bag.svg", gradient: "from-gray-50 to-white" },
-    'tote': { iconUrl: "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/shopping-bag.svg", gradient: "from-gray-50 to-white" },
-    'backpack': { iconUrl: "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/backpack.svg", gradient: "from-gray-50 to-white" },
-    'wallet': { iconUrl: "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/wallet.svg", gradient: "from-gray-50 to-white" },
-
-    // Accessories
-    'watch': { iconUrl: "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/watch.svg", gradient: "from-gray-50 to-white" },
-    'jewelry': { iconUrl: "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/gem.svg", gradient: "from-gray-50 to-white" },
-    'accessories': { iconUrl: "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/tag.svg", gradient: "from-gray-50 to-white" },
-    'sunglasses': { iconUrl: "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/eye.svg", gradient: "from-gray-50 to-white" },
-
-    // Print Products
-    'sticker': { iconUrl: "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/sticker.svg", gradient: "from-gray-50 to-white" },
-    'print': { iconUrl: "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/printer.svg", gradient: "from-gray-50 to-white" },
-    'poster': { iconUrl: "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/image.svg", gradient: "from-gray-50 to-white" },
-    'business card': { iconUrl: "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/id-card.svg", gradient: "from-gray-50 to-white" },
-    'card': { iconUrl: "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/credit-card.svg", gradient: "from-gray-50 to-white" },
-    'flyer': { iconUrl: "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/file-text.svg", gradient: "from-gray-50 to-white" },
-    'banner': { iconUrl: "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/flag.svg", gradient: "from-gray-50 to-white" },
-    'calendar': { iconUrl: "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/calendar.svg", gradient: "from-gray-50 to-white" },
-    'label': { iconUrl: "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/tag.svg", gradient: "from-gray-50 to-white" },
-
-    // Office & Stationery
-    'office': { iconUrl: "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/briefcase.svg", gradient: "from-gray-50 to-white" },
-    'notebook': { iconUrl: "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/book.svg", gradient: "from-gray-50 to-white" },
-    'pen': { iconUrl: "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/pen.svg", gradient: "from-gray-50 to-white" },
-    'document': { iconUrl: "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/file.svg", gradient: "from-gray-50 to-white" },
-    'folder': { iconUrl: "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/folder.svg", gradient: "from-gray-50 to-white" },
-
-    // Tech & Electronics
-    'phone': { iconUrl: "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/smartphone.svg", gradient: "from-gray-50 to-white" },
-    'tech': { iconUrl: "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/cpu.svg", gradient: "from-gray-50 to-white" },
-    'electronic': { iconUrl: "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/monitor.svg", gradient: "from-gray-50 to-white" },
-    'headphone': { iconUrl: "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/headphones.svg", gradient: "from-gray-50 to-white" },
-    'speaker': { iconUrl: "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/speaker.svg", gradient: "from-gray-50 to-white" },
-    'mouse': { iconUrl: "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/mouse.svg", gradient: "from-gray-50 to-white" },
-    'keyboard': { iconUrl: "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/keyboard.svg", gradient: "from-gray-50 to-white" },
-    'usb': { iconUrl: "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/usb.svg", gradient: "from-gray-50 to-white" },
-
-    // Home & Living
-    'home': { iconUrl: "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/home.svg", gradient: "from-gray-50 to-white" },
-    'decor': { iconUrl: "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/lamp.svg", gradient: "from-gray-50 to-white" },
-    'kitchen': { iconUrl: "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/chef-hat.svg", gradient: "from-gray-50 to-white" },
-    'pillow': { iconUrl: "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/bed.svg", gradient: "from-gray-50 to-white" },
-    'towel': { iconUrl: "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/shower.svg", gradient: "from-gray-50 to-white" },
-    'candle': { iconUrl: "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/flame.svg", gradient: "from-gray-50 to-white" },
-
-    // Promotional & Gifts
-    'gift': { iconUrl: "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/gift.svg", gradient: "from-gray-50 to-white" },
-    'promotional': { iconUrl: "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/megaphone.svg", gradient: "from-gray-50 to-white" },
-    'award': { iconUrl: "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/award.svg", gradient: "from-gray-50 to-white" },
-    'trophy': { iconUrl: "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/trophy.svg", gradient: "from-gray-50 to-white" },
-    'medal': { iconUrl: "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/medal.svg", gradient: "from-gray-50 to-white" },
-
-    // Packaging & Shipping
-    'package': { iconUrl: "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/package.svg", gradient: "from-gray-50 to-white" },
-    'packaging': { iconUrl: "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/box.svg", gradient: "from-gray-50 to-white" },
-    'box': { iconUrl: "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/box.svg", gradient: "from-gray-50 to-white" },
-    'envelope': { iconUrl: "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/mail.svg", gradient: "from-gray-50 to-white" },
-
-    // Events & Occasions
-    'party': { iconUrl: "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/party-popper.svg", gradient: "from-gray-50 to-white" },
-    'event': { iconUrl: "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/calendar.svg", gradient: "from-gray-50 to-white" },
-    'wedding': { iconUrl: "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/heart.svg", gradient: "from-gray-50 to-white" },
-    'birthday': { iconUrl: "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/cake.svg", gradient: "from-gray-50 to-white" },
-    'graduation': { iconUrl: "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/graduation-cap.svg", gradient: "from-gray-50 to-white" },
-    'baby': { iconUrl: "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/baby.svg", gradient: "from-gray-50 to-white" },
-    'christmas': { iconUrl: "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/christmas-tree.svg", gradient: "from-gray-50 to-white" },
-
-    // Sports & Outdoor
-    'sport': { iconUrl: "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/football.svg", gradient: "from-gray-50 to-white" },
-    'gym': { iconUrl: "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/dumbbell.svg", gradient: "from-gray-50 to-white" },
-    'fitness': { iconUrl: "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/activity.svg", gradient: "from-gray-50 to-white" },
-    'yoga': { iconUrl: "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/flower.svg", gradient: "from-gray-50 to-white" },
-    'outdoor': { iconUrl: "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/tent.svg", gradient: "from-gray-50 to-white" },
-    'camping': { iconUrl: "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/campfire.svg", gradient: "from-gray-50 to-white" },
-    'travel': { iconUrl: "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/plane.svg", gradient: "from-gray-50 to-white" },
-    'beach': { iconUrl: "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/umbrella.svg", gradient: "from-gray-50 to-white" },
-
-    // Food & Beverage
-    'food': { iconUrl: "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/utensils.svg", gradient: "from-gray-50 to-white" },
-    'beverage': { iconUrl: "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/glass-water.svg", gradient: "from-gray-50 to-white" },
-    'restaurant': { iconUrl: "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/chef-hat.svg", gradient: "from-gray-50 to-white" },
-    'coffee': { iconUrl: "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/coffee.svg", gradient: "from-gray-50 to-white" },
-
-    // Other Categories
-    'kid': { iconUrl: "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/baby.svg", gradient: "from-gray-50 to-white" },
-    'children': { iconUrl: "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/baby.svg", gradient: "from-gray-50 to-white" },
-    'toy': { iconUrl: "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/toy-brick.svg", gradient: "from-gray-50 to-white" },
-    'game': { iconUrl: "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/gamepad.svg", gradient: "from-gray-50 to-white" },
-    'gaming': { iconUrl: "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/gamepad.svg", gradient: "from-gray-50 to-white" },
-    'health': { iconUrl: "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/heart.svg", gradient: "from-gray-50 to-white" },
-    'medical': { iconUrl: "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/stethoscope.svg", gradient: "from-gray-50 to-white" },
-    'beauty': { iconUrl: "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/sparkles.svg", gradient: "from-gray-50 to-white" },
-    'spa': { iconUrl: "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/flower.svg", gradient: "from-gray-50 to-white" },
-    'car': { iconUrl: "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/car.svg", gradient: "from-gray-50 to-white" },
-    'vehicle': { iconUrl: "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/car.svg", gradient: "from-gray-50 to-white" },
-    'music': { iconUrl: "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/music.svg", gradient: "from-gray-50 to-white" },
-    'art': { iconUrl: "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/palette.svg", gradient: "from-gray-50 to-white" },
-    'design': { iconUrl: "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/brush.svg", gradient: "from-gray-50 to-white" },
-    'photo': { iconUrl: "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/camera.svg", gradient: "from-gray-50 to-white" },
-    'photography': { iconUrl: "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/camera.svg", gradient: "from-gray-50 to-white" },
-    'marketing': { iconUrl: "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/trending-up.svg", gradient: "from-gray-50 to-white" },
-    'business': { iconUrl: "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/briefcase.svg", gradient: "from-gray-50 to-white" },
-    'custom': { iconUrl: "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/wand.svg", gradient: "from-gray-50 to-white" },
-    'eco': { iconUrl: "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/recycle.svg", gradient: "from-gray-50 to-white" },
-    'sustainable': { iconUrl: "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/leaf.svg", gradient: "from-gray-50 to-white" },
-    'luxury': { iconUrl: "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/crown.svg", gradient: "from-gray-50 to-white" },
-    'premium': { iconUrl: "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/star.svg", gradient: "from-gray-50 to-white" },
-    'team': { iconUrl: "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/users.svg", gradient: "from-gray-50 to-white" },
-    'corporate': { iconUrl: "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/building.svg", gradient: "from-gray-50 to-white" },
-    'pet': { iconUrl: "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/paw-print.svg", gradient: "from-gray-50 to-white" },
-    'animal': { iconUrl: "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/paw-print.svg", gradient: "from-gray-50 to-white" },
-    'nature': { iconUrl: "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/tree-pine.svg", gradient: "from-gray-50 to-white" },
-    'craft': { iconUrl: "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/scissors.svg", gradient: "from-gray-50 to-white" },
-    'diy': { iconUrl: "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/hammer.svg", gradient: "from-gray-50 to-white" },
-    'tool': { iconUrl: "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/wrench.svg", gradient: "from-gray-50 to-white" },
-  }
-  
-  // Additional fallback icons - minimalistic generic icons
-  const fallbackIcons = [
-    "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/box.svg",
-    "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/tag.svg",
-    "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/shopping-cart.svg",
-    "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/basket.svg",
-    "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/archive.svg",
-    "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/cube.svg",
-    "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/grid.svg",
-    "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/circle.svg",
-    "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/square.svg",
-    "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/hexagon.svg"
-  ]
-  
-  let fallbackIndex = 0
-  
-  // Unique icon for each category - no duplicates
-  const getCategoryStyle = (categoryName: string, index: number) => {
-    const name = categoryName.toLowerCase()
-    
-    // Check if we already assigned an icon to this exact category
-    for (const [key, value] of Object.entries(iconMap)) {
-      if (name.includes(key) && !usedIconsRef.current.has(value.iconUrl)) {
-        usedIconsRef.current.add(value.iconUrl)
-        return value
-      }
-    }
-    
-    // If no match found or icon already used, assign a fallback icon based on index
-    const fallbackIcon = fallbackIcons[index % fallbackIcons.length]
-    if (!usedIconsRef.current.has(fallbackIcon)) {
-      usedIconsRef.current.add(fallbackIcon)
-      return { iconUrl: fallbackIcon, gradient: "from-gray-50 to-white" }
-    }
-    
-    // Ultimate fallback - find any unused icon
-    for (const iconUrl of fallbackIcons) {
-      if (!usedIconsRef.current.has(iconUrl)) {
-        usedIconsRef.current.add(iconUrl)
-        return { iconUrl, gradient: "from-gray-50 to-white" }
-      }
-    }
-    
-    // If all icons are used, use a default box icon
-    return { iconUrl: "https://cdn.jsdelivr.net/npm/lucide-static@0.446.0/icons/box.svg", gradient: "from-gray-50 to-white" }
+  // Get visible categories for mobile
+  const getVisibleCategories = () => {
+    if (!isMobile || showAll) return activeCategories
+    return activeCategories.slice(0, 8) // Show 8 on mobile initially (2 rows of 4)
   }
 
-  const activeCategories = categories.filter((cat: any) => cat.isActive)
+  const visibleCategories = getVisibleCategories()
+  const hasMoreCategories = isMobile && activeCategories.length > 8 && !showAll
 
   // Container animation
   const containerVariants = {
@@ -249,27 +109,27 @@ export function CategoryShowcase() {
     visible: {
       opacity: 1,
       transition: {
-        staggerChildren: 0.03,
-        delayChildren: 0.1
+        staggerChildren: 0.02,
+        delayChildren: 0.05
       }
     }
   }
 
   // Item animation
   const itemVariants = {
-    hidden: { 
-      opacity: 0, 
-      y: 30,
-      scale: 0.9
+    hidden: {
+      opacity: 0,
+      y: 20,
+      scale: 0.95
     },
-    visible: { 
-      opacity: 1, 
+    visible: {
+      opacity: 1,
       y: 0,
       scale: 1,
       transition: {
         type: "spring",
-        stiffness: 100,
-        damping: 15
+        stiffness: 200,
+        damping: 20
       }
     }
   }
@@ -277,14 +137,14 @@ export function CategoryShowcase() {
   // Show placeholder while loading
   if (!isVisible) {
     return (
-      <div className="w-full py-8 relative">
+      <div className="w-full py-6 sm:py-8 relative">
         <div className="container mx-auto px-4 relative">
-          <div className="flex items-center justify-center h-32">
-            <div className="flex gap-8">
+          <div className="flex items-center justify-center h-24 sm:h-32">
+            <div className="flex gap-4 sm:gap-8">
               {[...Array(6)].map((_, i) => (
                 <div key={i} className="animate-pulse">
-                  <div className="w-16 h-16 rounded-full bg-gray-200 dark:bg-gray-700"></div>
-                  <div className="w-14 h-3 mt-2 rounded bg-gray-200 dark:bg-gray-700"></div>
+                  <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-gray-200 dark:bg-gray-700"></div>
+                  <div className="w-12 h-3 sm:w-14 sm:h-3 mt-2 rounded bg-gray-200 dark:bg-gray-700"></div>
                 </div>
               ))}
             </div>
@@ -294,135 +154,47 @@ export function CategoryShowcase() {
     )
   }
 
-  const mobileVisibleCount = 8
-  const displayCategories = showAll ? activeCategories : activeCategories.slice(0, mobileVisibleCount)
-
-  return (
-    <AnimatePresence>
-      <motion.div
-        className="w-full relative"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.3 }}
-      >
-        {/* Mobile Grid View */}
-        <div className="sm:hidden">
-          <motion.div
-            className="grid grid-cols-4 gap-3 px-2"
-            variants={containerVariants}
-            initial="hidden"
-            animate="visible"
-          >
-            {displayCategories.map((category: any, index: number) => {
-              const style = getCategoryStyle(category.name, index)
-              return (
-                <motion.div
-                  key={category.id}
-                  variants={itemVariants}
-                  className="flex-shrink-0"
-                >
-                  <Link
-                    href={`/products?category=${category.slug}`}
-                    className="group flex flex-col items-center gap-1.5 cursor-pointer"
-                  >
-                    <motion.div
-                      className="relative"
-                      whileTap={{ scale: 0.95 }}
-                      transition={{ type: "spring", stiffness: 400, damping: 17 }}
-                    >
-                      <div className="w-16 h-16 rounded-full bg-white border-2 border-black dark:border-white flex items-center justify-center shadow-md active:shadow-lg transition-all duration-300">
-                        <img
-                          src={style.iconUrl}
-                          alt={category.name}
-                          className="w-7 h-7 filter"
-                          style={{ filter: 'grayscale(100%) contrast(1.5) brightness(0)' }}
-                        />
-                      </div>
-                    </motion.div>
-                    <span className="text-[10px] font-bold text-black dark:text-white text-center max-w-[65px] uppercase line-clamp-2 leading-tight">
-                      {category.name}
-                    </span>
-                  </Link>
-                </motion.div>
-              )
-            })}
-          </motion.div>
-
-          {activeCategories.length > mobileVisibleCount && (
-            <div className="text-center mt-4">
-              <button
-                onClick={() => setShowAll(!showAll)}
-                className="text-xs font-bold text-black dark:text-white uppercase px-4 py-2 border border-black dark:border-white rounded-full"
-              >
-                {showAll ? 'Show Less' : `Show All (${activeCategories.length})`}
-              </button>
-            </div>
-          )}
-        </div>
-
-        {/* Desktop Scroll View */}
-        <div className="hidden sm:block relative group">
-          <div className="relative w-full max-w-full overflow-hidden">
-            {/* Desktop scroll buttons */}
-            {showArrows && (
-              <>
-                <button
-                  onClick={() => scroll('left')}
-                  className="absolute -left-4 lg:-left-6 top-1/2 -translate-y-1/2 z-10 w-8 h-8 lg:w-10 lg:h-10 bg-black dark:bg-white text-white dark:text-black flex items-center justify-center hover:scale-110 active:scale-95 transition-all duration-200 opacity-0 group-hover:opacity-100 shadow-xl rounded-full"
-                >
-                  <ChevronLeft className="h-4 w-4 lg:h-5 lg:w-5" />
-                </button>
-                <button
-                  onClick={() => scroll('right')}
-                  className="absolute -right-4 lg:-right-6 top-1/2 -translate-y-1/2 z-10 w-8 h-8 lg:w-10 lg:h-10 bg-black dark:bg-white text-white dark:text-black flex items-center justify-center hover:scale-110 active:scale-95 transition-all duration-200 opacity-0 group-hover:opacity-100 shadow-xl rounded-full"
-                >
-                  <ChevronRight className="h-4 w-4 lg:h-5 lg:w-5" />
-                </button>
-              </>
-            )}
-
-            {/* Desktop scrollable container */}
+  // Mobile Grid Layout
+  if (isMobile) {
+    return (
+      <AnimatePresence>
+        <motion.div
+          className="w-full py-4"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.3 }}
+        >
+          <div className="container mx-auto px-4">
+            {/* Categories Grid for Mobile */}
             <motion.div
-              ref={scrollContainerRef}
-              className="flex gap-3 lg:gap-4 xl:gap-6 overflow-x-auto scrollbar-hide scroll-smooth py-2 px-6 lg:px-8"
-              style={{
-                scrollbarWidth: 'none' as any,
-                msOverflowStyle: 'none'
-              }}
+              className="grid grid-cols-4 gap-3"
               variants={containerVariants}
               initial="hidden"
               animate="visible"
             >
-              {/* Desktop category items */}
-              {activeCategories.map((category: any, index: number) => {
-                const style = getCategoryStyle(category.name, index)
-
+              {visibleCategories.map((category: any, index: number) => {
+                const IconComponent = getCategoryIcon(category.name, index, usedIconsRef.current)
                 return (
                   <motion.div
                     key={category.id}
                     variants={itemVariants}
-                    className="flex-shrink-0"
+                    className="flex justify-center"
                   >
                     <Link
                       href={`/products?category=${category.slug}`}
-                      className="group flex flex-col items-center gap-2 lg:gap-3 cursor-pointer relative z-10 min-w-0"
+                      className="group flex flex-col items-center gap-1.5 cursor-pointer transition-transform hover:scale-105 active:scale-95"
                     >
                       <motion.div
                         className="relative"
-                        whileHover={{ scale: 1.05 }}
+                        whileHover={{ scale: 1.1 }}
                         whileTap={{ scale: 0.95 }}
                         transition={{ type: "spring", stiffness: 400, damping: 17 }}
                       >
-                        <div className="w-12 h-12 lg:w-14 lg:h-14 xl:w-16 xl:h-16 rounded-full bg-white border-2 border-black dark:border-white flex items-center justify-center shadow-md group-hover:shadow-xl transition-all duration-300 flex-shrink-0">
-                          <img
-                            src={style.iconUrl}
-                            alt={category.name}
-                            className="w-5 h-5 lg:w-6 lg:h-6 xl:w-8 xl:h-8 filter transition-all"
-                            style={{ filter: 'grayscale(100%) contrast(1.5) brightness(0)' }}
-                          />
+                        <div className="w-14 h-14 rounded-full bg-white border-2 border-black dark:border-white flex items-center justify-center shadow-md group-hover:shadow-xl transition-all duration-300">
+                          <IconComponent className="w-6 h-6 text-black dark:text-white" />
                         </div>
                       </motion.div>
-                      <span className="text-[10px] lg:text-xs font-bold text-black dark:text-white transition-colors text-center max-w-[60px] lg:max-w-[80px] uppercase line-clamp-2 leading-tight">
+                      <span className="text-[10px] font-bold text-black dark:text-white text-center max-w-[60px] uppercase line-clamp-2 leading-tight">
                         {category.name}
                       </span>
                     </Link>
@@ -430,6 +202,119 @@ export function CategoryShowcase() {
                 )
               })}
             </motion.div>
+
+            {/* Show All Button - Mobile */}
+            {hasMoreCategories && (
+              <motion.div
+                className="flex justify-center mt-4"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.3 }}
+              >
+                <Button
+                  onClick={() => setShowAll(true)}
+                  variant="outline"
+                  className="border-2 border-black dark:border-white hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black transition-all font-bold uppercase text-xs px-4 py-2"
+                >
+                  {t("categories.showAllCategories")}
+                </Button>
+              </motion.div>
+            )}
+          </div>
+        </motion.div>
+      </AnimatePresence>
+    )
+  }
+
+  // Desktop Scrolling Layout
+  return (
+    <AnimatePresence>
+      <motion.div
+        className="w-full py-6"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.3 }}
+      >
+        <div className="relative">
+          <div className="relative group">
+            {/* Left Arrow - Desktop */}
+            <AnimatePresence>
+              {showLeftButton && (
+                <motion.button
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  onClick={() => scroll('left')}
+                  className="absolute left-2 top-1/2 -translate-y-1/2 z-20 w-10 h-10 bg-white/90 dark:bg-black/90 backdrop-blur-sm text-black dark:text-white flex items-center justify-center rounded-full shadow-lg hover:scale-110 transition-all opacity-0 group-hover:opacity-100"
+                  aria-label="Scroll left"
+                >
+                  <ChevronLeft className="h-5 w-5" />
+                </motion.button>
+              )}
+            </AnimatePresence>
+
+            {/* Right Arrow - Desktop */}
+            <AnimatePresence>
+              {showRightButton && (
+                <motion.button
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  onClick={() => scroll('right')}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 z-20 w-10 h-10 bg-white/90 dark:bg-black/90 backdrop-blur-sm text-black dark:text-white flex items-center justify-center rounded-full shadow-lg hover:scale-110 transition-all opacity-0 group-hover:opacity-100"
+                  aria-label="Scroll right"
+                >
+                  <ChevronRight className="h-5 w-5" />
+                </motion.button>
+              )}
+            </AnimatePresence>
+
+            {/* Categories container - Desktop */}
+            <div
+              ref={scrollContainerRef}
+              className="overflow-x-auto scrollbar-hide px-8"
+              style={{
+                scrollSnapType: 'x mandatory',
+                WebkitOverflowScrolling: 'touch'
+              }}
+            >
+              <motion.div
+                className="flex gap-5 lg:gap-6 py-3"
+                variants={containerVariants}
+                initial="hidden"
+                animate="visible"
+              >
+                {activeCategories.map((category: any, index: number) => {
+                  const IconComponent = getCategoryIcon(category.name, index, usedIconsRef.current)
+                  return (
+                    <motion.div
+                      key={category.id}
+                      variants={itemVariants}
+                      className="flex-shrink-0 scroll-snap-align-start"
+                    >
+                      <Link
+                        href={`/products?category=${category.slug}`}
+                        className="group flex flex-col items-center gap-2 cursor-pointer transition-transform hover:scale-105"
+                      >
+                        <motion.div
+                          className="relative"
+                          whileHover={{ scale: 1.1 }}
+                          whileTap={{ scale: 0.95 }}
+                          transition={{ type: "spring", stiffness: 400, damping: 17 }}
+                        >
+                          <div className="w-18 h-18 lg:w-20 lg:h-20 rounded-full bg-white border-2 border-black dark:border-white flex items-center justify-center shadow-md group-hover:shadow-xl transition-all duration-300">
+                            <IconComponent className="w-8 h-8 lg:w-9 lg:h-9 text-black dark:text-white" />
+                          </div>
+                        </motion.div>
+                        <span className="text-xs font-bold text-black dark:text-white text-center max-w-[80px] uppercase line-clamp-2 leading-tight">
+                          {category.name}
+                        </span>
+                      </Link>
+                    </motion.div>
+                  )
+                })}
+              </motion.div>
+            </div>
           </div>
         </div>
       </motion.div>

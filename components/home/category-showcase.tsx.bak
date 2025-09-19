@@ -1,0 +1,646 @@
+"use client"
+
+import { useEffect, useRef, useState } from "react"
+import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks"
+import { fetchCategories } from "@/lib/redux/slices/categoriesSlice"
+import { ChevronLeft, ChevronRight } from "lucide-react"
+import Link from "next/link"
+import { motion, AnimatePresence } from "framer-motion"
+
+export function CategoryShowcase() {
+  const dispatch = useAppDispatch()
+  const scrollContainerRef = useRef<HTMLDivElement>(null)
+  const categories = useAppSelector((state: any) => state.categories.categories)
+  const { language } = useAppSelector((state) => state.app)
+  const [isVisible, setIsVisible] = useState(false)
+  const usedIconsRef = useRef(new Set<string>())
+
+  useEffect(() => {
+    // Only fetch if not already loaded
+    if (categories.length === 0) {
+      dispatch(fetchCategories())
+    }
+  }, [dispatch, categories.length])
+
+  useEffect(() => {
+    // Trigger animation when categories are loaded
+    if (categories.length > 0) {
+      setIsVisible(true)
+    }
+  }, [categories])
+
+  const scroll = (direction: 'left' | 'right') => {
+    if (!scrollContainerRef.current) return
+    const scrollAmount = 320
+    scrollContainerRef.current.scrollBy({
+      left: direction === 'left' ? -scrollAmount : scrollAmount,
+      behavior: 'smooth'
+    })
+  }
+
+  // Reset used icons when categories change
+  useEffect(() => {
+    usedIconsRef.current.clear()
+  }, [categories])
+  
+  // Unique icon mapping - each category gets a different icon
+  const iconMap: { [key: string]: { icon: string, gradient: string } } = {
+    // Apparel
+    't-shirt': { icon: "👕", gradient: "from-blue-500/20 to-purple-500/20" },
+    'hoodie': { icon: "🧥", gradient: "from-gray-500/20 to-blue-500/20" },
+    'cap': { icon: "🧢", gradient: "from-green-500/20 to-teal-500/20" },
+    'jacket': { icon: "🧤", gradient: "from-indigo-500/20 to-blue-500/20" },
+    'pants': { icon: "👖", gradient: "from-blue-500/20 to-slate-500/20" },
+    'dress': { icon: "👗", gradient: "from-pink-500/20 to-purple-500/20" },
+    'shoe': { icon: "👟", gradient: "from-red-500/20 to-orange-500/20" },
+    'sock': { icon: "🧦", gradient: "from-yellow-500/20 to-orange-500/20" },
+    
+    // Drinkware
+    'mug': { icon: "☕", gradient: "from-orange-500/20 to-amber-500/20" },
+    'bottle': { icon: "🥤", gradient: "from-cyan-500/20 to-blue-500/20" },
+    'tumbler': { icon: "🍵", gradient: "from-green-500/20 to-teal-500/20" },
+    'glass': { icon: "🥃", gradient: "from-purple-500/20 to-pink-500/20" },
+    
+    // Bags
+    'bag': { icon: "🎒", gradient: "from-purple-500/20 to-pink-500/20" },
+    'tote': { icon: "👜", gradient: "from-pink-500/20 to-purple-500/20" },
+    'wallet': { icon: "💼", gradient: "from-amber-500/20 to-orange-500/20" },
+    
+    // Accessories
+    'watch': { icon: "⌚", gradient: "from-gray-500/20 to-blue-500/20" },
+    'jewelry': { icon: "💎", gradient: "from-purple-500/20 to-cyan-500/20" },
+    'sunglasses': { icon: "🕶️", gradient: "from-gray-800/20 to-gray-600/20" },
+    'belt': { icon: "🎗️", gradient: "from-brown-500/20 to-amber-500/20" },
+    'accessories': { icon: "💍", gradient: "from-yellow-500/20 to-pink-500/20" },
+    
+    // Print Products
+    'sticker': { icon: "🌟", gradient: "from-pink-500/20 to-purple-500/20" },
+    'poster': { icon: "🖼️", gradient: "from-teal-500/20 to-cyan-500/20" },
+    'business card': { icon: "🪪", gradient: "from-slate-500/20 to-gray-500/20" },
+    'flyer': { icon: "📋", gradient: "from-blue-500/20 to-indigo-500/20" },
+    'banner': { icon: "🎏", gradient: "from-red-500/20 to-orange-500/20" },
+    'sign': { icon: "🚦", gradient: "from-yellow-500/20 to-amber-500/20" },
+    'label': { icon: "🏷️", gradient: "from-green-500/20 to-emerald-500/20" },
+    'calendar': { icon: "📅", gradient: "from-red-500/20 to-pink-500/20" },
+    'invitation': { icon: "💌", gradient: "from-pink-500/20 to-red-500/20" },
+    
+    // Office
+    'pen': { icon: "🖊️", gradient: "from-gray-500/20 to-slate-500/20" },
+    'notebook': { icon: "📔", gradient: "from-indigo-500/20 to-purple-500/20" },
+    'folder': { icon: "📁", gradient: "from-yellow-500/20 to-amber-500/20" },
+    'office': { icon: "🗂️", gradient: "from-gray-500/20 to-blue-500/20" },
+    'stamp': { icon: "📮", gradient: "from-red-500/20 to-pink-500/20" },
+    
+    // Tech
+    'phone': { icon: "📱", gradient: "from-blue-500/20 to-purple-500/20" },
+    'laptop': { icon: "💻", gradient: "from-gray-500/20 to-slate-500/20" },
+    'tablet': { icon: "📲", gradient: "from-cyan-500/20 to-blue-500/20" },
+    'usb': { icon: "💿", gradient: "from-purple-500/20 to-pink-500/20" },
+    'charger': { icon: "🔌", gradient: "from-yellow-500/20 to-orange-500/20" },
+    'headphone': { icon: "🎧", gradient: "from-blue-500/20 to-cyan-500/20" },
+    'mouse': { icon: "🖱️", gradient: "from-slate-500/20 to-gray-500/20" },
+    'keyboard': { icon: "⌨️", gradient: "from-gray-600/20 to-gray-800/20" },
+    'speaker': { icon: "🔊", gradient: "from-red-500/20 to-orange-500/20" },
+    'tech': { icon: "🔧", gradient: "from-gray-500/20 to-blue-500/20" },
+    
+    // Home
+    'home': { icon: "🏠", gradient: "from-green-500/20 to-blue-500/20" },
+    'kitchen': { icon: "🍳", gradient: "from-orange-500/20 to-red-500/20" },
+    'pillow': { icon: "🛏️", gradient: "from-purple-500/20 to-pink-500/20" },
+    'towel': { icon: "🧻", gradient: "from-blue-500/20 to-cyan-500/20" },
+    'blanket': { icon: "🛋️", gradient: "from-gray-500/20 to-brown-500/20" },
+    'candle': { icon: "🕯️", gradient: "from-yellow-500/20 to-orange-500/20" },
+    
+    // Promotional
+    'gift': { icon: "🎁", gradient: "from-red-500/20 to-pink-500/20" },
+    'promotional': { icon: "📢", gradient: "from-purple-500/20 to-blue-500/20" },
+    'award': { icon: "🏆", gradient: "from-yellow-500/20 to-amber-500/20" },
+    'medal': { icon: "🥇", gradient: "from-gold-500/20 to-yellow-500/20" },
+    'certificate': { icon: "📜", gradient: "from-amber-500/20 to-yellow-500/20" },
+    
+    // Packaging
+    'box': { icon: "📦", gradient: "from-amber-500/20 to-orange-500/20" },
+    'envelope': { icon: "✉️", gradient: "from-blue-500/20 to-cyan-500/20" },
+    'wrap': { icon: "🎀", gradient: "from-pink-500/20 to-purple-500/20" },
+    
+    // Events
+    'party': { icon: "🎉", gradient: "from-purple-500/20 to-pink-500/20" },
+    'wedding': { icon: "💒", gradient: "from-pink-500/20 to-purple-500/20" },
+    'birthday': { icon: "🎂", gradient: "from-yellow-500/20 to-pink-500/20" },
+    'christmas': { icon: "🎄", gradient: "from-green-500/20 to-red-500/20" },
+    'graduation': { icon: "🎓", gradient: "from-blue-500/20 to-purple-500/20" },
+    'baby': { icon: "👶", gradient: "from-blue-300/20 to-pink-300/20" },
+    'event': { icon: "🎪", gradient: "from-red-500/20 to-yellow-500/20" },
+    
+    // Sports
+    'sport': { icon: "⚽", gradient: "from-green-500/20 to-blue-500/20" },
+    'gym': { icon: "💪", gradient: "from-red-500/20 to-orange-500/20" },
+    'yoga': { icon: "🧘", gradient: "from-purple-500/20 to-pink-500/20" },
+    'outdoor': { icon: "⛺", gradient: "from-green-500/20 to-teal-500/20" },
+    'travel': { icon: "✈️", gradient: "from-blue-500/20 to-cyan-500/20" },
+    'beach': { icon: "🏖️", gradient: "from-yellow-500/20 to-blue-500/20" },
+    
+    // Food
+    'food': { icon: "🍕", gradient: "from-red-500/20 to-yellow-500/20" },
+    'beverage': { icon: "🍹", gradient: "from-blue-500/20 to-cyan-500/20" },
+    'restaurant': { icon: "🍽️", gradient: "from-orange-500/20 to-red-500/20" },
+    
+    // Other
+    'kid': { icon: "🧸", gradient: "from-yellow-500/20 to-pink-500/20" },
+    'game': { icon: "🎮", gradient: "from-purple-500/20 to-blue-500/20" },
+    'pet': { icon: "🐾", gradient: "from-brown-500/20 to-orange-500/20" },
+    'health': { icon: "🏥", gradient: "from-red-500/20 to-white/20" },
+    'beauty': { icon: "💄", gradient: "from-pink-500/20 to-purple-500/20" },
+    'spa': { icon: "🧖", gradient: "from-green-500/20 to-blue-500/20" },
+    'car': { icon: "🚗", gradient: "from-gray-500/20 to-blue-500/20" },
+    'music': { icon: "🎵", gradient: "from-purple-500/20 to-pink-500/20" },
+    'movie': { icon: "🎬", gradient: "from-red-500/20 to-orange-500/20" },
+    'marketing': { icon: "📈", gradient: "from-blue-500/20 to-green-500/20" },
+    'custom': { icon: "✨", gradient: "from-purple-500/20 via-pink-500/20 to-yellow-500/20" },
+    'eco': { icon: "♻️", gradient: "from-green-500/20 to-emerald-500/20" },
+    'luxury': { icon: "👑", gradient: "from-gold-500/20 to-yellow-500/20" },
+  }
+  
+  // Additional unique icons to use as fallbacks
+  const fallbackIcons = [
+    "🎨", "🎭", "🌈", "💫", "🔮", "🎯", "🎲", "🎸", "🎺", "🎻",
+    "🏈", "🏀", "🎾", "🏐", "🥊", "🎳", "🏹", "🎣", "🎿", "🏂",
+    "🌍", "🌎", "🌏", "🌸", "🌺", "🌻", "🌷", "🌹", "🌴", "🍀",
+    "🔥", "💧", "⚡", "❄️", "🌙", "⭐", "🌞", "☁️", "🌊", "🍂"
+  ]
+  
+  let fallbackIndex = 0
+  
+  // Unique icon for each category - no duplicates
+  const getCategoryStyle = (categoryName: string) => {
+    const name = categoryName.toLowerCase()
+    
+    // Check if we already assigned an icon to this exact category
+    for (const [key, value] of Object.entries(iconMap)) {
+      if (name.includes(key) && !usedIconsRef.current.has(value.icon)) {
+        usedIconsRef.current.add(value.icon)
+        return value
+      }
+    }
+    
+    // If no match found or icon already used, assign a fallback icon
+    for (const icon of fallbackIcons) {
+      if (!usedIconsRef.current.has(icon)) {
+        usedIconsRef.current.add(icon)
+        return { icon, gradient: "from-gray-500/20 to-slate-500/20" }
+      }
+    }
+    
+    // Ultimate fallback
+    return { icon: "🛍️", gradient: "from-gray-500/20 to-slate-500/20" }
+  }
+
+  const activeCategories = categories.filter((cat: any) => cat.isActive)
+
+  // Container animation
+  const containerVariants = {
+      return { icon: getUniqueIcon("🧥", ["🥼", "🦺", "🧤"]), gradient: "from-indigo-500/20 to-blue-500/20" }
+    }
+    if (name.includes('pants') || name.includes('trousers') || name.includes('jeans')) {
+      return { icon: getUniqueIcon("👖", ["🩳", "🩲", "🥾"]), gradient: "from-blue-500/20 to-slate-500/20" }
+    }
+    if (name.includes('dress') || name.includes('skirt')) {
+      return { icon: getUniqueIcon("👗", ["👘", "🥻", "👚"]), gradient: "from-pink-500/20 to-purple-500/20" }
+    }
+    if (name.includes('shoe') || name.includes('sneaker') || name.includes('footwear')) {
+      return { icon: getUniqueIcon("👟", ["👞", "👠", "🥾", "👢", "🩴"]), gradient: "from-red-500/20 to-orange-500/20" }
+    }
+    if (name.includes('sock')) {
+      return { icon: getUniqueIcon("🧦", ["🦶", "🩴", "👣"]), gradient: "from-yellow-500/20 to-orange-500/20" }
+    }
+    
+    // Drinkware variety
+    if (name.includes('mug') || name.includes('cup') || name.includes('coffee')) {
+      return { icon: getUniqueIcon("☕", ["🍵", "🥤", "🧃", "🧋"]), gradient: "from-orange-500/20 to-amber-500/20" }
+    }
+    if (name.includes('bottle') || name.includes('water')) {
+      return { icon: getUniqueIcon("🥤", ["🍶", "🍼", "🧴", "🧃"]), gradient: "from-cyan-500/20 to-blue-500/20" }
+    }
+    if (name.includes('tumbler') || name.includes('thermos')) {
+      return { icon: getUniqueIcon("🍵", ["☕", "🥛", "🧉"]), gradient: "from-green-500/20 to-teal-500/20" }
+    }
+    if (name.includes('glass') || name.includes('wine')) {
+      return { icon: getUniqueIcon("🥃", ["🍷", "🍸", "🍹", "🥂"]), gradient: "from-purple-500/20 to-pink-500/20" }
+    }
+    
+    // Bags & Accessories expanded
+    if (name.includes('bag') || name.includes('backpack')) {
+      return { icon: "🎒", gradient: "from-purple-500/20 to-pink-500/20" }
+    }
+    if (name.includes('tote')) {
+      return { icon: "👜", gradient: "from-pink-500/20 to-purple-500/20" }
+    }
+    if (name.includes('wallet') || name.includes('purse')) {
+      return { icon: "💼", gradient: "from-amber-500/20 to-orange-500/20" }
+    }
+    if (name.includes('watch') || name.includes('timepiece')) {
+      return { icon: "⌚", gradient: "from-gray-500/20 to-blue-500/20" }
+    }
+    if (name.includes('jewelry') || name.includes('necklace')) {
+      return { icon: "💎", gradient: "from-purple-500/20 to-cyan-500/20" }
+    }
+    if (name.includes('sunglasses') || name.includes('eyewear')) {
+      return { icon: "🕶️", gradient: "from-gray-800/20 to-gray-600/20" }
+    }
+    if (name.includes('belt')) {
+      return { icon: "🎗️", gradient: "from-brown-500/20 to-amber-500/20" }
+    }
+    if (name.includes('accessories') || name.includes('accessory')) {
+      return { icon: "💍", gradient: "from-yellow-500/20 to-pink-500/20" }
+    }
+    
+    // Print Products variety
+    if (name.includes('sticker') || name.includes('decal')) {
+      return { icon: "🌟", gradient: "from-pink-500/20 to-purple-500/20" }
+    }
+    if (name.includes('poster') || name.includes('print')) {
+      return { icon: "🖼️", gradient: "from-teal-500/20 to-cyan-500/20" }
+    }
+    if (name.includes('business card') || name === 'cards') {
+      return { icon: "🪪", gradient: "from-slate-500/20 to-gray-500/20" }
+    }
+    if (name.includes('flyer') || name.includes('brochure')) {
+      return { icon: "📋", gradient: "from-blue-500/20 to-indigo-500/20" }
+    }
+    if (name.includes('banner')) {
+      return { icon: "🎏", gradient: "from-red-500/20 to-orange-500/20" }
+    }
+    if (name.includes('sign') || name.includes('signage')) {
+      return { icon: "🚦", gradient: "from-yellow-500/20 to-amber-500/20" }
+    }
+    if (name.includes('label') || name.includes('tag')) {
+      return { icon: "🏷️", gradient: "from-green-500/20 to-emerald-500/20" }
+    }
+    if (name.includes('calendar')) {
+      return { icon: "📅", gradient: "from-red-500/20 to-pink-500/20" }
+    }
+    if (name.includes('invitation')) {
+      return { icon: "💌", gradient: "from-pink-500/20 to-red-500/20" }
+    }
+    
+    // Office & Business expanded
+    if (name.includes('pen') || name.includes('writing')) {
+      return { icon: "🖊️", gradient: "from-gray-500/20 to-slate-500/20" }
+    }
+    if (name.includes('notebook') || name.includes('journal')) {
+      return { icon: "📔", gradient: "from-indigo-500/20 to-purple-500/20" }
+    }
+    if (name.includes('folder') || name.includes('binder')) {
+      return { icon: "📁", gradient: "from-yellow-500/20 to-amber-500/20" }
+    }
+    if (name.includes('desk') || name.includes('office')) {
+      return { icon: "🗂️", gradient: "from-gray-500/20 to-blue-500/20" }
+    }
+    if (name.includes('stamp') || name.includes('seal')) {
+      return { icon: "📮", gradient: "from-red-500/20 to-pink-500/20" }
+    }
+    
+    // Tech & Electronics expanded
+    if (name.includes('phone') || name.includes('mobile') || name.includes('case')) {
+      return { icon: "📱", gradient: "from-blue-500/20 to-purple-500/20" }
+    }
+    if (name.includes('laptop') || name.includes('computer')) {
+      return { icon: "💻", gradient: "from-gray-500/20 to-slate-500/20" }
+    }
+    if (name.includes('tablet') || name.includes('ipad')) {
+      return { icon: "📲", gradient: "from-cyan-500/20 to-blue-500/20" }
+    }
+    if (name.includes('usb') || name.includes('flash')) {
+      return { icon: "💿", gradient: "from-purple-500/20 to-pink-500/20" }
+    }
+    if (name.includes('charger') || name.includes('cable')) {
+      return { icon: "🔌", gradient: "from-yellow-500/20 to-orange-500/20" }
+    }
+    if (name.includes('headphone') || name.includes('earphone')) {
+      return { icon: "🎧", gradient: "from-blue-500/20 to-cyan-500/20" }
+    }
+    if (name.includes('mouse') || name.includes('mousepad')) {
+      return { icon: "🖱️", gradient: "from-slate-500/20 to-gray-500/20" }
+    }
+    if (name.includes('keyboard')) {
+      return { icon: "⌨️", gradient: "from-gray-600/20 to-gray-800/20" }
+    }
+    if (name.includes('speaker') || name.includes('audio')) {
+      return { icon: "🔊", gradient: "from-red-500/20 to-orange-500/20" }
+    }
+    if (name.includes('tech') || name.includes('gadget')) {
+      return { icon: "🔧", gradient: "from-gray-500/20 to-blue-500/20" }
+    }
+    
+    // Home & Living
+    if (name.includes('home') || name.includes('house')) {
+      return { icon: "🏠", gradient: "from-green-500/20 to-blue-500/20" }
+    }
+    if (name.includes('kitchen')) {
+      return { icon: "🍳", gradient: "from-orange-500/20 to-red-500/20" }
+    }
+    if (name.includes('pillow') || name.includes('cushion')) {
+      return { icon: "🛏️", gradient: "from-purple-500/20 to-pink-500/20" }
+    }
+    if (name.includes('towel')) {
+      return { icon: "🧻", gradient: "from-blue-500/20 to-cyan-500/20" }
+    }
+    if (name.includes('blanket') || name.includes('throw')) {
+      return { icon: "🛋️", gradient: "from-gray-500/20 to-brown-500/20" }
+    }
+    if (name.includes('candle')) {
+      return { icon: "🕯️", gradient: "from-yellow-500/20 to-orange-500/20" }
+    }
+    
+    // Promotional & Gift expanded
+    if (name.includes('gift') || name.includes('present')) {
+      return { icon: "🎁", gradient: "from-red-500/20 to-pink-500/20" }
+    }
+    if (name.includes('promotional') || name.includes('promo')) {
+      return { icon: "📢", gradient: "from-purple-500/20 to-blue-500/20" }
+    }
+    if (name.includes('award') || name.includes('trophy')) {
+      return { icon: "🏆", gradient: "from-yellow-500/20 to-amber-500/20" }
+    }
+    if (name.includes('medal') || name.includes('badge')) {
+      return { icon: "🥇", gradient: "from-gold-500/20 to-yellow-500/20" }
+    }
+    if (name.includes('certificate')) {
+      return { icon: "📜", gradient: "from-amber-500/20 to-yellow-500/20" }
+    }
+    
+    // Packaging variety
+    if (name.includes('box') || name.includes('package')) {
+      return { icon: "📦", gradient: "from-amber-500/20 to-orange-500/20" }
+    }
+    if (name.includes('envelope')) {
+      return { icon: "✉️", gradient: "from-blue-500/20 to-cyan-500/20" }
+    }
+    if (name.includes('wrap') || name.includes('wrapping')) {
+      return { icon: "🎀", gradient: "from-pink-500/20 to-purple-500/20" }
+    }
+    
+    // Events expanded
+    if (name.includes('party') || name.includes('celebration')) {
+      return { icon: "🎉", gradient: "from-purple-500/20 to-pink-500/20" }
+    }
+    if (name.includes('wedding')) {
+      return { icon: "💒", gradient: "from-pink-500/20 to-purple-500/20" }
+    }
+    if (name.includes('birthday')) {
+      return { icon: "🎂", gradient: "from-yellow-500/20 to-pink-500/20" }
+    }
+    if (name.includes('christmas') || name.includes('holiday')) {
+      return { icon: "🎄", gradient: "from-green-500/20 to-red-500/20" }
+    }
+    if (name.includes('graduation')) {
+      return { icon: "🎓", gradient: "from-blue-500/20 to-purple-500/20" }
+    }
+    if (name.includes('baby') || name.includes('shower')) {
+      return { icon: "👶", gradient: "from-blue-300/20 to-pink-300/20" }
+    }
+    if (name.includes('event')) {
+      return { icon: "🎪", gradient: "from-red-500/20 to-yellow-500/20" }
+    }
+    
+    // Sports & Outdoor expanded
+    if (name.includes('sport') || name.includes('fitness')) {
+      return { icon: "⚽", gradient: "from-green-500/20 to-blue-500/20" }
+    }
+    if (name.includes('gym') || name.includes('workout')) {
+      return { icon: "💪", gradient: "from-red-500/20 to-orange-500/20" }
+    }
+    if (name.includes('yoga')) {
+      return { icon: "🧘", gradient: "from-purple-500/20 to-pink-500/20" }
+    }
+    if (name.includes('outdoor') || name.includes('camping')) {
+      return { icon: "⛺", gradient: "from-green-500/20 to-teal-500/20" }
+    }
+    if (name.includes('travel') || name.includes('luggage')) {
+      return { icon: "✈️", gradient: "from-blue-500/20 to-cyan-500/20" }
+    }
+    if (name.includes('beach') || name.includes('summer')) {
+      return { icon: "🏖️", gradient: "from-yellow-500/20 to-blue-500/20" }
+    }
+    
+    // Food & Beverage
+    if (name.includes('food') || name.includes('snack')) {
+      return { icon: "🍕", gradient: "from-red-500/20 to-yellow-500/20" }
+    }
+    if (name.includes('beverage') || name.includes('drink')) {
+      return { icon: "🥤", gradient: "from-blue-500/20 to-cyan-500/20" }
+    }
+    if (name.includes('restaurant') || name.includes('cafe')) {
+      return { icon: "🍽️", gradient: "from-orange-500/20 to-red-500/20" }
+    }
+    
+    // Kids & Toys
+    if (name.includes('kid') || name.includes('child') || name.includes('toy')) {
+      return { icon: "🧸", gradient: "from-yellow-500/20 to-pink-500/20" }
+    }
+    if (name.includes('game') || name.includes('puzzle')) {
+      return { icon: "🎮", gradient: "from-purple-500/20 to-blue-500/20" }
+    }
+    
+    // Pet Products
+    if (name.includes('pet') || name.includes('dog') || name.includes('cat')) {
+      return { icon: "🐾", gradient: "from-brown-500/20 to-orange-500/20" }
+    }
+    
+    // Health & Beauty
+    if (name.includes('health') || name.includes('medical')) {
+      return { icon: "🏥", gradient: "from-red-500/20 to-white/20" }
+    }
+    if (name.includes('beauty') || name.includes('cosmetic')) {
+      return { icon: "💄", gradient: "from-pink-500/20 to-purple-500/20" }
+    }
+    if (name.includes('spa') || name.includes('wellness')) {
+      return { icon: "🧖", gradient: "from-green-500/20 to-blue-500/20" }
+    }
+    
+    // Automotive
+    if (name.includes('car') || name.includes('auto') || name.includes('vehicle')) {
+      return { icon: "🚗", gradient: "from-gray-500/20 to-blue-500/20" }
+    }
+    
+    // Music & Entertainment
+    if (name.includes('music') || name.includes('band')) {
+      return { icon: "🎵", gradient: "from-purple-500/20 to-pink-500/20" }
+    }
+    if (name.includes('movie') || name.includes('film')) {
+      return { icon: "🎬", gradient: "from-red-500/20 to-orange-500/20" }
+    }
+    
+    // Marketing & Advertising
+    if (name.includes('marketing') || name.includes('advertising')) {
+      return { icon: "📈", gradient: "from-blue-500/20 to-green-500/20" }
+    }
+    if (name.includes('social') || name.includes('media')) {
+      return { icon: "📱", gradient: "from-purple-500/20 to-pink-500/20" }
+    }
+    
+    // Custom & Special
+    if (name.includes('custom') || name.includes('personalized')) {
+      return { icon: "✨", gradient: "from-purple-500/20 via-pink-500/20 to-yellow-500/20" }
+    }
+    if (name.includes('eco') || name.includes('sustainable')) {
+      return { icon: "♻️", gradient: "from-green-500/20 to-emerald-500/20" }
+    }
+    if (name.includes('luxury') || name.includes('premium')) {
+      return { icon: "👑", gradient: "from-gold-500/20 to-yellow-500/20" }
+    }
+    
+    // Default fallback
+    return { icon: "🛍️", gradient: "from-gray-500/20 to-slate-500/20" }
+  }
+
+  const activeCategories = categories.filter((cat: any) => cat.isActive)
+
+  // Container animation
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.03,
+        delayChildren: 0.1
+      }
+    }
+  }
+
+  // Item animation
+  const itemVariants = {
+    hidden: { 
+      opacity: 0, 
+      y: 30,
+      scale: 0.9
+    },
+    visible: { 
+      opacity: 1, 
+      y: 0,
+      scale: 1,
+      transition: {
+        type: "spring",
+        stiffness: 100,
+        damping: 15
+      }
+    }
+  }
+
+  // Show placeholder while loading
+  if (!isVisible) {
+    return (
+      <div className="w-full py-8 relative">
+        <div className="container mx-auto px-4 relative">
+          <div className="flex items-center justify-center h-32">
+            <div className="flex gap-8">
+              {[...Array(6)].map((_, i) => (
+                <div key={i} className="animate-pulse">
+                  <div className="w-24 h-24 rounded-2xl bg-gray-200 dark:bg-gray-700"></div>
+                  <div className="w-20 h-4 mt-3 rounded bg-gray-200 dark:bg-gray-700"></div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <AnimatePresence>
+      <motion.div 
+        className="w-full py-4 relative"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.3 }}
+      >
+        <div className="container mx-auto px-4 relative">
+          <div className="flex items-center">
+            {/* Left scroll button */}
+            <motion.button
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.5 }}
+              onClick={() => scroll('left')}
+              className="absolute left-2 z-10 w-10 h-10 rounded-full bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm shadow-lg flex items-center justify-center hover:bg-white dark:hover:bg-gray-800 hover:scale-110 active:scale-95 transition-all duration-200"
+            >
+              <ChevronLeft className="h-5 w-5 text-gray-700 dark:text-gray-300" />
+            </motion.button>
+
+            {/* Scrollable container */}
+            <motion.div 
+              ref={scrollContainerRef}
+              className="flex gap-8 overflow-x-auto scrollbar-hide scroll-smooth px-14"
+              style={{ 
+                scrollbarWidth: 'none', 
+                msOverflowStyle: 'none',
+                WebkitScrollbar: { display: 'none' }
+              }}
+              variants={containerVariants}
+              initial="hidden"
+              animate="visible"
+            >
+              {/* Category items */}
+              {activeCategories.map((category: any) => {
+                const style = getCategoryStyle(category.name)
+                
+                return (
+                  <motion.div 
+                    key={category.id}
+                    variants={itemVariants}
+                  >
+                    <Link
+                      href={`/products?category=${category.slug}`}
+                      className="group flex flex-col items-center gap-3 cursor-pointer"
+                    >
+                      <motion.div 
+                        className="relative"
+                        whileHover={{ scale: 1.08 }}
+                        whileTap={{ scale: 0.95 }}
+                        transition={{ type: "spring", stiffness: 400, damping: 17 }}
+                      >
+                        <div className={`w-24 h-24 rounded-2xl bg-gradient-to-br ${style.gradient} backdrop-blur-sm border border-gray-200/50 dark:border-gray-700/50 flex items-center justify-center shadow-lg group-hover:shadow-xl transition-all duration-300`}>
+                          <span className="text-4xl filter drop-shadow-sm">{style.icon}</span>
+                        </div>
+                      </motion.div>
+                      <span className="text-sm font-semibold text-gray-700 dark:text-gray-300 group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors text-center max-w-[100px]">
+                        {category.name}
+                      </span>
+                    </Link>
+                  </motion.div>
+                )
+              })}
+            </motion.div>
+
+            {/* Right scroll button */}
+            <motion.button
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.5 }}
+              onClick={() => scroll('right')}
+              className="absolute right-2 z-10 w-10 h-10 rounded-full bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm shadow-lg flex items-center justify-center hover:bg-white dark:hover:bg-gray-800 hover:scale-110 active:scale-95 transition-all duration-200"
+            >
+              <ChevronRight className="h-5 w-5 text-gray-700 dark:text-gray-300" />
+            </motion.button>
+          </div>
+
+          {/* Visual hint for scrolling */}
+          <motion.div 
+            className="flex justify-center mt-6 gap-1"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.8 }}
+          >
+            {[...Array(Math.min(5, Math.ceil(activeCategories.length / 4)))].map((_, i) => (
+              <div 
+                key={i}
+                className="w-1.5 h-1.5 rounded-full bg-gray-300 dark:bg-gray-600"
+              />
+            ))}
+          </motion.div>
+        </div>
+      </motion.div>
+    </AnimatePresence>
+  )
+}

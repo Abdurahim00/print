@@ -7,6 +7,7 @@ import { setViewMode, setSelectedProduct, setProductColor, setSelectedTemplate, 
 import { Button } from "@/components/ui/button"
 import { RootState } from "@/lib/redux/store"
 import { ProductAnglesSelector } from "@/components/dashboard/common/ProductAnglesSelector"
+// import { LoadSavedDesign } from "./load-saved-design"
 import { useVariationDesignPersistence } from "@/hooks/useVariationDesignPersistence"
 import { VariationSelector, getVariationFrames } from "./components/VariationSelector"
 
@@ -22,6 +23,30 @@ interface Product {
   image?: string;
   hasVariations?: boolean;
   variations?: any[];
+  // Individual angle images
+  frontImage?: string;
+  backImage?: string;
+  leftImage?: string;
+  rightImage?: string;
+  materialImage?: string;
+  frontAltText?: string;
+  backAltText?: string;
+  leftAltText?: string;
+  rightAltText?: string;
+  materialAltText?: string;
+  // Additional properties
+  categoryId?: string;
+  subcategoryIds?: string[];
+  createdAt?: string;
+  updatedAt?: string;
+  eligibleForCoupons?: boolean;
+  description?: string;
+  inStock?: boolean;
+  purchaseLimit?: number;
+  isDesignable?: boolean;
+  designFrames?: any[];
+  designCostPerCm2?: number;
+  imageUrl?: string;
 }
 
 export function CentralCanvas() {
@@ -128,13 +153,13 @@ export function CentralCanvas() {
         console.log('📂 [CentralCanvas] Loading saved design from localStorage')
         const fabricCanvas = (window as any).fabricCanvas
         if (fabricCanvas) {
-          loadFromJSON(fabricCanvas, savedCanvas)
+          loadFromJSON(savedCanvas)
         } else {
           // Wait for canvas to be initialized
           setTimeout(() => {
             const canvas = (window as any).fabricCanvas
             if (canvas && loadFromJSON) {
-              loadFromJSON(canvas, savedCanvas)
+              loadFromJSON(savedCanvas)
             }
           }, 500)
         }
@@ -524,7 +549,7 @@ export function CentralCanvas() {
       return [] // No angles when no product is selected
     }
     
-    const product = selectedProduct as Product;
+    const product = selectedProduct;
     
     // For products WITHOUT variations, check individual angle images FIRST
     if (!product.hasVariations || !product.variations || product.variations.length === 0) {
@@ -642,11 +667,11 @@ export function CentralCanvas() {
       
       // Fallback to manual checking if hook function not available
       const angleImages = [
-        { angle: 'front', image: (product as any).frontImage },
-        { angle: 'back', image: (product as any).backImage },
-        { angle: 'left', image: (product as any).leftImage },
-        { angle: 'right', image: (product as any).rightImage },
-        { angle: 'material', image: (product as any).materialImage }
+        { angle: 'front', image: product.frontImage },
+        { angle: 'back', image: product.backImage },
+        { angle: 'left', image: product.leftImage },
+        { angle: 'right', image: product.rightImage },
+        { angle: 'material', image: product.materialImage }
       ]
       
       const availableAngles: string[] = []
@@ -669,7 +694,7 @@ export function CentralCanvas() {
   const getCurrentImage = () => {
     if (!selectedProduct) return null
     
-    const product = selectedProduct as any;
+    const product = selectedProduct;
     
     // Debug logging
     console.log('🖼️ [getCurrentImage] Called with product:', {
@@ -764,12 +789,12 @@ export function CentralCanvas() {
       }
     } else {
       // For single products without variations, check individual angle images
-      const angleImageMap: Record<string, string> = {
-        'front': (product as any).frontImage,
-        'back': (product as any).backImage,
-        'left': (product as any).leftImage,
-        'right': (product as any).rightImage,
-        'material': (product as any).materialImage
+      const angleImageMap: Record<string, string | undefined> = {
+        'front': product.frontImage,
+        'back': product.backImage,
+        'left': product.leftImage,
+        'right': product.rightImage,
+        'material': product.materialImage
       }
       
       const currentAngleImage = angleImageMap[viewMode]
@@ -813,24 +838,24 @@ export function CentralCanvas() {
         variationsCount: selectedProduct.variations?.length,
         currentVariation: getCurrentVariation(),
         currentImage: getCurrentImage(),
-        fallbackImage: (selectedProduct as any).imageUrl || (selectedProduct as any).image,
+        fallbackImage: selectedProduct.imageUrl || selectedProduct.image,
         // Debug single product angle images
         singleProductAngles: !selectedProduct.hasVariations ? {
-          frontImage: (selectedProduct as any).frontImage,
-          backImage: (selectedProduct as any).backImage,
-          leftImage: (selectedProduct as any).leftImage,
-          rightImage: (selectedProduct as any).rightImage,
-          materialImage: (selectedProduct as any).materialImage,
+          frontImage: selectedProduct.frontImage,
+          backImage: selectedProduct.backImage,
+          leftImage: selectedProduct.leftImage,
+          rightImage: selectedProduct.rightImage,
+          materialImage: selectedProduct.materialImage,
           angles: selectedProduct.angles
         } : null,
         // Debug raw product data
         rawProductData: {
           allKeys: Object.keys(selectedProduct),
-          hasFrontImage: !!(selectedProduct as any).frontImage,
-          hasBackImage: !!(selectedProduct as any).backImage,
-          hasLeftImage: !!(selectedProduct as any).leftImage,
-          hasRightImage: !!(selectedProduct as any).rightImage,
-          hasMaterialImage: !!(selectedProduct as any).materialImage
+          hasFrontImage: !!selectedProduct.frontImage,
+          hasBackImage: !!selectedProduct.backImage,
+          hasLeftImage: !!selectedProduct.leftImage,
+          hasRightImage: !!selectedProduct.rightImage,
+          hasMaterialImage: !!selectedProduct.materialImage
         }
       })
     }
@@ -840,7 +865,7 @@ export function CentralCanvas() {
   const getCurrentVariationImages = () => {
     if (!selectedProduct) return []
     
-    const product = selectedProduct as Product;
+    const product = selectedProduct;
     
     // For products WITHOUT variations, create image array from individual angle images
     if (!product.hasVariations || !product.variations || product.variations.length === 0) {
@@ -909,51 +934,51 @@ export function CentralCanvas() {
       // For single products without variations, return individual angle images
       const individualImages = []
       
-      if ((product as any).frontImage && (product as any).frontImage.trim() !== '') {
+      if (product.frontImage && product.frontImage.trim() !== '') {
         individualImages.push({
           id: 'front_img',
-          url: (product as any).frontImage,
-          alt_text: (product as any).frontAltText || '',
+          url: product.frontImage,
+          alt_text: product.frontAltText || '',
           angle: 'front',
           is_primary: true
         })
       }
       
-      if ((product as any).backImage && (product as any).backImage.trim() !== '') {
+      if (product.backImage && product.backImage.trim() !== '') {
         individualImages.push({
           id: 'back_img',
-          url: (product as any).backImage,
-          alt_text: (product as any).backAltText || '',
+          url: product.backImage,
+          alt_text: product.backAltText || '',
           angle: 'back',
           is_primary: false
         })
       }
       
-      if ((product as any).leftImage && (product as any).leftImage.trim() !== '') {
+      if (product.leftImage && product.leftImage.trim() !== '') {
         individualImages.push({
           id: 'left_img',
-          url: (product as any).leftImage,
-          alt_text: (product as any).leftAltText || '',
+          url: product.leftImage,
+          alt_text: product.leftAltText || '',
           angle: 'left',
           is_primary: false
         })
       }
       
-      if ((product as any).rightImage && (product as any).rightImage.trim() !== '') {
+      if (product.rightImage && product.rightImage.trim() !== '') {
         individualImages.push({
           id: 'right_img',
-          url: (product as any).rightImage,
-          alt_text: (product as any).rightAltText || '',
+          url: product.rightImage,
+          alt_text: product.rightAltText || '',
           angle: 'right',
           is_primary: false
         })
       }
       
-      if ((product as any).materialImage && (product as any).materialImage.trim() !== '') {
+      if (product.materialImage && product.materialImage.trim() !== '') {
         individualImages.push({
           id: 'material_img',
-          url: (product as any).materialImage,
-          alt_text: (product as any).materialAltText || '',
+          url: product.materialImage,
+          alt_text: product.materialAltText || '',
           angle: 'material',
           is_primary: false
         })
@@ -967,7 +992,7 @@ export function CentralCanvas() {
   const getCurrentVariation = () => {
     if (!selectedProduct) return null
     
-    const product = selectedProduct as Product;
+    const product = selectedProduct;
     
     if (product.hasVariations && product.variations) {
       // For variation products, find the variation that matches the current color
@@ -981,7 +1006,7 @@ export function CentralCanvas() {
           color: { name: 'Default', hex_code: product.baseColor || '#000000', swatch_image: product.image },
           images: individualImages,
           price: product.price,
-          inStock: (product as any).inStock || true,
+          inStock: product.inStock || true,
           stockQuantity: 0,
           isDefault: true
         }
@@ -1008,7 +1033,7 @@ export function CentralCanvas() {
   const currentVariationFrames = useMemo(() => {
     if (!selectedProduct) return []
     
-    const product = selectedProduct as any
+    const product = selectedProduct
     
     console.log('🖼️ [getCurrentVariationFrames] Debug:', {
       productId: product.id,
@@ -1283,9 +1308,9 @@ export function CentralCanvas() {
   // Enterprise apps typically log only in development environments
   if (isClient && process.env.NODE_ENV === 'development') {
     console.log('CentralCanvas:', {
-      productName: selectedProduct ? (selectedProduct as Product).name : null,
+      productName: selectedProduct ? selectedProduct.name : null,
       viewMode,
-      hasVariations: selectedProduct ? (selectedProduct as Product).hasVariations : null,
+      hasVariations: selectedProduct ? selectedProduct.hasVariations : null,
       colorSelected: productColor,
       angles,
       currentVariationImagesCount: currentVariationImages.length,
@@ -1299,7 +1324,7 @@ export function CentralCanvas() {
       hasCurrentDesign: variationDesignPersistence.hasCurrentDesign,
       variationsWithCurrentView: variationDesignPersistence.getVariationsWithCurrentView(),
       // Debug single product design persistence
-      singleProductDebug: !(selectedProduct as Product)?.hasVariations ? {
+      singleProductDebug: !selectedProduct?.hasVariations ? {
         currentVariationId: variationDesignPersistence.getCurrentVariationId(),
         availableViewModes: variationDesignPersistence.getAvailableViewModes(),
         hasCurrentDesign: variationDesignPersistence.hasCurrentDesign
@@ -1309,6 +1334,9 @@ export function CentralCanvas() {
 
   return (
     <div className="flex-1 flex flex-col bg-gradient-to-br from-gray-50 via-white to-gray-50 overflow-hidden relative">
+      {/* Load saved design component */}
+      {/* <LoadSavedDesign onDesignLoaded={handleDesignLoaded} /> */}
+      
       {/* Loading Overlay */}
       {isLoadingProduct && (
         <div className="absolute inset-0 z-50 bg-white/95 backdrop-blur-sm flex items-center justify-center">
@@ -1333,7 +1361,7 @@ export function CentralCanvas() {
             <div className="flex justify-center mb-2">
               <div className="bg-white/90 backdrop-blur-sm rounded-lg p-2 shadow-md border border-gray-200/60">
                 <div className="flex gap-1">
-                  {angles.map((angle) => (
+                  {angles.map((angle: string) => (
                     <Button
                       key={angle}
                       variant={viewMode === angle ? "default" : "outline"}
@@ -1367,7 +1395,7 @@ export function CentralCanvas() {
                     <img
                       key={`product-image-${viewMode}-${currentImage}`}
                       src={currentImage}
-                      alt={(selectedProduct as Product).name}
+                      alt={selectedProduct.name}
                       className="object-contain drop-shadow-lg"
                       style={{ 
                         maxWidth: '100%', 
@@ -1390,16 +1418,20 @@ export function CentralCanvas() {
                 
                 {/* Design Frames Overlay - Hidden since we show boundaries in the canvas itself */}
                 {/* Keeping the console logs for debugging */}
-                {currentVariationFrames && currentVariationFrames.length > 0 ? (
-                  console.log('🖼️ [CentralCanvas] Frames available:', currentVariationFrames) || null
-                ) : (
-                  console.log('❌ [CentralCanvas] No frames to render:', { 
-                    hasFrames: !!currentVariationFrames, 
-                    frameCount: currentVariationFrames?.length,
-                    viewMode,
-                    productId: selectedProduct?.id 
-                  }) || null
-                )}
+                {(() => {
+                  if (currentVariationFrames && currentVariationFrames.length > 0) {
+                    console.log('🖼️ [CentralCanvas] Frames available:', currentVariationFrames)
+                    return null
+                  } else {
+                    console.log('❌ [CentralCanvas] No frames to render:', { 
+                      hasFrames: !!currentVariationFrames, 
+                      frameCount: currentVariationFrames?.length,
+                      viewMode,
+                      productId: selectedProduct?.id 
+                    })
+                    return null
+                  }
+                })()}
               </>
             ) : !isLoadingProduct ? (
               /* Show instructions when no product selected and not loading */
@@ -1478,12 +1510,12 @@ export function CentralCanvas() {
                   const frames = getVariationFrames(selectedProduct, variation, viewMode)
                   if (frames.length > 0 && canvasRef.current) {
                     const frame = frames[0]
-                    setDesignBoundaries({
+                    setDesignBoundaries([{
                       left: frame.xPercent || (frame.x / 600 * 100),
                       top: frame.yPercent || (frame.y / 600 * 100),
                       width: frame.widthPercent || (frame.widthPx / 600 * 100),
                       height: frame.heightPercent || (frame.heightPx / 600 * 100)
-                    })
+                    }])
                   }
                 }}
                 className="mb-3"

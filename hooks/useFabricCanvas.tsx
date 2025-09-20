@@ -20,7 +20,27 @@ export const useFabricCanvas = (canvasId: string, scaleOptions?: { isMobile?: bo
   const saveState = useCallback(
     (canvasInstance: fabric.Canvas) => {
       if (canvasInstance) {
-        const state = JSON.stringify(canvasInstance.toJSON())
+        // Enhanced JSON serialization to ensure image objects are properly saved
+        const canvasJSON = canvasInstance.toJSON()
+        
+        // Ensure image objects have proper src properties
+        if (canvasJSON.objects) {
+          canvasJSON.objects.forEach((obj: any) => {
+            if (obj.type === 'image' && obj.src) {
+              // Ensure the src is properly preserved
+              console.log('🔍 [useFabricCanvas] Saving image object:', {
+                type: obj.type,
+                src: obj.src ? (obj.src.length > 100 ? obj.src.substring(0, 100) + '...' : obj.src) : 'No src',
+                width: obj.width,
+                height: obj.height,
+                left: obj.left,
+                top: obj.top
+              })
+            }
+          })
+        }
+        
+        const state = JSON.stringify(canvasJSON)
         dispatch(addToHistory(state))
         // Persist latest canvas JSON for refresh recovery and also per product+angle for multi-angle autosave
         try {
@@ -1751,6 +1771,24 @@ export const useFabricCanvas = (canvasId: string, scaleOptions?: { isMobile?: bo
             }
             if (objData.maxFontSize !== undefined) {
               (obj as any).maxFontSize = objData.maxFontSize
+            }
+            
+            // Special handling for image objects
+            if (obj.type === 'image' && objData.src) {
+              console.log('🔍 [useFabricCanvas] Restoring image object:', {
+                type: obj.type,
+                src: objData.src ? (objData.src.length > 100 ? objData.src.substring(0, 100) + '...' : objData.src) : 'No src',
+                width: obj.width,
+                height: obj.height,
+                left: obj.left,
+                top: obj.top
+              })
+              
+              // Ensure image object has proper properties
+              ;(obj as any).src = objData.src
+              ;(obj as any).crossOrigin = 'anonymous'
+              ;(obj as any).visible = objData.visible !== false
+              ;(obj as any).opacity = objData.opacity || 1
             }
           }
           

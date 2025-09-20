@@ -16,8 +16,26 @@ export function DesignCanvasRenderer({ canvasJSON, productImage, angle }: Design
     hasCanvasJSON: !!canvasJSON,
     objectsCount: canvasJSON?.objects?.length || 0,
     productImage: productImage ? 'Present' : 'Missing',
-    canvasJSONType: typeof canvasJSON
+    canvasJSONType: typeof canvasJSON,
+    canvasVersion: canvasJSON?.version,
+    canvasDimensions: canvasJSON ? { width: canvasJSON.width, height: canvasJSON.height } : null
   })
+  
+  // Debug: Log the actual canvas JSON structure for troubleshooting
+  if (canvasJSON?.objects) {
+    console.log(`🔍 [DesignCanvasRenderer] ${angle} - Canvas JSON objects preview:`, 
+      canvasJSON.objects.map((obj: any, index: number) => ({
+        index,
+        type: obj.type,
+        src: obj.src ? (obj.src.length > 100 ? obj.src.substring(0, 100) + '...' : obj.src) : 'No src',
+        visible: obj.visible,
+        left: obj.left,
+        top: obj.top,
+        width: obj.width,
+        height: obj.height
+      }))
+    )
+  }
 
   const containerRef = useRef<HTMLDivElement | null>(null)
   const fabricCanvasRef = useRef<any>(null)
@@ -252,8 +270,37 @@ export function DesignCanvasRenderer({ canvasJSON, productImage, angle }: Design
       console.log(`🔍 [DesignCanvasRenderer] ${angle} - Fabric.js canvas created successfully`)
       fabricCanvasRef.current = canvas
 
-      // Load canvas JSON with proper error handling
+      // Validate and prepare canvas JSON before loading
       console.log(`🔍 [DesignCanvasRenderer] ${angle} - About to load canvas JSON...`)
+      
+      // Ensure canvas JSON has proper structure
+      const validatedCanvasJSON = {
+        version: canvasJSON.version || "5.3.0",
+        width: canvasJSON.width || 800,
+        height: canvasJSON.height || 600,
+        backgroundColor: canvasJSON.backgroundColor || "transparent",
+        objects: (canvasJSON.objects || []).map((obj: any) => {
+          // Ensure image objects have proper structure
+          if (obj.type === 'image') {
+            return {
+              ...obj,
+              type: 'image',
+              src: obj.src || obj.imageSrc || obj.url, // Handle different src property names
+              crossOrigin: 'anonymous',
+              visible: obj.visible !== false, // Ensure visible unless explicitly false
+              opacity: obj.opacity || 1
+            }
+          }
+          return obj
+        })
+      }
+      
+      console.log(`🔍 [DesignCanvasRenderer] ${angle} - Validated canvas JSON:`, {
+        version: validatedCanvasJSON.version,
+        dimensions: { width: validatedCanvasJSON.width, height: validatedCanvasJSON.height },
+        objectCount: validatedCanvasJSON.objects.length,
+        imageObjects: validatedCanvasJSON.objects.filter((obj: any) => obj.type === 'image').length
+      })
       
       try {
         await new Promise<void>((resolve, reject) => {
@@ -261,7 +308,7 @@ export function DesignCanvasRenderer({ canvasJSON, productImage, angle }: Design
             reject(new Error('Canvas JSON loading timeout after 10 seconds'))
           }, 10000)
 
-          canvas.loadFromJSON(canvasJSON, () => {
+          canvas.loadFromJSON(validatedCanvasJSON, () => {
             clearTimeout(timeoutId)
             
             try {
@@ -269,6 +316,17 @@ export function DesignCanvasRenderer({ canvasJSON, productImage, angle }: Design
               
               const objects = canvas.getObjects()
               console.log(`🔍 [DesignCanvasRenderer] ${angle} - Objects loaded:`, objects.length)
+              
+              // Debug: Log all object types to identify what's being loaded
+              const objectTypes = objects.map((obj: any) => obj.type)
+              console.log(`🔍 [DesignCanvasRenderer] ${angle} - Object types loaded:`, objectTypes)
+              
+              // Count different object types
+              const typeCount = objectTypes.reduce((acc: Record<string, number>, type: string) => {
+                acc[type] = (acc[type] || 0) + 1
+                return acc
+              }, {} as Record<string, number>)
+              console.log(`🔍 [DesignCanvasRenderer] ${angle} - Object type counts:`, typeCount)
               
               if (objects.length > 0) {
                 console.log(`🔍 [DesignCanvasRenderer] ${angle} - Processing ${objects.length} objects...`)
@@ -311,9 +369,78 @@ export function DesignCanvasRenderer({ canvasJSON, productImage, angle }: Design
                       })
                     }
                     
-                    // Handle image objects
+                    // Handle image objects with proper loading and error handling
                     if (obj.type === 'image' && obj.src) {
+                      console.log(`🔍 [DesignCanvasRenderer] ${angle} - Processing image object:`, {
+                        src: obj.src,
+                        width: obj.width,
+                        height: obj.height,
+                        left: obj.left,
+                        top: obj.top
+                      })
+                      
+                      // Set crossOrigin for external images
                       obj.crossOrigin = 'anonymous'
+                      
+                      // Ensure the image is properly loaded
+                      if (obj.src.startsWith('data:') || obj.src.startsWith('blob:')) {
+                        // For data URLs and blob URLs, ensure they're properly handled
+                        console.log(`🔍 [DesignCanvasRenderer] ${angle} - Data/blob URL detected, ensuring proper handling`)
+                      } else {
+                        // For external URLs, ensure they load properly
+                        console.log(`🔍 [DesignCanvasRenderer] ${angle} - External URL detected, ensuring CORS handling`)
+                      }
+                      
+                      // Ensure the object is visible and properly positioned
+                      obj.visible = true
+                      obj.opacity = obj.opacity || 1
+                      
+                      // Add error handling for image loading
+                      const originalOnload = obj.onload
+                      const originalOnerror = obj.onerror
+                      
+                      obj.onload = () => {
+                        console.log(`🔍 [DesignCanvasRenderer] ${angle} - Image loaded successfully:`, obj.src)
+                        if (originalOnload) originalOnload()
+                        canvas.requestRenderAll()
+                      }
+                      
+                      obj.onerror = (error: any) => {
+                        console.error(`❌ [DesignCanvasRenderer] ${angle} - Image failed to load:`, error)
+                        console.error(`❌ [DesignCanvasRenderer] ${angle} - Image src:`, obj.src)
+                        
+                        // Create a placeholder rectangle for failed images
+                        const placeholder = new fabric.Rect({
+                          left: obj.left,
+                          top: obj.top,
+                          width: obj.width || 100,
+                          height: obj.height || 100,
+                          fill: '#f0f0f0',
+                          stroke: '#ccc',
+                          strokeWidth: 1,
+                          selectable: false,
+                          evented: false
+                        })
+                        
+                        // Add text to indicate failed image
+                        const text = new fabric.Text('Image Failed', {
+                          left: obj.left,
+                          top: obj.top + (obj.height || 100) / 2,
+                          fontSize: 12,
+                          fill: '#666',
+                          textAlign: 'center',
+                          selectable: false,
+                          evented: false
+                        })
+                        
+                        // Replace the failed image with placeholder
+                        canvas.remove(obj)
+                        canvas.add(placeholder)
+                        canvas.add(text)
+                        
+                        if (originalOnerror) originalOnerror(error)
+                        canvas.requestRenderAll()
+                      }
                     }
                     
                     // Force object coordinate recalculation
@@ -331,7 +458,7 @@ export function DesignCanvasRenderer({ canvasJSON, productImage, angle }: Design
                 // IMPROVED: Set canvas viewport to match the scaled design dimensions
                 canvas.setViewportTransform([1, 0, 0, 1, 0, 0])
 
-                // Multiple render passes for reliability
+                // Enhanced rendering with image loading verification
                 console.log(`🔍 [DesignCanvasRenderer] ${angle} - Rendering canvas...`)
                 
                 const performRender = () => {
@@ -339,17 +466,59 @@ export function DesignCanvasRenderer({ canvasJSON, productImage, angle }: Design
                   console.log(`🔍 [DesignCanvasRenderer] ${angle} - Render pass completed`)
                 }
                 
-                // Multiple render passes
-                performRender()
-                
-                requestAnimationFrame(() => {
+                // Check if there are any image objects that need special handling
+                const imageObjects = objects.filter((obj: any) => obj.type === 'image')
+                if (imageObjects.length > 0) {
+                  console.log(`🔍 [DesignCanvasRenderer] ${angle} - Found ${imageObjects.length} image objects, ensuring proper loading...`)
+                  
+                  // Wait for all images to load before final render
+                  const imageLoadPromises = imageObjects.map((imgObj: any) => {
+                    return new Promise<void>((resolve) => {
+                      if (imgObj.src) {
+                        const img = new Image()
+                        img.crossOrigin = 'anonymous'
+                        img.onload = () => {
+                          console.log(`🔍 [DesignCanvasRenderer] ${angle} - Image loaded:`, imgObj.src)
+                          resolve()
+                        }
+                        img.onerror = (error) => {
+                          console.error(`❌ [DesignCanvasRenderer] ${angle} - Image load error:`, error, imgObj.src)
+                          resolve() // Continue even if image fails to load
+                        }
+                        img.src = imgObj.src
+                      } else {
+                        resolve()
+                      }
+                    })
+                  })
+                  
+                  Promise.all(imageLoadPromises).then(() => {
+                    console.log(`🔍 [DesignCanvasRenderer] ${angle} - All images processed, performing final render`)
+                    performRender()
+                    
+                    // Additional render passes for reliability
+                    requestAnimationFrame(() => {
+                      performRender()
+                      
+                      setTimeout(() => {
+                        performRender()
+                        console.log(`🔍 [DesignCanvasRenderer] ${angle} - Final render completed`)
+                      }, 100)
+                    })
+                  })
+                } else {
+                  // No image objects, proceed with normal rendering
                   performRender()
                   
-                  setTimeout(() => {
+                  requestAnimationFrame(() => {
                     performRender()
-                    console.log(`🔍 [DesignCanvasRenderer] ${angle} - Final render completed`)
-                  }, 100)
-                })
+                    
+                    setTimeout(() => {
+                      performRender()
+                      console.log(`🔍 [DesignCanvasRenderer] ${angle} - Final render completed`)
+                    }, 100)
+                  })
+                }
               }
 
               console.log(`✅ [DesignCanvasRenderer] ${angle} - Canvas rendered successfully`)

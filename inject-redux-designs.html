@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inject Test Designs into Redux</title>
+    <style>
+        body {
+            font-family: monospace;
+            padding: 20px;
+            background: #1e1e1e;
+            color: #d4d4d4;
+        }
+        button {
+            background: #007acc;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            margin: 5px;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+        button:hover { background: #005a9e; }
+        .success { color: #4ec9b0; }
+        .error { color: #f48771; }
+        pre { background: #2d2d30; padding: 15px; border-radius: 4px; }
+    </style>
+</head>
+<body>
+    <h1>💉 Inject Test Designs Directly into Redux</h1>
+    <p>Since the app loads from Redux, not individual localStorage keys, we need to inject test designs there.</p>
+    
+    <button onclick="injectTestDesigns()">Inject Unique Designs for Each Angle</button>
+    <button onclick="checkReduxState()">Check Current Redux State</button>
+    <button onclick="clearReduxDesigns()">Clear All Redux Designs</button>
+    
+    <pre id="output"></pre>
+
+    <script>
+        function log(message, type = '') {
+            const output = document.getElementById('output');
+            const entry = document.createElement('div');
+            entry.className = type;
+            entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            output.appendChild(entry);
+        }
+
+        function injectTestDesigns() {
+            const productId = '68be85eb094d08828df03170'; // Your Lilio product
+            const angles = ['front', 'back', 'left', 'right'];
+            
+            // Create unique designs for each angle
+            const testDesigns = angles.map((angle, index) => ({
+                variationId: `${productId}_angle_${angle}`,
+                viewMode: angle,
+                canvasJSON: {
+                    version: "5.3.0",
+                    objects: [{
+                        type: "text",
+                        text: `${angle.toUpperCase()} - UNIQUE DESIGN #${index + 1}`,
+                        fontSize: 48,
+                        fill: ['red', 'blue', 'green', 'orange'][index],
+                        left: 100,
+                        top: 100,
+                        angle: index * 15 // Different rotation for each
+                    }]
+                },
+                lastModified: Date.now(),
+                isShared: false,
+                designAreaCm2: 100,
+                designAreaPercentage: 10
+            }));
+            
+            // Get current Redux state
+            const persistRoot = localStorage.getItem('persist:root');
+            if (!persistRoot) {
+                log('No Redux state found!', 'error');
+                return;
+            }
+            
+            try {
+                const parsed = JSON.parse(persistRoot);
+                const designState = JSON.parse(parsed.design);
+                
+                // Clear old designs and inject new ones
+                designState.variationDesigns = testDesigns;
+                designState.currentDesignId = null;
+                designState.productColor = ''; // Clear problematic color
+                
+                // Save back to Redux
+                parsed.design = JSON.stringify(designState);
+                localStorage.setItem('persist:root', JSON.stringify(parsed));
+                
+                log('✅ Injected test designs into Redux:', 'success');
+                testDesigns.forEach(d => {
+                    log(`  ${d.viewMode}: "${d.canvasJSON.objects[0].text}"`, 'success');
+                });
+                
+                log('\n🔄 Refresh the design tool and test switching between angles!', 'success');
+                log('Each angle should show its own unique colored text at different rotations.', 'success');
+                
+            } catch (e) {
+                log(`Error: ${e.message}`, 'error');
+            }
+        }
+
+        function checkReduxState() {
+            const persistRoot = localStorage.getItem('persist:root');
+            if (!persistRoot) {
+                log('No Redux state found!', 'error');
+                return;
+            }
+            
+            try {
+                const parsed = JSON.parse(persistRoot);
+                const designState = JSON.parse(parsed.design);
+                
+                log('Current Redux Design State:');
+                log(`  productColor: "${designState.productColor}"`);
+                log(`  viewMode: ${designState.viewMode}`);
+                log(`  Variation designs: ${designState.variationDesigns?.length || 0}`);
+                
+                if (designState.variationDesigns?.length > 0) {
+                    log('\nDesigns in Redux:');
+                    designState.variationDesigns.forEach(d => {
+                        const objects = d.canvasJSON?.objects || [];
+                        const text = objects[0]?.text || 'No text';
+                        log(`  ${d.variationId} / ${d.viewMode}: "${text}"`);
+                    });
+                }
+                
+            } catch (e) {
+                log(`Error: ${e.message}`, 'error');
+            }
+        }
+
+        function clearReduxDesigns() {
+            const persistRoot = localStorage.getItem('persist:root');
+            if (!persistRoot) {
+                log('No Redux state found!', 'error');
+                return;
+            }
+            
+            try {
+                const parsed = JSON.parse(persistRoot);
+                const designState = JSON.parse(parsed.design);
+                
+                designState.variationDesigns = [];
+                designState.currentDesignId = null;
+                designState.productColor = '';
+                
+                parsed.design = JSON.stringify(designState);
+                localStorage.setItem('persist:root', JSON.stringify(parsed));
+                
+                log('✅ Cleared all Redux designs', 'success');
+                
+            } catch (e) {
+                log(`Error: ${e.message}`, 'error');
+            }
+        }
+
+        // Check state on load
+        window.addEventListener('load', () => {
+            checkReduxState();
+        });
+    </script>
+</body>
+</html>

@@ -48,6 +48,7 @@ interface SiteConfiguration {
     collectionName?: string
     collectionDescription?: string
     collectionImage?: string
+    collectionThumbnailMode?: 'custom' | 'grid'
     collectionBadge?: string
     collectionBadgeColor?: string
     products?: Array<{ _id: string; id: string; name: string; price: number; image?: string }>
@@ -69,11 +70,11 @@ interface SiteConfiguration {
     order: number
   }>
   ctaSection: {
-    headline: string
-    subtitle: string
-    primaryButtonText: string
+    headline: string | { en: string; sv: string }
+    subtitle: string | { en: string; sv: string }
+    primaryButtonText: string | { en: string; sv: string }
     primaryButtonLink: string
-    secondaryButtonText: string
+    secondaryButtonText: string | { en: string; sv: string }
     secondaryButtonLink: string
   }
   bestSellersTitle: string | { en: string; sv: string }
@@ -92,21 +93,21 @@ const getDefaultConfig = (): SiteConfiguration => ({
       id: "1",
       value: 10000,
       suffix: "+",
-      label: "Designs",
+      label: { en: "Designs", sv: "Designer" },
       duration: 2
     },
     {
       id: "2",
       value: 500,
       suffix: "+",
-      label: "Products",
+      label: { en: "Products", sv: "Produkter" },
       duration: 2.5
     },
     {
       id: "3",
       value: 24,
       suffix: "hr",
-      label: "Delivery",
+      label: { en: "Delivery", sv: "Leverans" },
       duration: 1.5
     }
   ],
@@ -114,42 +115,42 @@ const getDefaultConfig = (): SiteConfiguration => ({
     {
       id: "1",
       iconType: "Zap",
-      title: "Lightning Fast Design",
-      description: "Create stunning designs in minutes with our intuitive design tool"
+      title: { en: "Lightning Fast Design", sv: "Blixtsnabb Design" },
+      description: { en: "Create stunning designs in minutes with our intuitive design tool", sv: "Skapa fantastiska designer på minuter med vårt intuitiva designverktyg" }
     },
     {
       id: "2",
       iconType: "Shield",
-      title: "Premium Quality",
-      description: "High-quality printing on premium materials that last"
+      title: { en: "Premium Quality", sv: "Premiumkvalitet" },
+      description: { en: "High-quality printing on premium materials that last", sv: "Högkvalitativ utskrift på premiummaterial som håller" }
     },
     {
       id: "3",
       iconType: "Truck",
-      title: "Fast Delivery",
-      description: "Get your custom products delivered in 3-5 business days"
+      title: { en: "Fast Delivery", sv: "Snabb Leverans" },
+      description: { en: "Get your custom products delivered in 3-5 business days", sv: "Få dina anpassade produkter levererade inom 3-5 arbetsdagar" }
     },
     {
       id: "4",
       iconType: "Users",
-      title: "24/7 Support",
-      description: "Our team is here to help you create the perfect design"
+      title: { en: "24/7 Support", sv: "24/7 Support" },
+      description: { en: "Our team is here to help you create the perfect design", sv: "Vårt team finns här för att hjälpa dig skapa den perfekta designen" }
     }
   ],
   featuredProducts: [],
   bestSellers: [],
   customSections: [],
   ctaSection: {
-    headline: "Ready to Create Something Amazing?",
-    subtitle: "Join thousands of customers who trust us with their custom printing needs",
-    primaryButtonText: "Start Your Design",
+    headline: { en: "Ready to Create Something Amazing?", sv: "Redo att Skapa Något Fantastiskt?" },
+    subtitle: { en: "Join thousands of customers who trust us with their custom printing needs", sv: "Gå med tusentals kunder som litar på oss med sina anpassade tryckbehov" },
+    primaryButtonText: { en: "Start Your Design", sv: "Börja Din Design" },
     primaryButtonLink: "/design-tool",
-    secondaryButtonText: "Get Started Free",
+    secondaryButtonText: { en: "Get Started Free", sv: "Kom Igång Gratis" },
     secondaryButtonLink: "/signup"
   },
-  bestSellersTitle: "Best Sellers",
-  bestSellersSubtitle: "Our most popular products",
-  featuresTitle: "Why Choose MR MERCH"
+  bestSellersTitle: { en: "Best Sellers", sv: "Bästsäljare" },
+  bestSellersSubtitle: { en: "Our most popular products", sv: "Våra mest populära produkter" },
+  featuresTitle: { en: "Why Choose MR MERCH", sv: "Varför Välja MR MERCH" }
 })
 
 export function SiteConfigPanel() {
@@ -216,9 +217,12 @@ export function SiteConfigPanel() {
 
   const fetchProducts = async () => {
     try {
-      const response = await fetch("/api/products?limit=100")
+      // For dropdown selects, we need all products at once
+      // The API should handle pagination internally if needed
+      const response = await fetch("/api/products?limit=9999")
       const data = await response.json()
       setProducts(data.products || [])
+      console.log(`Fetched ${(data.products || []).length} products for selection`)
     } catch (error) {
       console.error("Error fetching products:", error)
     }
@@ -351,6 +355,7 @@ export function SiteConfigPanel() {
       collectionName: collection.name,
       collectionDescription: collection.description,
       collectionImage: collection.image,
+      collectionThumbnailMode: collection.thumbnailMode || 'grid',
       collectionBadge: collection.badge,
       collectionBadgeColor: collection.badgeColor,
       products: collection.products,
@@ -686,6 +691,26 @@ export function SiteConfigPanel() {
               <CardDescription>Manage homepage statistics</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
+              <div className="mb-4">
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    variant={currentLanguage === 'en' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setCurrentLanguage('en')}
+                  >
+                    English
+                  </Button>
+                  <Button
+                    type="button"
+                    variant={currentLanguage === 'sv' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setCurrentLanguage('sv')}
+                  >
+                    Svenska
+                  </Button>
+                </div>
+              </div>
               {config.stats.map((stat, index) => (
                 <div key={stat.id} className="p-4 border rounded-lg space-y-3">
                   <div className="flex justify-between">
@@ -724,15 +749,22 @@ export function SiteConfigPanel() {
                       />
                     </div>
                     <div>
-                      <Label>Label</Label>
+                      <Label>Label ({currentLanguage === 'en' ? 'English' : 'Svenska'})</Label>
                       <Input
-                        value={stat.label}
+                        value={
+                          typeof stat.label === 'string'
+                            ? stat.label
+                            : stat.label[currentLanguage]
+                        }
                         onChange={(e) => {
                           const newStats = [...config.stats]
-                          newStats[index].label = e.target.value
+                          const currentVal = newStats[index].label
+                          newStats[index].label = typeof currentVal === 'string'
+                            ? { en: currentLanguage === 'en' ? e.target.value : currentVal, sv: currentLanguage === 'sv' ? e.target.value : currentVal }
+                            : { ...currentVal, [currentLanguage]: e.target.value }
                           setConfig({ ...config, stats: newStats })
                         }}
-                        placeholder="Designs"
+                        placeholder={currentLanguage === 'en' ? "Designs" : "Designer"}
                       />
                     </div>
                     <div>
@@ -766,13 +798,43 @@ export function SiteConfigPanel() {
               <CardDescription>Manage feature highlights</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
+              <div className="mb-4">
+                <div className="flex gap-2 mb-3">
+                  <Button
+                    type="button"
+                    variant={currentLanguage === 'en' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setCurrentLanguage('en')}
+                  >
+                    English
+                  </Button>
+                  <Button
+                    type="button"
+                    variant={currentLanguage === 'sv' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setCurrentLanguage('sv')}
+                  >
+                    Svenska
+                  </Button>
+                </div>
+              </div>
               <div>
-                <Label htmlFor="featuresTitle">Section Title</Label>
+                <Label htmlFor="featuresTitle">Section Title ({currentLanguage === 'en' ? 'English' : 'Svenska'})</Label>
                 <Input
                   id="featuresTitle"
-                  value={config.featuresTitle}
-                  onChange={(e) => updateConfig("featuresTitle", e.target.value)}
-                  placeholder="Why Choose MR MERCH"
+                  value={
+                    typeof config.featuresTitle === 'string'
+                      ? config.featuresTitle
+                      : config.featuresTitle[currentLanguage]
+                  }
+                  onChange={(e) => {
+                    const currentVal = config.featuresTitle
+                    const newVal = typeof currentVal === 'string'
+                      ? { en: currentLanguage === 'en' ? e.target.value : currentVal, sv: currentLanguage === 'sv' ? e.target.value : currentVal }
+                      : { ...currentVal, [currentLanguage]: e.target.value }
+                    updateConfig("featuresTitle", newVal)
+                  }}
+                  placeholder={currentLanguage === 'en' ? "Why Choose MR MERCH" : "Varför Välja MR MERCH"}
                 />
               </div>
               
@@ -814,28 +876,42 @@ export function SiteConfigPanel() {
                       </Select>
                     </div>
                     <div>
-                      <Label>Title</Label>
+                      <Label>Title ({currentLanguage === 'en' ? 'English' : 'Svenska'})</Label>
                       <Input
-                        value={feature.title}
+                        value={
+                          typeof feature.title === 'string'
+                            ? feature.title
+                            : feature.title[currentLanguage]
+                        }
                         onChange={(e) => {
                           const newFeatures = [...config.features]
-                          newFeatures[index].title = e.target.value
+                          const currentVal = newFeatures[index].title
+                          newFeatures[index].title = typeof currentVal === 'string'
+                            ? { en: currentLanguage === 'en' ? e.target.value : currentVal, sv: currentLanguage === 'sv' ? e.target.value : currentVal }
+                            : { ...currentVal, [currentLanguage]: e.target.value }
                           setConfig({ ...config, features: newFeatures })
                         }}
-                        placeholder="Feature Title"
+                        placeholder={currentLanguage === 'en' ? "Feature Title" : "Funktionstitel"}
                       />
                     </div>
                   </div>
                   <div>
-                    <Label>Description</Label>
+                    <Label>Description ({currentLanguage === 'en' ? 'English' : 'Svenska'})</Label>
                     <Textarea
-                      value={feature.description}
+                      value={
+                        typeof feature.description === 'string'
+                          ? feature.description
+                          : feature.description[currentLanguage]
+                      }
                       onChange={(e) => {
                         const newFeatures = [...config.features]
-                        newFeatures[index].description = e.target.value
+                        const currentVal = newFeatures[index].description
+                        newFeatures[index].description = typeof currentVal === 'string'
+                          ? { en: currentLanguage === 'en' ? e.target.value : currentVal, sv: currentLanguage === 'sv' ? e.target.value : currentVal }
+                          : { ...currentVal, [currentLanguage]: e.target.value }
                         setConfig({ ...config, features: newFeatures })
                       }}
-                      placeholder="Feature description..."
+                      placeholder={currentLanguage === 'en' ? "Feature description..." : "Funktionsbeskrivning..."}
                       rows={2}
                     />
                   </div>
@@ -875,9 +951,20 @@ export function SiteConfigPanel() {
                         <div className="flex items-start gap-3 flex-1">
                           {isCollection ? (
                             <>
-                              <div className="flex items-center justify-center w-16 h-16 bg-gradient-to-br from-blue-100 to-blue-200 rounded-md">
-                                <Layers className="h-8 w-8 text-blue-600" />
-                              </div>
+                              {fp.collectionThumbnailMode === 'custom' && fp.collectionImage ? (
+                                <div className="relative w-16 h-16 rounded-md overflow-hidden border">
+                                  <Image
+                                    src={fp.collectionImage}
+                                    alt={fp.collectionName || 'Collection'}
+                                    fill
+                                    className="object-cover"
+                                  />
+                                </div>
+                              ) : (
+                                <div className="flex items-center justify-center w-16 h-16 bg-gradient-to-br from-blue-100 to-blue-200 rounded-md">
+                                  <Layers className="h-8 w-8 text-blue-600" />
+                                </div>
+                              )}
                               <div className="flex-1">
                                 <div className="flex items-center gap-2">
                                   <Badge variant="secondary" className="text-xs">Collection</Badge>
@@ -996,6 +1083,7 @@ export function SiteConfigPanel() {
                                 name: fp.collectionName,
                                 description: fp.collectionDescription,
                                 image: fp.collectionImage,
+                                thumbnailMode: fp.collectionThumbnailMode || 'grid',
                                 badge: fp.collectionBadge,
                                 badgeColor: fp.collectionBadgeColor,
                                 products: fp.products || []
@@ -1120,23 +1208,63 @@ export function SiteConfigPanel() {
               <CardDescription>Select and order best selling products</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
+              <div className="mb-4">
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    variant={currentLanguage === 'en' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setCurrentLanguage('en')}
+                  >
+                    English
+                  </Button>
+                  <Button
+                    type="button"
+                    variant={currentLanguage === 'sv' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setCurrentLanguage('sv')}
+                  >
+                    Svenska
+                  </Button>
+                </div>
+              </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <Label htmlFor="bestSellersTitle">Section Title</Label>
+                  <Label htmlFor="bestSellersTitle">Section Title ({currentLanguage === 'en' ? 'English' : 'Svenska'})</Label>
                   <Input
                     id="bestSellersTitle"
-                    value={config.bestSellersTitle}
-                    onChange={(e) => updateConfig("bestSellersTitle", e.target.value)}
-                    placeholder="Best Sellers"
+                    value={
+                      typeof config.bestSellersTitle === 'string'
+                        ? config.bestSellersTitle
+                        : config.bestSellersTitle[currentLanguage]
+                    }
+                    onChange={(e) => {
+                      const currentVal = config.bestSellersTitle
+                      const newVal = typeof currentVal === 'string'
+                        ? { en: currentLanguage === 'en' ? e.target.value : currentVal, sv: currentLanguage === 'sv' ? e.target.value : currentVal }
+                        : { ...currentVal, [currentLanguage]: e.target.value }
+                      updateConfig("bestSellersTitle", newVal)
+                    }}
+                    placeholder={currentLanguage === 'en' ? "Best Sellers" : "Bästsäljare"}
                   />
                 </div>
                 <div>
-                  <Label htmlFor="bestSellersSubtitle">Section Subtitle</Label>
+                  <Label htmlFor="bestSellersSubtitle">Section Subtitle ({currentLanguage === 'en' ? 'English' : 'Svenska'})</Label>
                   <Input
                     id="bestSellersSubtitle"
-                    value={config.bestSellersSubtitle}
-                    onChange={(e) => updateConfig("bestSellersSubtitle", e.target.value)}
-                    placeholder="Our most popular products"
+                    value={
+                      typeof config.bestSellersSubtitle === 'string'
+                        ? config.bestSellersSubtitle
+                        : config.bestSellersSubtitle[currentLanguage]
+                    }
+                    onChange={(e) => {
+                      const currentVal = config.bestSellersSubtitle
+                      const newVal = typeof currentVal === 'string'
+                        ? { en: currentLanguage === 'en' ? e.target.value : currentVal, sv: currentLanguage === 'sv' ? e.target.value : currentVal }
+                        : { ...currentVal, [currentLanguage]: e.target.value }
+                      updateConfig("bestSellersSubtitle", newVal)
+                    }}
+                    placeholder={currentLanguage === 'en' ? "Our most popular products" : "Våra mest populära produkter"}
                   />
                 </div>
               </div>
@@ -1362,33 +1490,83 @@ export function SiteConfigPanel() {
               <CardDescription>Edit the CTA section content</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
+              <div className="mb-4">
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    variant={currentLanguage === 'en' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setCurrentLanguage('en')}
+                  >
+                    English
+                  </Button>
+                  <Button
+                    type="button"
+                    variant={currentLanguage === 'sv' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setCurrentLanguage('sv')}
+                  >
+                    Svenska
+                  </Button>
+                </div>
+              </div>
               <div>
-                <Label htmlFor="ctaHeadline">Headline</Label>
+                <Label htmlFor="ctaHeadline">Headline ({currentLanguage === 'en' ? 'English' : 'Svenska'})</Label>
                 <Input
                   id="ctaHeadline"
-                  value={config.ctaSection.headline}
-                  onChange={(e) => updateConfig("ctaSection.headline", e.target.value)}
-                  placeholder="Ready to Create Something Amazing?"
+                  value={
+                    typeof config.ctaSection.headline === 'string'
+                      ? config.ctaSection.headline
+                      : config.ctaSection.headline[currentLanguage]
+                  }
+                  onChange={(e) => {
+                    const currentVal = config.ctaSection.headline
+                    const newVal = typeof currentVal === 'string'
+                      ? { en: currentLanguage === 'en' ? e.target.value : currentVal, sv: currentLanguage === 'sv' ? e.target.value : currentVal }
+                      : { ...currentVal, [currentLanguage]: e.target.value }
+                    updateConfig("ctaSection.headline", newVal)
+                  }}
+                  placeholder={currentLanguage === 'en' ? "Ready to Create Something Amazing?" : "Redo att Skapa Något Fantastiskt?"}
                 />
               </div>
               <div>
-                <Label htmlFor="ctaSubtitle">Subtitle</Label>
+                <Label htmlFor="ctaSubtitle">Subtitle ({currentLanguage === 'en' ? 'English' : 'Svenska'})</Label>
                 <Textarea
                   id="ctaSubtitle"
-                  value={config.ctaSection.subtitle}
-                  onChange={(e) => updateConfig("ctaSection.subtitle", e.target.value)}
-                  placeholder="Join thousands of customers..."
+                  value={
+                    typeof config.ctaSection.subtitle === 'string'
+                      ? config.ctaSection.subtitle
+                      : config.ctaSection.subtitle[currentLanguage]
+                  }
+                  onChange={(e) => {
+                    const currentVal = config.ctaSection.subtitle
+                    const newVal = typeof currentVal === 'string'
+                      ? { en: currentLanguage === 'en' ? e.target.value : currentVal, sv: currentLanguage === 'sv' ? e.target.value : currentVal }
+                      : { ...currentVal, [currentLanguage]: e.target.value }
+                    updateConfig("ctaSection.subtitle", newVal)
+                  }}
+                  placeholder={currentLanguage === 'en' ? "Join thousands of customers..." : "Gå med tusentals kunder..."}
                   rows={2}
                 />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <Label htmlFor="primaryButtonText">Primary Button Text</Label>
+                  <Label htmlFor="primaryButtonText">Primary Button Text ({currentLanguage === 'en' ? 'English' : 'Svenska'})</Label>
                   <Input
                     id="primaryButtonText"
-                    value={config.ctaSection.primaryButtonText}
-                    onChange={(e) => updateConfig("ctaSection.primaryButtonText", e.target.value)}
-                    placeholder="Start Your Design"
+                    value={
+                      typeof config.ctaSection.primaryButtonText === 'string'
+                        ? config.ctaSection.primaryButtonText
+                        : config.ctaSection.primaryButtonText[currentLanguage]
+                    }
+                    onChange={(e) => {
+                      const currentVal = config.ctaSection.primaryButtonText
+                      const newVal = typeof currentVal === 'string'
+                        ? { en: currentLanguage === 'en' ? e.target.value : currentVal, sv: currentLanguage === 'sv' ? e.target.value : currentVal }
+                        : { ...currentVal, [currentLanguage]: e.target.value }
+                      updateConfig("ctaSection.primaryButtonText", newVal)
+                    }}
+                    placeholder={currentLanguage === 'en' ? "Start Your Design" : "Börja Din Design"}
                   />
                 </div>
                 <div>
@@ -1401,12 +1579,22 @@ export function SiteConfigPanel() {
                   />
                 </div>
                 <div>
-                  <Label htmlFor="secondaryButtonText">Secondary Button Text</Label>
+                  <Label htmlFor="secondaryButtonText">Secondary Button Text ({currentLanguage === 'en' ? 'English' : 'Svenska'})</Label>
                   <Input
                     id="secondaryButtonText"
-                    value={config.ctaSection.secondaryButtonText}
-                    onChange={(e) => updateConfig("ctaSection.secondaryButtonText", e.target.value)}
-                    placeholder="Get Started Free"
+                    value={
+                      typeof config.ctaSection.secondaryButtonText === 'string'
+                        ? config.ctaSection.secondaryButtonText
+                        : config.ctaSection.secondaryButtonText[currentLanguage]
+                    }
+                    onChange={(e) => {
+                      const currentVal = config.ctaSection.secondaryButtonText
+                      const newVal = typeof currentVal === 'string'
+                        ? { en: currentLanguage === 'en' ? e.target.value : currentVal, sv: currentLanguage === 'sv' ? e.target.value : currentVal }
+                        : { ...currentVal, [currentLanguage]: e.target.value }
+                      updateConfig("ctaSection.secondaryButtonText", newVal)
+                    }}
+                    placeholder={currentLanguage === 'en' ? "Get Started Free" : "Kom Igång Gratis"}
                   />
                 </div>
                 <div>
@@ -1450,6 +1638,7 @@ export function SiteConfigPanel() {
                   collectionName: collection.name,
                   collectionDescription: collection.description,
                   collectionImage: collection.image,
+                  collectionThumbnailMode: collection.thumbnailMode || 'grid',
                   collectionBadge: collection.badge,
                   collectionBadgeColor: collection.badgeColor,
                   products: collection.products

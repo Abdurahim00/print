@@ -34,6 +34,7 @@ function ProductCardComponent({ product }: ProductCardProps) {
   const [quantityModalOpen, setQuantityModalOpen] = useState(false)
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
   const [isHovering, setIsHovering] = useState(false)
+  const [intervalId, setIntervalId] = useState<NodeJS.Timeout | null>(null)
   const { language } = useAppSelector((state) => state.app)
   const t = translations[language]
   
@@ -114,25 +115,48 @@ function ProductCardComponent({ product }: ProductCardProps) {
   const handleMouseEnter = useCallback(() => {
     setIsHovering(true)
     if (productImages.length > 1) {
-      setCurrentImageIndex(1) // Show second image on hover
+      // Clear any existing interval first
+      if (intervalId) {
+        clearInterval(intervalId)
+        setIntervalId(null)
+      }
+
+      // Immediately show second image
+      setCurrentImageIndex(1)
+
+      // Start cycling if more than 2 images
+      if (productImages.length > 2) {
+        const newInterval = setInterval(() => {
+          setCurrentImageIndex((prev) => {
+            const nextIndex = (prev + 1) % productImages.length
+            // Skip index 0 during hover cycling
+            return nextIndex === 0 ? 1 : nextIndex
+          })
+        }, 1500)
+        setIntervalId(newInterval)
+      }
     }
-  }, [productImages.length])
+  }, [productImages.length, intervalId])
 
   const handleMouseLeave = useCallback(() => {
     setIsHovering(false)
-    setCurrentImageIndex(0) // Back to first image
-  }, [])
+    // Clear interval if exists
+    if (intervalId) {
+      clearInterval(intervalId)
+      setIntervalId(null)
+    }
+    // Always reset to first image on mouse leave
+    setCurrentImageIndex(0)
+  }, [intervalId])
 
-  // Cycle through images while hovering (optional enhancement)
+  // Clean up interval on unmount
   useEffect(() => {
-    if (!isHovering || productImages.length <= 1) return
-    
-    const interval = setInterval(() => {
-      setCurrentImageIndex((prev) => (prev + 1) % productImages.length)
-    }, 1500) // Change image every 1.5 seconds
-    
-    return () => clearInterval(interval)
-  }, [isHovering, productImages.length])
+    return () => {
+      if (intervalId) {
+        clearInterval(intervalId)
+      }
+    }
+  }, [intervalId])
 
   const handleDesignThisProduct = () => {
     const productId = (product as any)._id || product.id
@@ -219,7 +243,7 @@ function ProductCardComponent({ product }: ProductCardProps) {
         onMouseLeave={handleMouseLeave}
       >
         <ProductImage
-          src={productImages[currentImageIndex]}
+          src={productImages[currentImageIndex] || productImages[0] || getProductImage(product)}
           alt={product.name}
           fill
           sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"

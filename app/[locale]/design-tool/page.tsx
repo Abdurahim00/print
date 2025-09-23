@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation"
 import { useTranslations } from "next-intl"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { ArrowLeft, Palette } from "lucide-react"
+import { ArrowLeft, Palette, Loader2 } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -27,11 +27,51 @@ export default function DesignToolPage() {
   const t = useTranslations()
   const [products, setProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
+  const [loadingMore, setLoadingMore] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [page, setPage] = useState(1)
+  const [hasMore, setHasMore] = useState(true)
   
   // Check if a productId was passed in query params
   const productId = searchParams.get('productId')
   
+  // Define loadProducts outside useEffect so it can be used by handleLoadMore
+  const loadProducts = async (pageNum = 1, append = false) => {
+    try {
+      if (!append) {
+        setLoading(true)
+      } else {
+        setLoadingMore(true)
+      }
+
+      const limit = 20
+      const response = await fetch(`/api/products?designableOnly=true&page=${pageNum}&limit=${limit}`)
+      if (!response.ok) throw new Error('Failed to load products')
+
+      const data = await response.json()
+      // Check if data is an array, if not try data.products
+      const productsArray = Array.isArray(data) ? data : (data.products || [])
+
+      if (append) {
+        setProducts(prev => [...prev, ...productsArray])
+      } else {
+        setProducts(productsArray)
+      }
+
+      // Check if there are more products
+      setHasMore(productsArray.length === limit)
+      setPage(pageNum)
+
+      console.log(`Loaded ${productsArray.length} designable products (page ${pageNum})`)
+    } catch (err) {
+      console.error('Error loading products:', err)
+      setError('Failed to load products')
+    } finally {
+      setLoading(false)
+      setLoadingMore(false)
+    }
+  }
+
   useEffect(() => {
     // If productId is provided, redirect to step-based design tool
     if (productId) {
@@ -39,32 +79,14 @@ export default function DesignToolPage() {
       router.push(`/${locale}/design-tool/${productId}/step/1`)
       return
     }
-    
+
     // Otherwise, load products for selection
-    const loadProducts = async () => {
-      try {
-        const response = await fetch('/api/products')
-        if (!response.ok) throw new Error('Failed to load products')
-        
-        const data = await response.json()
-        // Check if data is an array, if not try data.products
-        const productsArray = Array.isArray(data) ? data : (data.products || [])
-        
-        // Filter for designable products
-        const designableProducts = productsArray.filter((p: Product) => 
-          p.designCostPerCm2 !== undefined && p.designCostPerCm2 > 0
-        )
-        setProducts(designableProducts)
-      } catch (err) {
-        console.error('Error loading products:', err)
-        setError('Failed to load products')
-      } finally {
-        setLoading(false)
-      }
-    }
-    
-    loadProducts()
+    loadProducts(1)
   }, [productId, router])
+
+  const handleLoadMore = () => {
+    loadProducts(page + 1, true)
+  }
   
   const handleSelectProduct = (product: Product) => {
     const productId = product._id || product.id
@@ -192,6 +214,35 @@ export default function DesignToolPage() {
             )
           })}
         </div>
+
+        {/* Load More Button */}
+        {hasMore && (
+          <div className="mt-8 text-center">
+            <Button
+              onClick={handleLoadMore}
+              disabled={loadingMore}
+              variant="outline"
+              size="lg"
+              className="min-w-[200px]"
+            >
+              {loadingMore ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Loading...
+                </>
+              ) : (
+                <>Load More Products</>
+              )}
+            </Button>
+          </div>
+        )}
+
+        {/* No more products message */}
+        {!hasMore && products.length > 0 && (
+          <div className="mt-8 text-center text-sm text-gray-500">
+            All designable products loaded ({products.length} total)
+          </div>
+        )}
       </div>
     </div>
   )

@@ -26,7 +26,7 @@ const AdminDashboard = dynamic(
 )
 
 const OperationsDashboard = dynamic(
-  () => import("@/components/dashboard/operations-dashboard").then(mod => mod.OperationsDashboard),
+  () => import("@/components/dashboard/operations-dashboard-wrapper").then(mod => ({ default: mod.OperationsDashboard })),
   {
     loading: () => <DashboardSkeleton />,
     ssr: false

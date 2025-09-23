@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
 import { Card } from "@/components/ui/card"
 import { ProductBrowserModal } from "./ProductBrowserModal"
-import { X, Plus, Package, Grip, Image as ImageIcon } from "lucide-react"
+import { X, Plus, Package, Grip, Image as ImageIcon, Upload, Grid3x3 } from "lucide-react"
 import Image from "next/image"
 import { getProductImage } from "@/lib/utils/product-image"
 import { useCurrency } from "@/contexts/CurrencyContext"
@@ -29,6 +29,7 @@ interface Collection {
   name: string
   description?: string
   image?: string
+  thumbnailMode?: 'custom' | 'grid'
   products: Product[]
   badge?: string
   badgeColor?: string
@@ -54,6 +55,8 @@ export function CollectionEditor({
     initialCollection || {
       name: "",
       description: "",
+      image: "",
+      thumbnailMode: "grid",
       products: [],
       badge: "",
       badgeColor: ""
@@ -69,6 +72,8 @@ export function CollectionEditor({
       setCollection({
         name: "",
         description: "",
+        image: "",
+        thumbnailMode: "grid",
         products: [],
         badge: "",
         badgeColor: ""
@@ -178,6 +183,112 @@ export function CollectionEditor({
                 placeholder="Describe this collection..."
                 rows={2}
               />
+            </div>
+
+            {/* Thumbnail Settings */}
+            <div className="space-y-3 p-4 border rounded-lg bg-gray-50">
+              <div className="flex items-center justify-between">
+                <Label className="text-base font-semibold">Collection Thumbnail</Label>
+                <Badge variant="outline" className="text-xs">
+                  {collection.thumbnailMode === 'custom' ? 'Custom Image' : 'Product Grid'}
+                </Badge>
+              </div>
+
+              {/* Thumbnail Mode Toggle */}
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant={collection.thumbnailMode === 'grid' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setCollection({ ...collection, thumbnailMode: 'grid' })}
+                  className="flex-1"
+                >
+                  <Grid3x3 className="h-4 w-4 mr-2" />
+                  Product Grid (Auto)
+                </Button>
+                <Button
+                  type="button"
+                  variant={collection.thumbnailMode === 'custom' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setCollection({ ...collection, thumbnailMode: 'custom' })}
+                  className="flex-1"
+                >
+                  <ImageIcon className="h-4 w-4 mr-2" />
+                  Custom Image
+                </Button>
+              </div>
+
+              {/* Custom Image Input */}
+              {collection.thumbnailMode === 'custom' && (
+                <div className="space-y-3">
+                  <div>
+                    <Label htmlFor="image-url">Image URL</Label>
+                    <Input
+                      id="image-url"
+                      type="url"
+                      value={collection.image || ""}
+                      onChange={(e) => setCollection({ ...collection, image: e.target.value })}
+                      placeholder="https://example.com/image.jpg"
+                      className="mt-1"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Enter a URL for your collection thumbnail image
+                    </p>
+                  </div>
+
+                  {/* Image Preview */}
+                  {collection.image && (
+                    <div className="relative w-full h-48 border rounded-lg overflow-hidden bg-white">
+                      <Image
+                        src={collection.image}
+                        alt="Collection thumbnail"
+                        fill
+                        className="object-contain p-2"
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement
+                          target.style.display = 'none'
+                        }}
+                      />
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        size="sm"
+                        className="absolute top-2 right-2"
+                        onClick={() => setCollection({ ...collection, image: '' })}
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Grid Preview */}
+              {collection.thumbnailMode === 'grid' && collection.products.length > 0 && (
+                <div className="space-y-2">
+                  <Label className="text-sm">Preview (using first 4 products)</Label>
+                  <div className="relative w-full h-48 border rounded-lg overflow-hidden bg-gray-100">
+                    <div className="absolute inset-0 p-2 grid grid-cols-2 gap-1">
+                      {collection.products.slice(0, 4).map((product, idx) => (
+                        <div key={idx} className="relative bg-white rounded overflow-hidden">
+                          {product.image ? (
+                            <Image
+                              src={getProductImage(product)}
+                              alt=""
+                              fill
+                              className="object-contain p-1"
+                            />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center">
+                              <Package className="h-6 w-6 text-gray-400" />
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Badge Color */}

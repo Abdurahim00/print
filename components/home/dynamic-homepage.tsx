@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useEffect, useState } from "react"
+import React, { useEffect, useState, useRef } from "react"
 import { useAppSelector, useAppDispatch } from "@/lib/redux/hooks"
 import { fetchCategories } from "@/lib/redux/slices/categoriesSlice"
 import { fetchProducts } from "@/lib/redux/slices/productsSlice"
@@ -152,64 +152,24 @@ interface SiteConfiguration {
 // Product Carousel Component
 const ProductCarousel = ({ featuredProducts }: { featuredProducts: any[] }) => {
   const [currentIndex, setCurrentIndex] = useState(0)
+  const [hasInitialized, setHasInitialized] = useState(false)
   const dispatch = useAppDispatch()
   const router = useRouter()
   const { formatPrice } = useCurrency()
-  const { items: reduxProducts = [] } = useAppSelector((state) => state.products)
+  const { items: reduxProducts = [], loading: productsLoading } = useAppSelector((state) => state.products)
   const t = useTranslations()
-  
-  // Use featured products if available, otherwise use redux products or mock data
-  const mockProducts = [
-    {
-      id: 1,
-      _id: "1",
-      name: "Premium T-Shirt Collection",
-      price: 24.99,
-      basePrice: 24.99,
-      image: "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=800&q=80",
-      colors: ["#000000", "#FFFFFF", "#FF0000", "#0000FF"],
-    },
-    {
-      id: 2,
-      _id: "2",
-      name: "Business Card Package",
-      price: 39.99,
-      basePrice: 39.99,
-      image: "https://images.unsplash.com/photo-1589829545856-d10d557cf95f?w=800&q=80",
-      colors: ["#F0F0F0", "#2C3E50", "#E74C3C", "#3498DB"],
-    },
-    {
-      id: 3,
-      _id: "3",
-      name: "Custom Hoodies",
-      price: 45.99,
-      basePrice: 45.99,
-      image: "https://images.unsplash.com/photo-1556821840-3a63f95609a7?w=800&q=80",
-      colors: ["#34495E", "#95A5A6", "#E67E22", "#27AE60"],
-    },
-    {
-      id: 4,
-      _id: "4",
-      name: "Sticker Pack",
-      price: 12.99,
-      basePrice: 12.99,
-      image: "https://images.unsplash.com/photo-1558655146-d09347e92766?w=800&q=80",
-      colors: ["#9B59B6", "#F39C12", "#1ABC9C", "#C0392B"],
-    },
-    {
-      id: 5,
-      _id: "5",
-      name: "Custom Mugs",
-      price: 15.99,
-      basePrice: 15.99,
-      image: "https://images.unsplash.com/photo-1514228742587-6b1558fcca3d?w=800&q=80",
-      colors: ["#FFFFFF", "#2C3E50", "#E74C3C", "#F39C12"],
-    }
-  ]
-  
-  const products = featuredProducts.length > 0 ? featuredProducts : 
-                  reduxProducts.length > 0 ? reduxProducts.slice(0, 5) : 
-                  mockProducts
+
+  // Mark as initialized after a brief delay to prevent flash of "no products"
+  useEffect(() => {
+    const timer = setTimeout(() => setHasInitialized(true), 1500)
+    return () => clearTimeout(timer)
+  }, [])
+
+  // Use featured products if available, otherwise use ALL redux products
+  // This ensures carousel shows products even when none are featured
+  const products = featuredProducts.length > 0 ? featuredProducts :
+                  reduxProducts.length > 0 ? reduxProducts.slice(0, 10) : // Show up to 10 products
+                  []
   
   const nextSlide = () => {
     setCurrentIndex((prev) => (prev + 1) % products.length)
@@ -230,8 +190,42 @@ const ProductCarousel = ({ featuredProducts }: { featuredProducts: any[] }) => {
     return () => clearInterval(interval)
   }, [currentIndex, products.length])
   
+  // Handle empty products state
+  if (products.length === 0) {
+    // Show loading skeleton if products are still being fetched or hasn't initialized
+    if (productsLoading || !hasInitialized) {
+      return (
+        <div className="relative w-full h-full min-h-[350px] sm:min-h-[500px] lg:min-h-[600px] overflow-hidden bg-white dark:bg-gray-900 animate-pulse">
+          <div className="h-full p-4 sm:p-4 lg:p-8 xl:p-12">
+            {/* Carousel title skeleton */}
+            <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-48 mb-6"></div>
+            {/* Product image skeleton */}
+            <div className="h-40 sm:h-64 lg:h-80 bg-gray-200 dark:bg-gray-700 rounded-lg mb-6"></div>
+            {/* Product info skeleton */}
+            <div className="space-y-3">
+              <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-3/4"></div>
+              <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-24"></div>
+              <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded w-full"></div>
+            </div>
+          </div>
+        </div>
+      )
+    }
+
+    // Only show "No products" message after loading is complete
+    return (
+      <div className="relative w-full h-full min-h-[350px] sm:min-h-[500px] lg:min-h-[600px] overflow-hidden bg-white dark:bg-gray-900">
+        <div className="flex flex-col items-center justify-center h-full p-8 text-center">
+          <Package className="h-20 w-20 text-gray-400 mb-4" />
+          <p className="text-gray-600 dark:text-gray-300 text-lg mb-2">No products available</p>
+          <p className="text-gray-500 dark:text-gray-400 text-sm">Add products to display them here</p>
+        </div>
+      </div>
+    )
+  }
+
   const currentProduct = products[currentIndex]
-  
+
   if (!currentProduct) return null
   
   return (
@@ -272,25 +266,36 @@ const ProductCarousel = ({ featuredProducts }: { featuredProducts: any[] }) => {
                   onClick={() => router.push(`/products?collection=${currentProduct.id}`)}
                   className="block relative h-48 sm:h-64 lg:h-80 xl:h-96 mb-4 sm:mb-4 lg:mb-6 overflow-hidden bg-white dark:bg-gray-900 cursor-pointer group rounded-lg sm:rounded-2xl shadow-md sm:shadow-lg sm:border-2 sm:border-black sm:dark:border-white"
                 >
-                  {/* Collection preview grid */}
-                  <div className="absolute inset-0 p-4 grid grid-cols-2 gap-2">
-                    {currentProduct.products?.slice(0, 4).map((product: any, idx: number) => (
-                      <div key={idx} className="relative bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-md">
-                        {product.image ? (
-                          <Image
-                            src={getProductImage(product)}
-                            alt=""
-                            fill
-                            className="object-contain p-2"
-                          />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center">
-                            <Package className="h-8 w-8 text-gray-400" />
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
+                  {/* Show custom image or product grid based on thumbnailMode */}
+                  {currentProduct.thumbnailMode === 'custom' && currentProduct.image ? (
+                    <Image
+                      src={currentProduct.image}
+                      alt={currentProduct.name}
+                      fill
+                      className="object-cover"
+                      sizes="(max-width: 768px) 100vw, 50vw"
+                    />
+                  ) : (
+                    /* Collection preview grid */
+                    <div className="absolute inset-0 p-4 grid grid-cols-2 gap-2">
+                      {currentProduct.products?.slice(0, 4).map((product: any, idx: number) => (
+                        <div key={idx} className="relative bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-md">
+                          {product.image ? (
+                            <Image
+                              src={getProductImage(product)}
+                              alt=""
+                              fill
+                              className="object-contain p-2"
+                            />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center">
+                              <Package className="h-8 w-8 text-gray-400" />
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
 
                   {/* Collection overlay info */}
                   <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black to-transparent p-4">
@@ -320,17 +325,15 @@ const ProductCarousel = ({ featuredProducts }: { featuredProducts: any[] }) => {
                 </div>
               ) : (
                 // Render single product
-                <Link href={`/product/${currentProduct._id || currentProduct.id}`} className="block relative h-40 sm:h-64 lg:h-80 xl:h-96 mb-3 sm:mb-4 lg:mb-6 overflow-hidden bg-black dark:bg-white cursor-pointer group">
+                <Link href={`/product/${currentProduct._id || currentProduct.id}`} className="block relative h-40 sm:h-64 lg:h-80 xl:h-96 mb-3 sm:mb-4 lg:mb-6 overflow-hidden bg-white dark:bg-gray-100 cursor-pointer group">
                   <Image
-                    src={getOptimizedImageUrl(getProductImage(currentProduct))}
-                    alt={currentProduct.name}
+                    src={getProductImage(currentProduct) || '/placeholder.jpg'}
+                    alt={currentProduct.name || 'Product'}
                     fill
-                    sizes={generateImageSizes('hero')}
-                    className="object-contain p-4 opacity-90 group-hover:opacity-100 transition-opacity bg-white"
+                    sizes="(max-width: 768px) 100vw, 50vw"
+                    className="object-contain p-4 opacity-90 group-hover:opacity-100 transition-opacity"
                     priority
-                    quality={90}
-                    placeholder="blur"
-                    blurDataURL={blurDataURL}
+                    quality={75}
                   />
 
                   <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-black/80 to-transparent" />
@@ -462,36 +465,72 @@ const ProductCarousel = ({ featuredProducts }: { featuredProducts: any[] }) => {
 
 // Animated Stats Component
 const AnimatedStats = ({ stats, currentLocale }: { stats: SiteConfiguration['stats'], currentLocale: string }) => {
-  const [isVisible, setIsVisible] = useState(false)
-  const [counts, setCounts] = useState(stats.map(() => 0))
-  
+  const [counts, setCounts] = useState(stats.map(stat => stat.value))
+  const animationRef = useRef<{ timers: NodeJS.Timeout[], completed: boolean }>({ timers: [], completed: false })
+
   useEffect(() => {
-    setIsVisible(true)
-    
+    // Clear any existing timers
+    animationRef.current.timers.forEach(timer => clearTimeout(timer))
+    animationRef.current.timers = []
+
+    // If already animated, just set final values
+    if (animationRef.current.completed) {
+      setCounts(stats.map(stat => stat.value))
+      return
+    }
+
+    // Start from 0 for animation
+    setCounts(stats.map(() => 0))
+
     stats.forEach((stat, index) => {
       const duration = stat.duration * 1000
       const steps = 50
+      const stepDuration = duration / steps
       const increment = stat.value / steps
-      let current = 0
-      
+
       const timer = setTimeout(() => {
+        let currentStep = 0
+
         const interval = setInterval(() => {
-          current += increment
-          if (current >= stat.value) {
-            current = stat.value
+          currentStep++
+
+          if (currentStep >= steps) {
+            // Ensure we set exactly the target value
+            setCounts(prev => {
+              const newCounts = [...prev]
+              newCounts[index] = stat.value
+              return newCounts
+            })
             clearInterval(interval)
+
+            // Mark as completed after all animations finish
+            if (index === stats.length - 1) {
+              setTimeout(() => {
+                animationRef.current.completed = true
+              }, 100)
+            }
+          } else {
+            // Animate towards target
+            setCounts(prev => {
+              const newCounts = [...prev]
+              newCounts[index] = Math.min(Math.floor(currentStep * increment), stat.value)
+              return newCounts
+            })
           }
-          setCounts(prev => {
-            const newCounts = [...prev]
-            newCounts[index] = Math.floor(current)
-            return newCounts
-          })
-        }, duration / steps)
+        }, stepDuration)
+
+        animationRef.current.timers.push(interval as unknown as NodeJS.Timeout)
       }, index * 200)
-      
-      return () => clearTimeout(timer)
+
+      animationRef.current.timers.push(timer)
     })
-  }, [stats])
+
+    // Cleanup function
+    return () => {
+      animationRef.current.timers.forEach(timer => clearTimeout(timer))
+      animationRef.current.timers = []
+    }
+  }, []) // Empty dependency array - only run once on mount
   
   return (
     <div className="relative w-full py-4 sm:py-6 lg:py-8 xl:py-12">
@@ -629,7 +668,7 @@ export default function DynamicHomepage() {
   // Extract current locale from pathname
   const currentLocale = pathname.startsWith('/sv') ? 'sv' : 'en'
 
-  const [config, setConfig] = useState<SiteConfiguration | null>(getDefaultConfig(t))
+  const [config, setConfig] = useState<SiteConfiguration | null>(null)
   const [featuredProducts, setFeaturedProducts] = useState<any[]>([])
   const [bestSellerProducts, setBestSellerProducts] = useState<any[]>([])
   const [customSectionsData, setCustomSectionsData] = useState<any[]>([])
@@ -650,6 +689,7 @@ export default function DynamicHomepage() {
                 name: fp.collectionName,
                 description: fp.collectionDescription,
                 image: fp.collectionImage,
+                thumbnailMode: fp.collectionThumbnailMode || 'grid',
                 badge: fp.collectionBadge,
                 badgeColor: fp.collectionBadgeColor,
                 products: fp.products || [],
@@ -720,7 +760,7 @@ export default function DynamicHomepage() {
   
   useEffect(() => {
     dispatch(fetchCategories())
-    dispatch(fetchProducts({ page: 1, limit: 100 })) // Fetch more products
+    dispatch(fetchProducts({ page: 1, limit: 1000 })) // Fetch all products
     
     // Fetch site configuration
     fetch("/api/admin/site-configuration?configKey=homepage")
@@ -754,19 +794,101 @@ export default function DynamicHomepage() {
       })
   }, [dispatch, t])
   
-  if (loading) {
+  if (loading || !config) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-gray-900"></div>
-      </div>
-    )
-  }
-  
-  // Ensure config is always available
-  if (!config) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-gray-900"></div>
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white dark:from-gray-900 dark:to-black">
+        <div className="max-w-[1600px] mx-auto px-0 sm:px-4 lg:px-6 xl:px-8 pt-0 sm:pt-6 lg:pt-8 pb-6">
+          <div className="bg-white dark:bg-gray-900 rounded-none sm:rounded-3xl shadow-none sm:shadow-2xl overflow-hidden border-0 sm:border-2 sm:border-gray-100 sm:dark:border-gray-800">
+
+            {/* Categories skeleton */}
+            <div className="px-4 sm:px-6 lg:px-8 pt-6 sm:pt-6 lg:pt-8">
+              <div className="flex gap-6 justify-center py-4">
+                {[1, 2, 3, 4, 5, 6].map((i) => (
+                  <div key={i} className="flex flex-col items-center gap-2 animate-pulse">
+                    <div className="w-16 h-16 rounded-full bg-gray-200 dark:bg-gray-700"></div>
+                    <div className="h-3 w-14 bg-gray-200 dark:bg-gray-700 rounded"></div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Hero section skeleton with left/right split */}
+            <div className="grid grid-cols-1 lg:grid-cols-2">
+              {/* Left side - Text content */}
+              <div className="p-6 sm:p-6 lg:p-10 xl:p-12 2xl:p-16 animate-pulse">
+                {/* Title skeleton */}
+                <div className="h-10 sm:h-12 lg:h-14 bg-gray-200 dark:bg-gray-700 rounded w-full mb-3"></div>
+                <div className="h-10 sm:h-12 lg:h-14 bg-gray-200 dark:bg-gray-700 rounded w-4/5 mb-6"></div>
+
+                {/* Subtitle skeleton */}
+                <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-full mb-2"></div>
+                <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-5/6 mb-8"></div>
+
+                {/* Button skeletons */}
+                <div className="flex flex-col sm:flex-row gap-4">
+                  <div className="h-12 bg-gray-200 dark:bg-gray-700 rounded-lg w-40"></div>
+                  <div className="h-12 bg-gray-200 dark:bg-gray-700 rounded-lg w-40"></div>
+                </div>
+
+                {/* Stats skeleton */}
+                <div className="grid grid-cols-3 gap-4 mt-12">
+                  {[1, 2, 3].map((i) => (
+                    <div key={i}>
+                      <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-16 mb-2"></div>
+                      <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-20"></div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Right side - Product carousel skeleton */}
+              <div className="relative border-t border-gray-100 sm:border-t-2 lg:border-t-0 lg:border-l-2 lg:border-l-4 sm:border-gray-200 sm:border-black dark:border-gray-700 sm:dark:border-white bg-white sm:bg-gray-50 dark:bg-gray-900 animate-pulse">
+                <div className="h-full min-h-[350px] sm:min-h-[500px] lg:min-h-[600px] p-4 sm:p-4 lg:p-8 xl:p-12">
+                  {/* Carousel title */}
+                  <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-48 mb-6"></div>
+
+                  {/* Product image placeholder */}
+                  <div className="h-40 sm:h-64 lg:h-80 bg-gray-200 dark:bg-gray-700 rounded-lg mb-6"></div>
+
+                  {/* Product info */}
+                  <div className="space-y-3">
+                    <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-3/4"></div>
+                    <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-24"></div>
+                    <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded w-full"></div>
+                  </div>
+
+                  {/* Carousel dots */}
+                  <div className="flex gap-2 justify-center mt-6">
+                    {[1, 2, 3, 4, 5].map((i) => (
+                      <div key={i} className="w-2 h-2 rounded-full bg-gray-300 dark:bg-gray-600"></div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Best Sellers skeleton */}
+          <div className="mt-6 bg-white dark:bg-gray-900 rounded-none sm:rounded-3xl overflow-hidden">
+            <div className="text-center py-6 px-4">
+              <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-48 mx-auto mb-2"></div>
+              <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-64 mx-auto"></div>
+            </div>
+            <div className="flex gap-4 overflow-x-auto px-4 pb-6">
+              {[1, 2, 3, 4, 5].map((i) => (
+                <div key={i} className="flex-shrink-0 w-[160px] sm:w-[180px] lg:w-[220px] animate-pulse">
+                  <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
+                    <div className="h-[180px] sm:h-[200px] lg:h-[240px] bg-gray-200 dark:bg-gray-700"></div>
+                    <div className="p-3">
+                      <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4 mb-2"></div>
+                      <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-1/2"></div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
       </div>
     )
   }
@@ -913,12 +1035,12 @@ export default function DynamicHomepage() {
                     <Link key={product._id || product.id} href={`/product/${product._id || product.id}`} className="flex-shrink-0 w-[160px] sm:w-[180px] lg:w-[220px] xl:w-[260px] snap-start">
                       <Card className="border-0 sm:border border-gray-100 sm:border-gray-200 dark:border-gray-800 sm:dark:border-gray-700 h-full hover:shadow-lg transition-all duration-200 cursor-pointer bg-white dark:bg-gray-900 overflow-hidden flex flex-col">
                         <div className="relative h-[180px] sm:h-[200px] lg:h-[240px] xl:h-[280px] bg-gray-50 dark:bg-gray-800 flex-shrink-0">
-                          <Image 
-                            src={getOptimizedImageUrl(getProductImage(product))} 
-                            alt={product.name} 
-                            fill 
-                            sizes={generateImageSizes('card')}
-                            className="object-contain p-2 sm:p-3" 
+                          <Image
+                            src={getProductImage(product) || '/placeholder.jpg'}
+                            alt={product.name || 'Product'}
+                            fill
+                            sizes="(max-width: 640px) 160px, (max-width: 1024px) 220px, 260px"
+                            className="object-contain p-2 sm:p-3"
                             loading="lazy"
                             quality={75}
                           />
@@ -1046,14 +1168,14 @@ export default function DynamicHomepage() {
                   {section.products && section.products.length > 0 ? (
                     section.products.map((product: any) => (
                       <Link key={product._id || product.id} href={`/product/${product._id || product.id}`} className="flex-shrink-0 w-48 sm:w-64 lg:w-80">
-                        <Card className="border-0 sm:border sm:border-2 border-gray-100 sm:border-black dark:border-gray-800 sm:dark:border-white h-full hover:shadow-xl transition-all duration-200 cursor-pointer bg-white dark:bg-gray-900">
+                        <Card className="border-0 sm:border sm:border-2 border-gray-100 sm:border-black dark:border-gray-800 sm:dark:border-white h-full hover:shadow-xl transition-all duration-200 cursor-pointer bg-white dark:bg-gray-900 flex flex-col">
                           <div className="relative h-40 sm:h-52 lg:h-64 bg-gray-50 dark:bg-gray-800">
-                            <Image 
-                              src={getOptimizedImageUrl(product.image || '/placeholder.jpg')} 
-                              alt={product.name} 
-                              fill 
-                              sizes={generateImageSizes('card')}
-                              className="object-contain p-3" 
+                            <Image
+                              src={getProductImage(product) || '/placeholder.jpg'}
+                              alt={product.name || 'Product'}
+                              fill
+                              sizes="(max-width: 640px) 192px, (max-width: 1024px) 256px, 320px"
+                              className="object-contain p-3"
                               loading="lazy"
                               quality={75}
                             />
@@ -1083,16 +1205,16 @@ export default function DynamicHomepage() {
                               </div>
                             )}
                           </div>
-                          <div className="p-3 sm:p-5 lg:p-6">
+                          <div className="p-3 sm:p-5 lg:p-6 flex flex-col flex-grow">
                             <h3 className="text-sm sm:text-base lg:text-lg font-black text-black mb-2 sm:mb-3 line-clamp-2">
                               {product.name}
                             </h3>
-                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                              <span className="text-lg sm:text-xl lg:text-2xl font-black text-black">
+                            <div className="mt-auto">
+                              <span className="text-lg sm:text-xl lg:text-2xl font-black text-black block mb-2">
                                 {formatPrice(product.basePrice || product.price || 0)}
                               </span>
-                              <Button 
-                                className="bg-black hover:bg-gray-800 text-white font-bold uppercase text-xs sm:text-sm w-full sm:w-auto" 
+                              <Button
+                                className="bg-black hover:bg-gray-800 text-white font-bold uppercase text-xs sm:text-sm w-full"
                                 size="sm" 
                                 onClick={(e) => {
                                   e.preventDefault()

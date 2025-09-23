@@ -592,22 +592,9 @@ export const translations = {
   },
 }
 
-export const productCategories = [
-  { id: "all", name: (t: any) => t.allCategories },
-  { id: "flyers", name: (t: any) => t.flyers },
-  { id: "business-cards", name: (t: any) => t.businessCards },
-  { id: "stickers", name: (t: any) => t.stickers },
-  { id: "car-wraps", name: (t: any) => t.carWraps },
-  { id: "decals", name: (t: any) => t.decals },
-  { id: "apparel", name: (t: any) => t.apparel },
-  { id: "promotional-items", name: (t: any) => t.promotionalItems },
-]
+export const productCategories = []
 
-export const carDatabase = {
-  "ABC 123": { make: "Volvo", model: "V60", svgPath: "/placeholder.svg?height=300&width=500" },
-  "DEF 456": { make: "Saab", model: "9-3", svgPath: "/placeholder.svg?height=300&width=500" },
-  "GHI 789": { make: "Tesla", model: "Model Y", svgPath: "/placeholder.svg?height=300&width=500" },
-}
+export const carDatabase = {}
 
 export const fonts = ["Arial", "Verdana", "Times New Roman", "Courier New", "Georgia", "Impact"]
 export const colors = [

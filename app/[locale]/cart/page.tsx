@@ -3,7 +3,7 @@
 import { useAppSelector, useAppDispatch } from "@/lib/redux/hooks"
 import { useMemo, useState, useEffect } from "react"
 import { updateQuantity, removeFromCart, setCart } from "@/lib/redux/slices/cartSlice"
-import { translations } from "@/lib/constants"
+import { useTranslations } from "next-intl"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -29,12 +29,10 @@ export default function CartPage() {
   const router = useRouter()
   const dispatch = useAppDispatch()
   const { items: cart } = useAppSelector((state) => state.cart)
-  const { language } = useAppSelector((state) => state.app)
-  const t = translations[language]
+  const t = useTranslations()
   const activeCoupon = useAppSelector((s: any) => s.coupons.activeCoupon)
   const [isClient, setIsClient] = useState(false)
-  const [cartKey, setCartKey] = useState(0)
-  const [renderKey, setRenderKey] = useState(Date.now())
+  // Removed cartKey and renderKey state variables to prevent unnecessary re-renders
   const { formatPrice, currency } = useCurrency()
   
   // Debug: Log currency information
@@ -82,7 +80,7 @@ export default function CartPage() {
     }
   }, [])
   
-  // Debug: Log cart changes
+  // Debug: Log cart changes (removed force re-render to prevent loops)
   useEffect(() => {
     console.log('🛒 Cart updated:', cart)
     cart.forEach((item, index) => {
@@ -96,9 +94,6 @@ export default function CartPage() {
         quantity: item.quantity
       })
     })
-    // Force re-render when cart changes
-    setCartKey(prev => prev + 1)
-    setRenderKey(Date.now())
   }, [cart])
 
   const rawSubtotal = cart.reduce((total, item) => {
@@ -165,25 +160,16 @@ export default function CartPage() {
     cartLength: cart.length
   })
   
-  // Check if cart total is suspiciously low (indicating cache issue)
+  // Log cart total for debugging (removed problematic refresh logic)
   if (cartTotal < 10 && cart.length > 0) {
     console.warn('⚠️ Cart total is suspiciously low:', cartTotal, 'for', cart.length, 'items')
-    console.log('🔄 Forcing component refresh...')
-    
-    // Force refresh the Redux cart state
-    dispatch(setCart([...cart]))
-    
-    // Force refresh the component
-    setRenderKey(Date.now())
-    setCartKey(prev => prev + 1)
-    
-    // If still incorrect after refresh, reload the page
-    setTimeout(() => {
-      if (cartTotal < 10 && cart.length > 0) {
-        console.log('🔄 Still incorrect, forcing page reload...')
-        window.location.reload()
-      }
-    }, 1000)
+    console.log('🛒 Cart items for debugging:', cart.map(item => ({
+      id: item.id,
+      name: item.name,
+      price: item.price,
+      quantity: item.quantity,
+      totalPrice: (item as any).totalPrice
+    })))
   }
 
   const handleUpdateQuantity = (id: string, quantity: number) => {
@@ -200,7 +186,7 @@ export default function CartPage() {
     return (
       <div className="text-center py-8 sm:py-12 flex flex-col items-center justify-center min-h-[calc(100vh-250px)] px-4">
         <ShoppingCart className="mx-auto h-16 w-16 sm:h-20 sm:w-20 text-slate-400 dark:text-slate-500 mb-4 sm:mb-6 animate-pulse" />
-        <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3 sm:mb-4 text-slate-900 dark:text-white">{t.cart}</h1>
+        <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3 sm:mb-4 text-slate-900 dark:text-white">{t('cart.title')}</h1>
         <p className="text-base sm:text-lg text-slate-600 dark:text-slate-300 mb-6 sm:mb-8">Loading...</p>
       </div>
     )
@@ -210,21 +196,21 @@ export default function CartPage() {
     return (
       <div className="text-center py-8 sm:py-12 flex flex-col items-center justify-center min-h-[calc(100vh-250px)] px-4">
         <ShoppingCart className="mx-auto h-16 w-16 sm:h-20 sm:w-20 text-slate-400 dark:text-slate-500 mb-4 sm:mb-6" />
-        <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3 sm:mb-4 text-slate-900 dark:text-white">{t.cart}</h1>
-        <p className="text-base sm:text-lg text-slate-600 dark:text-slate-300 mb-6 sm:mb-8">{t.yourCartIsEmpty}</p>
+        <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3 sm:mb-4 text-slate-900 dark:text-white">{t('cart.title')}</h1>
+        <p className="text-base sm:text-lg text-slate-600 dark:text-slate-300 mb-6 sm:mb-8">{t('cart.emptyMessage')}</p>
         <Button 
           size="lg" 
           className="bg-black hover:bg-gray-800 text-white shadow-lg min-h-[44px] touch-manipulation"
           onClick={() => router.push('/products')}
         >
-          <span className="flex items-center">{t.browseProducts}</span>
+          <span className="flex items-center">{t('cart.browseProducts')}</span>
         </Button>
       </div>
     )
   }
 
   return (
-    <div key={`cart-${renderKey}-${cartKey}-${cart.length}-${cartTotal}`} className="space-y-3 sm:space-y-4 lg:space-y-6 xl:space-y-8 px-2 sm:px-4 lg:px-6 xl:px-8">
+    <div className="space-y-3 sm:space-y-4 lg:space-y-6 xl:space-y-8 px-2 sm:px-4 lg:px-6 xl:px-8">
       {/* Breadcrumbs */}
       <div className="max-w-7xl mx-auto">
         <Breadcrumb className="mb-3 sm:mb-4">
@@ -244,7 +230,7 @@ export default function CartPage() {
         </Breadcrumb>
       </div>
       
-      <h1 className="text-xl sm:text-2xl lg:text-3xl xl:text-4xl font-bold text-center text-slate-900 dark:text-white">{t.cart}</h1>
+      <h1 className="text-xl sm:text-2xl lg:text-3xl xl:text-4xl font-bold text-center text-slate-900 dark:text-white">{t('cart.title')}</h1>
       <Card className="shadow-xl border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 max-w-7xl mx-auto">
         <CardContent className="p-0">
           {/* Mobile View */}
@@ -276,6 +262,10 @@ export default function CartPage() {
                 if ((item as any).designContext?.selectedVariation) {
                   const variation = (item as any).designContext.selectedVariation
                   displayName += ` (${variation.colorName})`
+                }
+                // Add size if available
+                if ((item as any).selectedSize) {
+                  displayName += ` - Size: ${(item as any).selectedSize}`
                 }
                 return displayName
               }
@@ -403,10 +393,10 @@ export default function CartPage() {
             <Table>
               <TableHeader>
                 <TableRow className="bg-slate-50 dark:bg-slate-700/50">
-                  <TableHead className="w-2/5 text-slate-700 dark:text-slate-300">{t.products}</TableHead>
-                  <TableHead className="text-slate-700 dark:text-slate-300">{t.price}</TableHead>
-                  <TableHead className="text-center w-1/5 text-slate-700 dark:text-slate-300">{t.quantity}</TableHead>
-                  <TableHead className="text-right text-slate-700 dark:text-slate-300">{t.total}</TableHead>
+                  <TableHead className="w-2/5 text-slate-700 dark:text-slate-300">{t('cart.products')}</TableHead>
+                  <TableHead className="text-slate-700 dark:text-slate-300">{t('cart.price')}</TableHead>
+                  <TableHead className="text-center w-1/5 text-slate-700 dark:text-slate-300">{t('cart.quantity')}</TableHead>
+                  <TableHead className="text-right text-slate-700 dark:text-slate-300">{t('cart.total')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -453,13 +443,18 @@ export default function CartPage() {
                   // Get product display name with variation info
                   const getProductDisplayName = () => {
                     let displayName = item.name
-                    
+
                     // Add variation color info if available
                     if ((item as any).designContext?.selectedVariation) {
                       const variation = (item as any).designContext.selectedVariation
                       displayName += ` (${variation.colorName})`
                     }
-                    
+
+                    // Add size if available
+                    if ((item as any).selectedSize) {
+                      displayName += ` - Size: ${(item as any).selectedSize}`
+                    }
+
                     return displayName
                   }
 
@@ -678,13 +673,13 @@ export default function CartPage() {
               </div>
             )}
             <div className="flex justify-between text-slate-700 dark:text-slate-300">
-              <span>{t.vat}:</span>
+              <span>{t('cart.vat')}:</span>
               <span>{effectiveFormatPrice(vatAmount)}</span>
             </div>
             <Separator className="bg-slate-300 dark:bg-slate-600" />
             <div className="flex justify-between font-bold text-base sm:text-lg lg:text-xl text-slate-900 dark:text-white">
-              <span>{t.total}:</span>
-              <span id={`cart-total-${renderKey}`}>
+              <span>{t('cart.total')}:</span>
+              <span id="cart-total">
                 {(() => {
                   console.log('🎯 Rendering cartTotal:', cartTotal, 'currency:', effectiveCurrency, 'formatted:', effectiveFormatPrice(cartTotal))
                   console.log('🎯 Currency conversion:', {
@@ -704,7 +699,7 @@ export default function CartPage() {
             onClick={() => router.push('/checkout')}
           >
             <span className="flex items-center justify-center text-sm sm:text-base">
-              {t.checkout} <Truck className="ml-2 h-4 w-4 sm:h-5 sm:w-5" />
+              {t('cart.checkout')} <Truck className="ml-2 h-4 w-4 sm:h-5 sm:w-5" />
             </span>
           </Button>
         </CardFooter>

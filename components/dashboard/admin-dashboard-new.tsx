@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo } from "react"
 import * as Yup from "yup"
 import { useAppSelector, useAppDispatch } from "@/lib/redux/hooks"
 import { useTranslations } from "next-intl"
-import { fetchProducts, createProduct, updateProduct, deleteProduct } from "@/lib/redux/slices/productsSlice"
+import { fetchProducts, createProduct, updateProduct, deleteProduct, clearProductCache } from "@/lib/redux/slices/productsSlice"
 import { fetchUsers, updateUser, deleteUser } from "@/lib/redux/slices/usersSlice"
 import { fetchTemplates, createTemplate, updateTemplate, deleteTemplate } from "@/lib/redux/slices/templatesSlice"
 import { fetchCoupons, createCoupon, updateCoupon, deleteCoupon } from "@/lib/redux/slices/couponsSlice"
@@ -299,6 +299,14 @@ export function AdminDashboardNew({ onLogout }: AdminDashboardNewProps) {
       
       console.log('Updating product with data:', productData)
       await dispatch(updateProduct(productData))
+
+      // Clear the product cache to ensure fresh data everywhere
+      dispatch(clearProductCache())
+
+      // Refetch products to ensure filters are updated
+      // This is especially important for designable status changes
+      await dispatch(fetchProducts({ page: 1, limit: 100 }))
+
       toast.success(t("dashboard.productUpdated", { productName: values.name }))
       setIsEditProductDialogOpen(false)
       setEditingProduct(null)
@@ -329,6 +337,10 @@ export function AdminDashboardNew({ onLogout }: AdminDashboardNewProps) {
   const handleToggleProductStock = async (productId: string, inStock: boolean) => {
     try {
       await dispatch(updateProduct({ id: productId, inStock }))
+      // Clear cache to ensure fresh data
+      dispatch(clearProductCache())
+      // Refetch to update filters
+      await dispatch(fetchProducts({ page: 1, limit: 100 }))
       toast.success(inStock ? t("dashboard.productInStock") : t("dashboard.productOutOfStock"))
     } catch (error) {
       toast.error(t("dashboard.failedToUpdateStock"))

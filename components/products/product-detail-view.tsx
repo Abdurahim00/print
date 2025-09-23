@@ -299,8 +299,17 @@ export function ProductDetailView({
     console.log('Add to Cart clicked')
     console.log('Product:', product)
     console.log('Current price:', currentPrice)
+    console.log('Selected size:', selectedSize)
 
-    // No size selection required - add directly to cart
+    // Check if size selection is required
+    if (product.requiresSize && product.availableSizes && product.availableSizes.length > 0 && !selectedSize) {
+      toast({
+        title: "Please select a size",
+        description: "Size selection is required for this product",
+        variant: "destructive"
+      })
+      return
+    }
 
     // Create cart item with proper structure
     const cartItem: any = {
@@ -311,7 +320,8 @@ export function ProductDetailView({
       price: currentPrice > 0 ? currentPrice : (product.price || product.basePrice || 0),
       basePrice: product.basePrice || product.price || 0,
       image: selectedVariant?.image || selectedVariant?.variant_image || product.image,
-      name: product.name
+      name: product.name,
+      selectedSize: selectedSize || null
     }
 
     // Add variant information if selected
@@ -402,11 +412,11 @@ export function ProductDetailView({
       </div>
       
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-2 sm:px-4 md:px-6 lg:px-8 pb-16">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-16">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8 lg:gap-12">
           
           {/* Image Gallery */}
-          <div className="flex gap-3">
+          <div className="flex gap-2 sm:gap-3">
             {/* Vertical Thumbnail Gallery - Show when there are multiple angle images */}
             {angleImages.length > 1 && (
               <div className="hidden md:flex flex-col gap-2 overflow-y-auto max-h-[600px] custom-scrollbar">
@@ -437,8 +447,8 @@ export function ProductDetailView({
             )}
             
             {/* Main Image */}
-            <div className="flex-1">
-              <div className="relative aspect-square bg-gray-100 dark:bg-gray-800 rounded-xl overflow-hidden border-2 border-black dark:border-white">
+            <div className="flex-1 max-w-full">
+              <div className="relative aspect-square bg-gray-100 dark:bg-gray-800 rounded-lg sm:rounded-xl overflow-hidden border sm:border-2 border-gray-300 sm:border-black dark:border-gray-600 dark:sm:border-white">
                 <Image
                   src={angleImages.length > 0 ? (angleImages[selectedImage]?.url || mainImage) : mainImage}
                   alt={`${product.name}${angleImages[selectedImage] ? ` - ${angleImages[selectedImage].label}` : ''}`}
@@ -495,22 +505,6 @@ export function ProductDetailView({
                 )}
               </div>
               
-              {/* Mobile Thumbnail Dots - Show for products with multiple angle images */}
-              {angleImages.length > 1 && (
-                <div className="md:hidden flex justify-center gap-1 mt-3">
-                  {angleImages.map((_, idx) => (
-                    <button
-                      key={idx}
-                      onClick={() => setSelectedImage(idx)}
-                      className={`w-2 h-2 rounded-full transition-all ${
-                        selectedImage === idx 
-                          ? 'bg-black dark:bg-white w-6' 
-                          : 'bg-gray-300 dark:bg-gray-600'
-                      }`}
-                    />
-                  ))}
-                </div>
-              )}
             </div>
           </div>
           
@@ -518,15 +512,15 @@ export function ProductDetailView({
           <div className="space-y-6">
             {/* Header */}
             <div>
-              <h1 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-black text-black dark:text-white uppercase break-words">
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-black text-black dark:text-white uppercase break-words hyphens-auto">
                 {product.name}
               </h1>
               <div className="flex flex-wrap gap-2 sm:gap-4 mt-2 text-xs sm:text-sm text-gray-500 dark:text-gray-400">
                 {(product.sku || product.originalData?.articleNo) && (
-                  <span className="truncate max-w-[150px] sm:max-w-none">SKU: {product.sku || product.originalData?.articleNo}</span>
+                  <span className="break-all">SKU: {product.sku || product.originalData?.articleNo}</span>
                 )}
                 {product.originalData?.articleNo && (
-                  <span className="truncate max-w-[150px] sm:max-w-none">Article No: {product.originalData.articleNo}</span>
+                  <span className="break-all">Article No: {product.originalData.articleNo}</span>
                 )}
               </div>
 
@@ -534,7 +528,7 @@ export function ProductDetailView({
             
             {/* Price */}
             <div className="space-y-2">
-              <div className="flex items-baseline gap-3">
+              <div className="flex items-baseline gap-2 sm:gap-3 flex-wrap">
                 <span className="text-2xl sm:text-3xl lg:text-4xl font-black text-black dark:text-white">
                   {currentPrice > 0 ? currentPrice.toFixed(2) : 'Price on request'}
                 </span>
@@ -562,7 +556,7 @@ export function ProductDetailView({
                 <Label className="font-bold">
                   Color: {selectedVariant?.variant_name || selectedVariant?.color?.name || 'Select Color'}
                 </Label>
-                <div className="grid grid-cols-4 sm:grid-cols-5 gap-3">
+                <div className="grid grid-cols-3 xs:grid-cols-4 sm:grid-cols-5 gap-2 sm:gap-3">
                   {product.variants.map((variant: any, idx: number) => {
                     const variantImage = variant.variant_image || variant.image || 
                                        variant.color?.swatch_image || 
@@ -576,14 +570,14 @@ export function ProductDetailView({
                       <button
                         key={variant.id || `variant-${idx}`}
                         onClick={() => handleVariantChange(variant)}
-                        className={`group relative flex flex-col items-center gap-1 p-2 rounded-lg border-2 transition-all ${
+                        className={`group relative flex flex-col items-center gap-1 p-1.5 sm:p-2 rounded-lg border sm:border-2 transition-all ${
                           isSelected
                             ? 'border-black dark:border-white bg-gray-50 dark:bg-gray-800'
                             : 'border-gray-300 dark:border-gray-600 hover:border-gray-500'
                         }`}
                         title={variantName}
                       >
-                        <div className="relative w-16 h-16 rounded-md overflow-hidden bg-white">
+                        <div className="relative w-12 h-12 sm:w-16 sm:h-16 rounded-md overflow-hidden bg-white">
                           {variantImage ? (
                             <Image
                               src={variantImage}
@@ -613,10 +607,45 @@ export function ProductDetailView({
               </div>
             )}
             
-            
+
+            {/* Size Selection */}
+            {product.requiresSize && product.availableSizes && product.availableSizes.length > 0 && (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="font-bold">Size</span>
+                  {selectedSize && (
+                    <Badge variant="secondary" className="bg-black text-white">
+                      {selectedSize}
+                    </Badge>
+                  )}
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {product.availableSizes.map((size: string) => (
+                    <Button
+                      key={size}
+                      type="button"
+                      variant={selectedSize === size ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setSelectedSize(size)}
+                      className={
+                        selectedSize === size
+                          ? "bg-black text-white hover:bg-gray-800 border-2 border-black"
+                          : "border-2 border-gray-300 hover:border-black"
+                      }
+                    >
+                      {size}
+                    </Button>
+                  ))}
+                </div>
+                {!selectedSize && (
+                  <p className="text-sm text-red-500">Please select a size</p>
+                )}
+              </div>
+            )}
+
             {/* Quantity */}
             <div className="space-y-3">
-              <Label className="font-bold">Quantity</Label>
+              <span className="font-bold">Quantity</span>
               <div className="flex items-center gap-4">
                 <div className="flex items-center border-2 border-black dark:border-white rounded-lg">
                   <button
@@ -643,7 +672,7 @@ export function ProductDetailView({
             {/* Action Buttons */}
             <div className="space-y-3">
               {isDesignable ? (
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <Button
                     onClick={handleAddToCart}
                     disabled={!product.inStock}

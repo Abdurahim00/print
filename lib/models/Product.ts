@@ -97,6 +97,17 @@ export interface ProductDocument {
   leftAltText?: string;
   rightAltText?: string;
   materialAltText?: string;
+  // Size options for apparel products
+  availableSizes?: string[]; // Available sizes for products without variations (e.g., ['S', 'M', 'L', 'XL'])
+  sizeChart?: {
+    [size: string]: {
+      chest?: string;
+      length?: string;
+      shoulders?: string;
+      waist?: string;
+    };
+  };
+  requiresSize?: boolean; // Whether size selection is required for this product
   // Purchase limit settings
   purchaseLimit?: {
     enabled: boolean; // Whether purchase limits are enabled for this product
@@ -148,6 +159,17 @@ export interface Product {
   leftAltText?: string;
   rightAltText?: string;
   materialAltText?: string;
+  // Size options for apparel products
+  availableSizes?: string[]; // Available sizes for products without variations (e.g., ['S', 'M', 'L', 'XL'])
+  sizeChart?: {
+    [size: string]: {
+      chest?: string;
+      length?: string;
+      shoulders?: string;
+      waist?: string;
+    };
+  };
+  requiresSize?: boolean; // Whether size selection is required for this product
   // Purchase limit settings
   purchaseLimit?: {
     enabled: boolean; // Whether purchase limits are enabled for this product

@@ -48,7 +48,8 @@
     "code": "KOD",
     "offEverything": "RABATT PÅ ALLT",
     "currency": "kr",
-    "design": "Design"
+    "design": "Design",
+    "backToProducts": "Tillbaka till Produkter"
   },
   "navigation": {
     "home": "Hem",
@@ -445,10 +446,15 @@
     "showingRange": "Visar {start}-{end} av {total} produkter"
   },
   "cart": {
+    "title": "Varukorg",
     "cart": "Varukorg",
+    "emptyMessage": "Din varukorg är tom.",
     "yourCartIsEmpty": "Din varukorg är tom.",
     "browseProducts": "Bläddra Produkter",
     "orderSummary": "Ordersammanfattning",
+    "products": "Produkter",
+    "price": "Pris",
+    "quantity": "Antal",
     "vat": "Moms (25%)",
     "shipping": "Frakt",
     "total": "Totalt",
@@ -931,5 +937,10 @@
     "directImageTest": "Direkt bildtest",
     "testingUrl": "Testar URL:",
     "altText": "Test"
-  }
+  },
+  "applied": "Tillämpad",
+  "paymentSuccessful": "Betalning Lyckades",
+  "orderPlacedSuccessfully": "Din beställning har lagts framgångsrikt!",
+  "orderCreationFailed": "Orderskapande Misslyckades",
+  "orderCreationFailedDescription": "Betalningen lyckades men orderskapandet misslyckades. Vänligen kontakta support."
 }

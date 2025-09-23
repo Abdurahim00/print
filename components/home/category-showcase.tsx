@@ -167,7 +167,7 @@ export function CategoryShowcase() {
           <div className="container mx-auto px-4">
             {/* Categories Grid for Mobile */}
             <motion.div
-              className="grid grid-cols-4 gap-3"
+              className="grid grid-cols-4 gap-3 place-items-center"
               variants={containerVariants}
               initial="hidden"
               animate="visible"
@@ -236,7 +236,7 @@ export function CategoryShowcase() {
         transition={{ duration: 0.3 }}
       >
         <div className="relative">
-          <div className="relative group">
+          <div className="relative group max-w-7xl mx-auto">
             {/* Left Arrow - Desktop */}
             <AnimatePresence>
               {showLeftButton && (
@@ -279,10 +279,11 @@ export function CategoryShowcase() {
               }}
             >
               <motion.div
-                className="flex gap-5 lg:gap-6 py-3"
+                className="flex gap-5 lg:gap-6 py-3 justify-center"
                 variants={containerVariants}
                 initial="hidden"
                 animate="visible"
+                style={{ minWidth: 'max-content' }}
               >
                 {activeCategories.map((category: any, index: number) => {
                   const IconComponent = getCategoryIcon(category.name, index, usedIconsRef.current)

@@ -16,9 +16,23 @@ import { toast } from "sonner"
 import type { Order } from "@/types"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import Image from "next/image"
-import { downloadOrderPDF } from "@/lib/utils/pdfExport"
-import { DesignCanvasRenderer } from "@/components/DesignCanvasRenderer"
-import { DesignElementsSummary } from "@/components/DesignElementsSummary"
+// Dynamically import PDF export to reduce initial bundle size
+const downloadOrderPDF = async (order: Order) => {
+  const { downloadOrderPDF: pdfExport } = await import("@/lib/utils/pdfExport")
+  return pdfExport(order)
+}
+import dynamic from 'next/dynamic'
+
+// Dynamically import heavy components to prevent chunk loading issues
+const DesignCanvasRenderer = dynamic(
+  () => import("@/components/DesignCanvasRenderer").then(mod => ({ default: mod.DesignCanvasRenderer })),
+  { ssr: false }
+)
+
+const DesignElementsSummary = dynamic(
+  () => import("@/components/DesignElementsSummary").then(mod => ({ default: mod.DesignElementsSummary })),
+  { ssr: false }
+)
 
 export function OperationsDashboard() {
   const dispatch = useAppDispatch()
@@ -101,8 +115,8 @@ export function OperationsDashboard() {
       
       toast.success(`Generating PDF for order ${orderId}...`)
       
-      // Generate and download PDF
-      downloadOrderPDF(order)
+      // Generate and download PDF using dynamic import
+      await downloadOrderPDF(order)
       
       toast.success(`PDF generated successfully for order ${orderId}`)
     } catch (error) {

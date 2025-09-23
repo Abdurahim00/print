@@ -445,10 +445,15 @@
     "showingRange": "Showing {start}-{end} of {total} products"
   },
   "cart": {
+    "title": "Shopping Cart",
     "cart": "Cart",
+    "emptyMessage": "Your cart is currently empty.",
     "yourCartIsEmpty": "Your cart is currently empty.",
     "browseProducts": "Browse Products",
     "orderSummary": "Order Summary",
+    "products": "Products",
+    "price": "Price",
+    "quantity": "Quantity",
     "vat": "VAT (25%)",
     "shipping": "Shipping",
     "total": "Total",

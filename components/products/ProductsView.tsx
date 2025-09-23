@@ -284,14 +284,14 @@ export function ProductsView({ categorySlug, subcategorySlug, collectionId, desi
   }, [products, collectionId, collectionProducts])
 
   const ProductCardSkeleton = () => (
-    <Card className="overflow-hidden flex flex-col border-2 border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 rounded-xl animate-pulse">
+    <Card className="overflow-hidden flex flex-col border-2 border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 rounded-xl animate-pulse max-w-full">
       <div className="w-full aspect-[4/3] bg-gray-200 dark:bg-gray-800" />
-      <CardContent className="p-4 flex-grow flex flex-col space-y-2 border-t-2 border-gray-300 dark:border-gray-700">
-        <div className="h-4 bg-gray-200 dark:bg-gray-800 rounded w-3/4" />
-        <div className="h-6 bg-gray-200 dark:bg-gray-800 rounded w-1/2" />
-        <div className="h-3 bg-gray-200 dark:bg-gray-800 rounded w-1/3" />
+      <CardContent className="p-3 sm:p-4 flex-grow flex flex-col space-y-2 border-t-2 border-gray-300 dark:border-gray-700">
+        <div className="h-3 sm:h-4 bg-gray-200 dark:bg-gray-800 rounded w-3/4" />
+        <div className="h-4 sm:h-6 bg-gray-200 dark:bg-gray-800 rounded w-1/2" />
+        <div className="h-2 sm:h-3 bg-gray-200 dark:bg-gray-800 rounded w-1/3" />
       </CardContent>
-      <CardFooter className="p-4 pt-0 border-t-2 border-gray-300 dark:border-gray-700">
+      <CardFooter className="p-3 sm:p-4 pt-0 border-t-2 border-gray-300 dark:border-gray-700">
         <div className="flex gap-2 w-full">
           <div className="flex-1 h-9 bg-gray-200 dark:bg-gray-800 rounded" />
           <div className="flex-1 h-9 bg-gray-200 dark:bg-gray-800 rounded" />

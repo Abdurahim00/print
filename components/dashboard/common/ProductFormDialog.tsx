@@ -472,7 +472,124 @@ export const ProductFormDialog: React.FC<ProductFormDialogProps> = ({
               </div>
             )}
           </div>
-          
+
+          {/* Size Options Section */}
+          <div className="space-y-4 border rounded-lg p-3 sm:p-4 bg-slate-50 dark:bg-slate-800/30">
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                id="requiresSize"
+                checked={!!formik.values.requiresSize}
+                onChange={(e) => {
+                  formik.setFieldValue("requiresSize", e.target.checked)
+                  if (e.target.checked && (!formik.values.availableSizes || formik.values.availableSizes.length === 0)) {
+                    // Set default sizes for apparel
+                    formik.setFieldValue("availableSizes", ["XS", "S", "M", "L", "XL", "XXL"])
+                  }
+                }}
+              />
+              <Label htmlFor="requiresSize" className="font-medium">Size Options (for apparel)</Label>
+            </div>
+
+            {formik.values.requiresSize && (
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                    Available Sizes
+                  </Label>
+                  <div className="flex flex-wrap gap-2">
+                    {["XS", "S", "M", "L", "XL", "XXL", "3XL", "4XL", "5XL"].map((size) => {
+                      const isSelected = formik.values.availableSizes?.includes(size)
+                      return (
+                        <Button
+                          key={size}
+                          type="button"
+                          variant={isSelected ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => {
+                            const currentSizes = formik.values.availableSizes || []
+                            if (isSelected) {
+                              formik.setFieldValue(
+                                "availableSizes",
+                                currentSizes.filter((s: string) => s !== size)
+                              )
+                            } else {
+                              formik.setFieldValue("availableSizes", [...currentSizes, size])
+                            }
+                          }}
+                          className={isSelected ? "bg-black hover:bg-gray-800" : ""}
+                        >
+                          {size}
+                        </Button>
+                      )
+                    })}
+                  </div>
+                  <p className="text-xs text-slate-500">Click to toggle sizes. Selected sizes will be available for customers.</p>
+                </div>
+
+                {/* Custom size input */}
+                <div className="space-y-2">
+                  <Label htmlFor="customSize" className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                    Add Custom Size
+                  </Label>
+                  <div className="flex gap-2">
+                    <Input
+                      id="customSize"
+                      placeholder="Enter custom size (e.g., '2XS', 'One Size')"
+                      onKeyPress={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault()
+                          const input = e.target as HTMLInputElement
+                          const value = input.value.trim().toUpperCase()
+                          if (value && !formik.values.availableSizes?.includes(value)) {
+                            formik.setFieldValue("availableSizes", [
+                              ...(formik.values.availableSizes || []),
+                              value
+                            ])
+                            input.value = ''
+                          }
+                        }
+                      }}
+                    />
+                    <Button
+                      type="button"
+                      size="sm"
+                      onClick={() => {
+                        const input = document.getElementById('customSize') as HTMLInputElement
+                        const value = input.value.trim().toUpperCase()
+                        if (value && !formik.values.availableSizes?.includes(value)) {
+                          formik.setFieldValue("availableSizes", [
+                            ...(formik.values.availableSizes || []),
+                            value
+                          ])
+                          input.value = ''
+                        }
+                      }}
+                    >
+                      Add
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Display selected sizes */}
+                {formik.values.availableSizes && formik.values.availableSizes.length > 0 && (
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                      Selected Sizes: {formik.values.availableSizes.length}
+                    </Label>
+                    <div className="flex flex-wrap gap-1">
+                      {formik.values.availableSizes.sort().map((size: string) => (
+                        <Badge key={size} variant="secondary">
+                          {size}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
           <div className="space-y-2">
             <Label htmlFor="categoryId" className="text-sm font-medium text-slate-700 dark:text-slate-300">
               {t("dashboard.category")} <span className="text-red-500">*</span>
@@ -562,7 +679,20 @@ export const ProductFormDialog: React.FC<ProductFormDialogProps> = ({
                 <Switch
                   id="isDesignable"
                   checked={formik.values.isDesignable}
-                  onCheckedChange={(checked) => formik.setFieldValue("isDesignable", checked)}
+                  onCheckedChange={(checked) => {
+                    formik.setFieldValue("isDesignable", checked)
+                    // Clear designCostPerCm2 when disabling design capability
+                    if (!checked) {
+                      formik.setFieldValue("designCostPerCm2", 0)
+                      // Also clear design frames
+                      formik.setFieldValue("designFrames", [])
+                    } else {
+                      // Set default cost when enabling
+                      if (!formik.values.designCostPerCm2 || formik.values.designCostPerCm2 === 0) {
+                        formik.setFieldValue("designCostPerCm2", 0.5)
+                      }
+                    }
+                  }}
                 />
                 <Label htmlFor="isDesignable" className="font-medium cursor-pointer">
                   {t("dashboard.enableDesignCustomization")}

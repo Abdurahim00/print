@@ -155,6 +155,12 @@ export const updateProduct = createAsyncThunk(
     if (!response.ok) {
       throw new Error("Failed to update product")
     }
+
+    // Clear the product cache when a product is updated
+    // This ensures that filters and other components get fresh data
+    productCache.clear()
+    console.log("Product cache cleared after update")
+
     return response.json()
   }
 )
@@ -187,14 +193,7 @@ const initialState = {
     minPrice: undefined as number | undefined,
     maxPrice: undefined as number | undefined
   },
-  categoryCounts: [] as {
-    categoryId: string
-    count: number
-    subcategories?: {
-      subcategoryId: string
-      count: number
-    }[]
-  }[]
+  categoryCounts: []
 }
 
 const productsSlice = createSlice({
@@ -225,6 +224,11 @@ const productsSlice = createSlice({
     resetFilters: (state) => {
       state.filters = initialState.filters
       state.pagination.page = 1
+    },
+    clearProductCache: () => {
+      // Clear the cache to force refetch
+      productCache.clear()
+      console.log("Product cache manually cleared")
     }
   },
   extraReducers: (builder) => {
@@ -326,15 +330,16 @@ const productsSlice = createSlice({
   },
 })
 
-export const { 
-  setProducts, 
-  addProduct, 
-  setLoading, 
-  setError, 
+export const {
+  setProducts,
+  addProduct,
+  setLoading,
+  setError,
   clearError,
   setFilters,
   setPage,
-  resetFilters
+  resetFilters,
+  clearProductCache
 } = productsSlice.actions
 
 export default productsSlice.reducer

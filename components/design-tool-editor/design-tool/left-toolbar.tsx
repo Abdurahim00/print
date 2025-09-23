@@ -27,7 +27,6 @@ export function LeftToolbar() {
   const { handleUndo, handleRedo, addText } = useFabricCanvas("design-canvas")
 
   const tools = [
-    { id: "product", icon: Shirt, label: "Product", description: "Select and configure products" },
     { id: "text", icon: Type, label: "Text", description: "Add and edit text elements" },
     { id: "template", icon: FileText, label: "Templates", description: "Browse and apply design templates" },
     { id: "upload", icon: Upload, label: "Upload", description: "Upload custom images and graphics" },
@@ -39,13 +38,9 @@ export function LeftToolbar() {
     
     // First, set the selected tool (this visually highlights the tool)
     dispatch(setSelectedTool(toolId))
-    
+
     // Then perform the tool-specific action
-    if (toolId === "product") {
-      console.log('🛠️ [LeftToolbar] Opening product modal')
-      dispatch(setShowProductModal(true))
-      console.log('🛠️ [LeftToolbar] Product modal action dispatched')
-    } else if (toolId === "template") {
+    if (toolId === "template") {
       console.log('🛠️ [LeftToolbar] Opening template modal')
       dispatch(setShowTemplateModal(true))
       console.log('🛠️ [LeftToolbar] Template modal action dispatched')

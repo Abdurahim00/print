@@ -716,7 +716,7 @@ export default function ReviewPage() {
                 </CardHeader>
                 <CardContent>
                   {/* Design Preview */}
-                  <div className="aspect-square bg-gray-100 dark:bg-gray-800 rounded-lg mb-4 relative overflow-hidden">
+                  <div className="bg-gray-100 dark:bg-gray-800 rounded-lg mb-4 relative overflow-hidden flex items-center justify-center" style={{ width: '600px', height: '600px' }}>
                     {product && design.canvasJSON?.objects?.length > 0 ? (
                       <>
                     {/* Product Image Background */}
@@ -742,7 +742,11 @@ export default function ReviewPage() {
                               <img
                                 src={imageUrl}
                                 alt={`${product.name} - ${design.angle}`}
-                                className="w-full h-full object-contain"
+                                className="object-contain"
+                                style={{ 
+                                  maxWidth: '100%', 
+                                  maxHeight: '100%'
+                                }}
                                 onError={(e) => {
                                   console.error(`❌ Failed to load image for ${design.angle}:`, imageUrl)
                                   console.error('Product data:', product)

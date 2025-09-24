@@ -1087,6 +1087,24 @@ export const useFabricCanvas = (canvasId: string, scaleOptions?: { isMobile?: bo
         // Place text in the center of the first boundary
         initialLeft = boundary.x + boundary.width / 2
         initialTop = boundary.y + boundary.height / 2
+        
+        console.log('🎯 [addText] Positioning text at boundary center:', {
+          boundary: boundary,
+          calculatedPosition: { left: initialLeft, top: initialTop }
+        })
+      } else {
+        // If no boundaries are set, create a default centered position
+        // This ensures text is always centered even if boundaries aren't ready yet
+        const canvasWidth = canvasInstance.getWidth() || 600
+        const canvasHeight = canvasInstance.getHeight() || 600
+        initialLeft = canvasWidth / 2
+        initialTop = canvasHeight / 2
+        
+        console.log('🎯 [addText] No boundaries found, using canvas center:', { 
+          left: initialLeft, 
+          top: initialTop,
+          canvasSize: { width: canvasWidth, height: canvasHeight }
+        })
       }
       
       const textObj = new fabric.IText(text, {
@@ -1369,7 +1387,7 @@ export const useFabricCanvas = (canvasId: string, scaleOptions?: { isMobile?: bo
     
     // Store boundaries regardless of canvas availability
     designBoundariesRef.current = newBoundaries
-    console.log('📐 [setDesignBoundaries] Boundaries stored:', newBoundaries.length)
+    console.log('📐 [setDesignBoundaries] Boundaries stored:', newBoundaries.length, newBoundaries)
     
     // Check both the ref and the global window object
     const canvas = fabricCanvasRef.current || (window as any).fabricCanvas

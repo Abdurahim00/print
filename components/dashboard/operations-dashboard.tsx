@@ -740,15 +740,19 @@ export function OperationsDashboard() {
                                         <div className="flex flex-col lg:flex-row gap-6">
                                           {/* Design Canvas */}
                                           <div className="flex-1">
-                                            <div className="relative w-full max-w-md mx-auto">
-                                              <div className="relative aspect-square bg-gray-100 dark:bg-gray-600 rounded-lg border-2 border-orange-200 dark:border-orange-700 shadow-lg overflow-hidden">
+                                            <div className="relative mx-auto">
+                                              <div className="relative bg-gray-100 dark:bg-gray-600 rounded-lg border-2 border-orange-200 dark:border-orange-700 shadow-lg overflow-hidden flex items-center justify-center" style={{ width: '600px', height: '600px' }}>
                                                 {hasDesign && parsedCanvasJSON ? (
                                                   <>
                                                     {/* Product Image Background */}
                                                     <img
                                                       src={design.productImage || (item as any).image || '/placeholder.svg'}
                                                       alt={item.name}
-                                                      className="w-full h-full object-contain"
+                                                      className="object-contain"
+                                                      style={{ 
+                                                        maxWidth: '100%', 
+                                                        maxHeight: '100%'
+                                                      }}
                                                     />
                                                     
                                                     {/* Design Canvas Overlay */}

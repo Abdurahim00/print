@@ -1,0 +1,4 @@
+[33m32b71d7[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m)[m HEAD@{0}: reset: moving to 32b71d7
+[33m1da3e06[m HEAD@{1}: commit: update
+[33m09bf645[m HEAD@{2}: pull origin main --allow-unrelated-histories: Merge made by the 'ort' strategy.
+[33m32b71d7[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m)[m HEAD@{3}: clone: from https://github.com/Abdurahim00/print.git

@@ -1446,18 +1446,17 @@ export function CentralCanvas() {
             {/* Sub Container - Contains canvas and all design layers */}
             <div className="absolute inset-0 flex items-center justify-center" style={{ zIndex: 10 }}>
               <div 
-                className="relative" 
+                className="relative w-full h-full max-w-[600px] max-h-[600px]" 
                 style={{ 
-                  width: isMobile ? `${600 * canvasScale}px` : '600px', 
-                  height: isMobile ? `${600 * canvasScale}px` : '600px', 
                   position: 'absolute', 
                   top: '50%', 
                   left: '50%', 
-                  transform: 'translate(-50%, -50%)'
+                  transform: 'translate(-50%, -50%)',
+                  aspectRatio: '1/1'
                 }}
               >
                 
-                {/* Canvas Container - Scaled for mobile */}
+                {/* Canvas Container - Responsive */}
                 <div 
                   className="absolute inset-0 flex items-center justify-center" 
                   style={{ 
@@ -1470,12 +1469,10 @@ export function CentralCanvas() {
                     ref={canvasRef}
                     id="design-canvas"
                     style={{ 
-                      width: '600px', 
-                      height: '600px', 
-                      position: 'absolute', 
-                      top: isMobile ? '50%' : 0, 
-                      left: isMobile ? '50%' : 0,
-                      transform: isMobile ? 'translate(-50%, -50%)' : 'none'
+                      width: '100%', 
+                      height: '100%', 
+                      position: 'relative',
+                      zIndex: 10
                     }}
                     // className="cursor-crosshair bg-transparent transition-all duration-300 ease-in-out"
                     // style={{ 

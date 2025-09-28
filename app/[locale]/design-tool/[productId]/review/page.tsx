@@ -738,12 +738,14 @@ export default function ReviewPage() {
                           })
                           
                           return (
-                            <div className="relative w-full h-full">
+                            <div className="relative w-full h-full flex items-center justify-center">
                               <img
                                 src={imageUrl}
                                 alt={`${product.name} - ${design.angle}`}
-                                className="object-contain"
+                                className="object-contain max-w-full max-h-full"
                                 style={{ 
+                                  width: 'auto',
+                                  height: 'auto',
                                   maxWidth: '100%', 
                                   maxHeight: '100%'
                                 }}
@@ -803,11 +805,17 @@ export default function ReviewPage() {
                           })
                           
                           return (
-                            <div className="relative w-full h-full">
+                            <div className="relative w-full h-full flex items-center justify-center">
                               <img
                                 src={imageUrl}
                                 alt={`${product.name} - ${design.angle}`}
-                                className="w-full h-full object-contain opacity-50"
+                                className="object-contain max-w-full max-h-full opacity-50"
+                                style={{ 
+                                  width: 'auto',
+                                  height: 'auto',
+                                  maxWidth: '100%', 
+                                  maxHeight: '100%'
+                                }}
                                 onError={(e) => {
                                   console.error(`❌ Failed to load fallback image for ${design.angle}:`, imageUrl)
                                 }}

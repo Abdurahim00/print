@@ -54,23 +54,14 @@ export default function DesignStepPage() {
           })
           dispatch(setSelectedProduct(product))
           
-          // Check if this is a new design session (step 1 and no referrer from review)
+          // Auto-continue with existing designs (no dialog)
           if (stepNumber === 1) {
             const isFromReview = document.referrer.includes('/review')
             const hasExistingDesigns = localStorage.getItem(`design_${productId}_step_1_area`)
             
             if (!isFromReview && hasExistingDesigns) {
-              // Ask user if they want to continue or start fresh
-              const continueDesign = confirm('You have existing designs for this product. Would you like to continue where you left off?\n\nClick OK to continue, Cancel to start fresh.')
-              
-              if (!continueDesign) {
-                // Clear all saved designs for this product
-                for (let step = 1; step <= 4; step++) {
-                  localStorage.removeItem(`design_${productId}_step_${step}`)
-                  localStorage.removeItem(`design_${productId}_step_${step}_area`)
-                }
-                console.log('🧹 Cleared existing designs for fresh start')
-              }
+              // Automatically continue with existing designs
+              console.log('🔄 Continuing with existing designs automatically')
             }
           }
         }

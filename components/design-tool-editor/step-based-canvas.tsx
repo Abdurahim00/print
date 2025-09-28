@@ -1522,8 +1522,8 @@ export function StepBasedCanvas({ product, stepNumber, angle }: StepBasedCanvasP
             ref={canvasRef}
             id={canvasId}
             style={{
-              width: isMobile ? `${600 * canvasScale}px` : '600px',
-              height: isMobile ? `${600 * canvasScale}px` : '600px',
+              width: '100%',
+              height: '100%',
               position: 'relative',
               zIndex: 10
             }}

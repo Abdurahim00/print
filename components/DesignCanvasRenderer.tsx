@@ -81,7 +81,7 @@ export function DesignCanvasRenderer({ canvasJSON, productImage, angle }: Design
   // FIXED: Enhanced scaling calculation that maps design to actual product printable area
   const calculateDesignTransform = useCallback((containerWidth: number, containerHeight: number) => {
     // Get the actual canvas JSON dimensions - these represent the original design canvas
-    const originalCanvasWidth = canvasJSON?.width || 800
+    const originalCanvasWidth = canvasJSON?.width || 600
     const originalCanvasHeight = canvasJSON?.height || 600
     
     console.log(`🔍 [DesignCanvasRenderer] ${angle} - Original design canvas:`, {
@@ -93,56 +93,54 @@ export function DesignCanvasRenderer({ canvasJSON, productImage, angle }: Design
       height: containerHeight
     })
     
-    // CRITICAL FIX: Define the actual printable area on the product
-    // T-shirts typically have a printable area that's centered but smaller than the full image
-    // Standard t-shirt print area is roughly 60-70% of the shirt width and positioned in the center
-    const printableAreaRatio = 0.65 // 65% of the container represents the printable area
-    const printableWidth = containerWidth * printableAreaRatio
-    const printableHeight = containerHeight * printableAreaRatio
+    // CRITICAL FIX: Use responsive scaling that maintains aspect ratio
+    // This ensures objects appear in the same relative position across all screen sizes
+    const containerAspectRatio = containerWidth / containerHeight
+    const canvasAspectRatio = originalCanvasWidth / originalCanvasHeight
     
-    // Position the printable area in the center-upper portion of the shirt
-    // For t-shirts, the design area typically starts about 20% from the top
-    const printableOffsetX = (containerWidth - printableWidth) / 2
-    const printableOffsetY = containerHeight * 0.2 // Start 20% from top
+    let scale: number
+    let scaledWidth: number
+    let scaledHeight: number
+    let offsetX: number
+    let offsetY: number
     
-    console.log(`🔍 [DesignCanvasRenderer] ${angle} - Calculated printable area:`, {
-      width: printableWidth,
-      height: printableHeight,
-      offsetX: printableOffsetX,
-      offsetY: printableOffsetY
-    })
+    if (containerAspectRatio > canvasAspectRatio) {
+      // Container is wider than canvas - scale based on height
+      scale = containerHeight / originalCanvasHeight
+      scaledHeight = containerHeight
+      scaledWidth = originalCanvasWidth * scale
+      offsetX = (containerWidth - scaledWidth) / 2
+      offsetY = 0
+    } else {
+      // Container is taller than canvas - scale based on width
+      scale = containerWidth / originalCanvasWidth
+      scaledWidth = containerWidth
+      scaledHeight = originalCanvasHeight * scale
+      offsetX = 0
+      offsetY = (containerHeight - scaledHeight) / 2
+    }
     
-    // Scale the design to fit within the printable area
-    const scaleX = printableWidth / originalCanvasWidth
-    const scaleY = printableHeight / originalCanvasHeight
-    const scale = Math.min(scaleX, scaleY)
-    
-    // Center the scaled design within the printable area
-    const scaledDesignWidth = originalCanvasWidth * scale
-    const scaledDesignHeight = originalCanvasHeight * scale
-    const designCenterX = printableOffsetX + (printableWidth - scaledDesignWidth) / 2
-    const designCenterY = printableOffsetY + (printableHeight - scaledDesignHeight) / 2
-    
-    console.log(`🔍 [DesignCanvasRenderer] ${angle} - Final transform:`, {
+    console.log(`🔍 [DesignCanvasRenderer] ${angle} - Responsive scaling:`, {
       scale,
-      printableArea: { width: printableWidth, height: printableHeight },
-      designPosition: { x: designCenterX, y: designCenterY },
-      scaledDesign: { width: scaledDesignWidth, height: scaledDesignHeight }
+      containerAspectRatio,
+      canvasAspectRatio,
+      scaledDimensions: { width: scaledWidth, height: scaledHeight },
+      offsets: { x: offsetX, y: offsetY }
     })
     
     return { 
       scale, 
-      offsetX: designCenterX, 
-      offsetY: designCenterY, 
-      scaledWidth: scaledDesignWidth, 
-      scaledHeight: scaledDesignHeight,
+      offsetX, 
+      offsetY, 
+      scaledWidth, 
+      scaledHeight,
       originalCanvasWidth,
       originalCanvasHeight,
       printableArea: {
-        width: printableWidth,
-        height: printableHeight,
-        offsetX: printableOffsetX,
-        offsetY: printableOffsetY
+        width: containerWidth,
+        height: containerHeight,
+        offsetX: 0,
+        offsetY: 0
       }
     }
   }, [angle, canvasJSON])
@@ -331,14 +329,14 @@ export function DesignCanvasRenderer({ canvasJSON, productImage, angle }: Design
               if (objects.length > 0) {
                 console.log(`🔍 [DesignCanvasRenderer] ${angle} - Processing ${objects.length} objects...`)
 
-                // IMPROVED: Calculate transform to maintain exact positioning
+                // CRITICAL FIX: Maintain exact positioning from design canvas without additional transforms
                 const transform = calculateDesignTransform(containerWidth, containerHeight)
                 console.log(`🔍 [DesignCanvasRenderer] ${angle} - Transform calculated:`, transform)
                 
-                // FIXED: Process each object with precise positioning that matches original design
+                // FIXED: Process each object to maintain EXACT positioning from design canvas
                 objects.forEach((obj: any, index: number) => {
                   if (obj) {
-                    // Store original properties
+                    // Store original properties from the design canvas
                     const originalLeft = obj.left || 0
                     const originalTop = obj.top || 0
                     const originalScaleX = obj.scaleX || 1
@@ -350,14 +348,21 @@ export function DesignCanvasRenderer({ canvasJSON, productImage, angle }: Design
                       originalScale: { x: originalScaleX, y: originalScaleY }
                     })
                     
-                    // IMPROVED: Apply precise scaling and positioning to match original design
+                    // CRITICAL FIX: Apply scaling but maintain exact relative positioning
                     // Scale the object uniformly
                     obj.scaleX = originalScaleX * transform.scale
                     obj.scaleY = originalScaleY * transform.scale
                     
-                    // FIXED: Position objects to maintain exact relative positioning from original design
+                    // FIXED: Position objects to maintain EXACT relative positioning from original design
+                    // This ensures objects appear in the same relative position as in the design canvas
                     obj.left = (originalLeft * transform.scale) + transform.offsetX
                     obj.top = (originalTop * transform.scale) + transform.offsetY
+                    
+                    console.log(`🔍 [DesignCanvasRenderer] ${angle} - Object ${index + 1} positioned:`, {
+                      type: obj.type,
+                      finalPosition: { left: obj.left, top: obj.top },
+                      finalScale: { x: obj.scaleX, y: obj.scaleY }
+                    })
                     
                     // Handle text objects with proper font scaling
                     if ((obj.type === 'text' || obj.type === 'i-text' || obj.type === 'textbox') && obj.fontSize) {
@@ -508,16 +513,16 @@ export function DesignCanvasRenderer({ canvasJSON, productImage, angle }: Design
                   })
                 } else {
                   // No image objects, proceed with normal rendering
+                performRender()
+                
+                requestAnimationFrame(() => {
                   performRender()
                   
-                  requestAnimationFrame(() => {
+                  setTimeout(() => {
                     performRender()
-                    
-                    setTimeout(() => {
-                      performRender()
-                      console.log(`🔍 [DesignCanvasRenderer] ${angle} - Final render completed`)
-                    }, 100)
-                  })
+                    console.log(`🔍 [DesignCanvasRenderer] ${angle} - Final render completed`)
+                  }, 100)
+                })
                 }
               }
 

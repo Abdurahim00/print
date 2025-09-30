@@ -102,6 +102,8 @@ export interface Product {
   inStock: boolean;
   hasVariations?: boolean;
   variations?: Variation[];
+  /** Available sizes for products without variations */
+  availableSizes?: string[];
   /** If true, product participates in global coupon discounts */
   eligibleForCoupons?: boolean;
   /** If true, product can be customized in the design tool */

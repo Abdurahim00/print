@@ -167,7 +167,7 @@ export function CategoryShowcase() {
           <div className="container mx-auto px-4">
             {/* Categories Grid for Mobile */}
             <motion.div
-              className="grid grid-cols-4 gap-3"
+              className="grid grid-cols-4 gap-3 mx-auto max-w-sm"
               variants={containerVariants}
               initial="hidden"
               animate="visible"
@@ -272,7 +272,7 @@ export function CategoryShowcase() {
             {/* Categories container - Desktop */}
             <div
               ref={scrollContainerRef}
-              className="overflow-x-auto scrollbar-hide px-8"
+              className="overflow-x-auto scrollbar-hide px-8 flex justify-center"
               style={{
                 scrollSnapType: 'x mandatory',
                 WebkitOverflowScrolling: 'touch'

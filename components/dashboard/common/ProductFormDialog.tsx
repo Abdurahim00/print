@@ -168,6 +168,8 @@ export const ProductFormDialog: React.FC<ProductFormDialogProps> = ({
         maxQuantityPerOrder: 5,
         message: ""
       },
+      // Available sizes for products without variations
+      availableSizes: initialValues.availableSizes || [],
       // Design capabilities
       isDesignable: initialValues.isDesignable || false,
       designFrames: initialValues.designFrames || [],
@@ -402,6 +404,52 @@ export const ProductFormDialog: React.FC<ProductFormDialogProps> = ({
               )}
             </div>
           </div>
+
+          {/* Available Sizes (for products without variations) */}
+          {!showVariations && (
+            <div className="space-y-2">
+              <Label htmlFor="availableSizes" className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                {t("dashboard.availableSizes")}
+              </Label>
+              <div className="space-y-2">
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  {t("dashboard.availableSizesHelp")}
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {['XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL', '4XL'].map((size) => {
+                    const isSelected = formik.values.availableSizes?.includes(size)
+                    return (
+                      <button
+                        key={size}
+                        type="button"
+                        onClick={() => {
+                          const currentSizes = formik.values.availableSizes || []
+                          if (isSelected) {
+                            formik.setFieldValue('availableSizes', currentSizes.filter((s: string) => s !== size))
+                          } else {
+                            formik.setFieldValue('availableSizes', [...currentSizes, size])
+                          }
+                        }}
+                        className={`px-3 py-1.5 text-sm font-medium rounded-md border-2 transition-colors ${
+                          isSelected
+                            ? 'bg-black text-white border-black dark:bg-white dark:text-black dark:border-white'
+                            : 'bg-white text-black border-gray-300 hover:border-black dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:border-white'
+                        }`}
+                      >
+                        {size}
+                      </button>
+                    )
+                  })}
+                </div>
+                {formik.values.availableSizes && formik.values.availableSizes.length > 0 && (
+                  <p className="text-xs text-slate-600 dark:text-slate-400">
+                    {t("dashboard.selectedSizes")}: {formik.values.availableSizes.join(', ')}
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
+
           {/* Coupon eligibility */}
           <div className="flex items-center gap-2">
             <input

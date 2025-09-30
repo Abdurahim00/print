@@ -3,6 +3,10 @@ import type { ProductDocument, Product } from "@/lib/models/Product"
 import { ObjectId } from "mongodb"
 import { getDesignableCategoryIds } from "@/lib/services/categoryService"
 
+// Simple in-memory cache
+const productCache = new Map<string, { data: any, timestamp: number }>()
+const CACHE_TTL = 60000 // 1 minute cache
+
 export class ProductService {
   private static indexesCreated = false
   
@@ -129,9 +133,26 @@ export class ProductService {
     fields?: string[]
   }): Promise<{ products: Product[], total: number }> {
     console.log('[ProductService.getPaginatedProducts] Starting with options:', options)
-    const collection = await this.getCollection()
-    
+
     const { filter = {}, skip = 0, limit = 20, sortBy = 'featured', fields } = options
+
+    // Check cache first - normalize small limits to same cache key for efficiency
+    const normalizedLimit = limit <= 10 ? 10 : limit
+    const cacheKey = JSON.stringify({ filter, skip, limit: normalizedLimit, sortBy, fields })
+    const cached = productCache.get(cacheKey)
+    if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+      console.log('[ProductService] ⚡ Returning cached products')
+      // Return subset if requested limit is smaller than cached
+      if (limit < cached.data.products.length) {
+        return {
+          products: cached.data.products.slice(skip, skip + limit),
+          total: cached.data.total
+        }
+      }
+      return cached.data
+    }
+
+    const collection = await this.getCollection()
     
     // Debug logging
     console.log('[ProductService] Filter received:', JSON.stringify(filter, null, 2))
@@ -273,19 +294,32 @@ export class ProductService {
     
     // Apply pagination
     cursor.skip(skip).limit(limit)
-    
+
+    const queryStart = Date.now()
+    console.log('[ProductService] ⏱️ Starting MongoDB query...')
     let [products, total] = await Promise.all([
       cursor.toArray(),
       collection.countDocuments(query)
     ])
+    const queryTime = Date.now() - queryStart
+    console.log(`[ProductService] ⏱️ MongoDB query took ${queryTime}ms`)
 
     console.log(`[ProductService] Query results: ${products.length} products found, ${total} total`)
     console.log('[ProductService] First product:', products[0] ? { name: products[0].name, id: products[0]._id } : 'No products')
-    
-    return {
+
+    const result = {
       products: products.map((product) => this.mapProductToResponse(product)),
       total
     }
+
+    // Store in cache
+    productCache.set(cacheKey, {
+      data: result,
+      timestamp: Date.now()
+    })
+    console.log('[ProductService] 💾 Cached products for future requests')
+
+    return result
   }
   
   private static mapProductToResponse(product: ProductDocument): Product {
@@ -397,37 +431,28 @@ export class ProductService {
   static async getProductById(id: string): Promise<Product | null> {
     console.log('[ProductService.getProductById] Looking for product with ID:', id)
     const collection = await this.getCollection()
-    
-    // Try to find by MongoDB ObjectId first if it's a valid ObjectId format
-    let product = null
-    
+
+    // Build a single query with $or to check all ID formats at once (much faster!)
+    const queries: any[] = []
+
     // Check if the ID is exactly 24 hex characters (valid MongoDB ObjectId)
     if (/^[0-9a-fA-F]{24}$/.test(id)) {
-      console.log('[ProductService.getProductById] ID looks like ObjectId, trying ObjectId query')
-      try {
-        product = await collection.findOne({ _id: new ObjectId(id) })
-        if (product) {
-          console.log('[ProductService.getProductById] Found product by ObjectId:', product.name)
-        }
-      } catch (error) {
-        console.log('Invalid ObjectId format:', id)
-      }
+      queries.push({ _id: new ObjectId(id) })
     }
-    
-    // If not found, try to find by string id field
-    if (!product) {
-      product = await collection.findOne({ id: id })
+
+    // Always check string id field
+    queries.push({ id: id })
+
+    // Check _id as string
+    queries.push({ _id: id } as any)
+
+    // Check numeric id if applicable
+    if (!isNaN(Number(id))) {
+      queries.push({ id: Number(id) })
     }
-    
-    // Also try to find by _id as string (some databases store ObjectId as string)
-    if (!product) {
-      product = await collection.findOne({ _id: id } as any)
-    }
-    
-    // If still not found, try to find by numeric id
-    if (!product && !isNaN(Number(id))) {
-      product = await collection.findOne({ id: Number(id) })
-    }
+
+    // Execute single query with $or - much faster than 4 sequential queries!
+    const product = await collection.findOne({ $or: queries })
 
     if (!product) return null
 

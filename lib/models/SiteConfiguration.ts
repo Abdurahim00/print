@@ -1,30 +1,33 @@
 import type { ObjectId } from "mongodb"
 
+// Translation helper type - can be a string or an object with language keys
+export type Translatable<T = string> = T | { en?: T; sv?: T; [key: string]: T | undefined }
+
 export interface HeroHeadline {
-  line1: string
-  line2: string
-  subtitle: string
+  line1: Translatable<string>
+  line2: Translatable<string>
+  subtitle: Translatable<string>
 }
 
 export interface StatItem {
   id: string
   value: number
   suffix: string
-  label: string
+  label: Translatable<string>
   duration: number
 }
 
 export interface FeatureItem {
   id: string
   iconType: string
-  title: string
-  description: string
+  title: Translatable<string>
+  description: Translatable<string>
 }
 
 export interface FeaturedProduct {
   productId: string
   order: number
-  badge?: string
+  badge?: Translatable<string>
   badgeColor?: string
 }
 
@@ -35,8 +38,8 @@ export interface BestSeller {
 
 export interface CustomSection {
   id: string
-  title: string
-  subtitle: string
+  title: Translatable<string>
+  subtitle: Translatable<string>
   products: Array<{
     productId: string
     order: number
@@ -46,11 +49,11 @@ export interface CustomSection {
 }
 
 export interface CTASection {
-  headline: string
-  subtitle: string
-  primaryButtonText: string
+  headline: Translatable<string>
+  subtitle: Translatable<string>
+  primaryButtonText: Translatable<string>
   primaryButtonLink: string
-  secondaryButtonText: string
+  secondaryButtonText: Translatable<string>
   secondaryButtonLink: string
 }
 
@@ -78,13 +81,13 @@ export interface SiteConfigurationDocument {
   
   // CTA Section
   ctaSection: CTASection
-  
+
   // Best Sellers Section Text
-  bestSellersTitle: string
-  bestSellersSubtitle: string
-  
+  bestSellersTitle: Translatable<string>
+  bestSellersSubtitle: Translatable<string>
+
   // Features Section Text
-  featuresTitle: string
+  featuresTitle: Translatable<string>
   
   // Metadata
   createdAt: Date

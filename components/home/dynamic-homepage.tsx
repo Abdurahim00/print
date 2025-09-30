@@ -41,6 +41,178 @@ import Link from "next/link"
 import Image from "next/image"
 import { motion, AnimatePresence, useScroll, useTransform } from "framer-motion"
 import { useTranslations } from "next-intl"
+import { Skeleton } from "@/components/ui/skeleton"
+
+// Skeleton Loading Component
+const HomepageSkeleton = () => {
+  return (
+    <div className="min-h-screen -mx-4 sm:mx-0 -my-8 sm:my-0">
+      <div className="fixed inset-0 -z-10">
+        <div className="absolute inset-0 bg-white sm:bg-gradient-to-br sm:from-gray-50 sm:to-white dark:bg-black dark:sm:from-gray-900 dark:sm:to-black" />
+      </div>
+
+      {/* Hero Section Skeleton */}
+      <section className="relative overflow-hidden">
+        <div className="relative max-w-[1600px] mx-auto px-0 sm:px-4 lg:px-6 xl:px-8 pt-0 sm:pt-6 lg:pt-8 pb-0 sm:pb-6 lg:pb-8">
+          <div className="bg-white dark:bg-gray-900 rounded-none sm:rounded-3xl shadow-none sm:shadow-2xl overflow-hidden border-0 sm:border-2 sm:border-gray-100 sm:dark:border-gray-800">
+            {/* Category Showcase Skeleton */}
+            <div className="px-4 sm:px-8 lg:px-8 pt-6 sm:pt-6 lg:pt-8">
+              <div className="w-full py-4 sm:py-6">
+                {/* Mobile Grid Layout */}
+                <div className="grid grid-cols-4 gap-3 md:hidden mx-auto max-w-sm">
+                  {[...Array(8)].map((_, i) => (
+                    <div key={i} className="flex flex-col items-center gap-1.5">
+                      <Skeleton className="w-14 h-14 rounded-full" />
+                      <Skeleton className="h-3 w-12" />
+                    </div>
+                  ))}
+                </div>
+                {/* Desktop Scrolling Layout */}
+                <div className="hidden md:flex gap-5 lg:gap-6 justify-center items-center">
+                  {[...Array(8)].map((_, i) => (
+                    <div key={i} className="flex flex-col items-center gap-2 flex-shrink-0">
+                      <Skeleton className="w-18 h-18 lg:w-20 lg:h-20 rounded-full" />
+                      <Skeleton className="h-3 w-16 lg:w-20" />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2">
+              {/* Left Column - Hero Text Skeleton */}
+              <div className="p-6 sm:p-6 lg:p-10 xl:p-12 2xl:p-16">
+                <div className="space-y-6">
+                  <div className="space-y-3">
+                    <Skeleton className="h-12 sm:h-16 lg:h-20 w-3/4" />
+                    <Skeleton className="h-12 sm:h-16 lg:h-20 w-2/3" />
+                  </div>
+                  <Skeleton className="h-6 w-full" />
+                  <Skeleton className="h-6 w-5/6" />
+
+                  {/* Buttons Skeleton */}
+                  <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 pt-4">
+                    <Skeleton className="h-12 sm:h-14 w-full sm:flex-1" />
+                    <Skeleton className="h-12 sm:h-14 w-full sm:flex-1" />
+                  </div>
+
+                  {/* Stats Skeleton */}
+                  <div className="grid grid-cols-3 gap-4 pt-8">
+                    {[...Array(3)].map((_, i) => (
+                      <div key={i} className="text-center space-y-2">
+                        <Skeleton className="h-8 sm:h-12 w-20 mx-auto" />
+                        <Skeleton className="h-4 w-16 mx-auto" />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Right Column - Product Carousel Skeleton */}
+              <div className="relative border-t border-gray-100 sm:border-t-2 lg:border-t-0 lg:border-l-2 lg:border-l-4 sm:border-gray-200 sm:border-black dark:border-gray-700 sm:dark:border-white bg-white sm:bg-gray-50 dark:bg-gray-900">
+                <div className="relative w-full h-full min-h-[350px] sm:min-h-[500px] lg:min-h-[600px] p-4 sm:p-4 lg:p-8 xl:p-12">
+                  <div className="mb-4 sm:mb-6 lg:mb-8">
+                    <Skeleton className="h-6 sm:h-8 w-48 mb-2" />
+                    <Skeleton className="h-4 w-36" />
+                  </div>
+
+                  <div className="flex-1 flex items-center justify-center mb-12 sm:mb-16 lg:mb-20">
+                    <div className="w-full max-w-xs sm:max-w-lg lg:max-w-xl xl:max-w-2xl space-y-4">
+                      <Skeleton className="h-40 sm:h-64 lg:h-80 xl:h-96 w-full" />
+                      <Skeleton className="h-6 w-3/4 mx-auto" />
+                      <div className="flex gap-2 justify-center">
+                        <Skeleton className="h-12 flex-1" />
+                        <Skeleton className="h-12 flex-1" />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Carousel Controls Skeleton */}
+                  <div className="absolute bottom-8 left-8 right-8 flex items-center justify-between">
+                    <Skeleton className="h-10 w-10 rounded-full" />
+                    <div className="flex gap-2">
+                      {[...Array(3)].map((_, i) => (
+                        <Skeleton key={i} className="h-2 w-8 rounded-full" />
+                      ))}
+                    </div>
+                    <Skeleton className="h-10 w-10 rounded-full" />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Best Sellers Section Skeleton */}
+      <section className="relative overflow-hidden">
+        <div className="relative max-w-[1600px] mx-auto px-0 sm:px-4 lg:px-6 xl:px-8 py-6 sm:py-6 lg:py-8">
+          <div className="bg-white dark:bg-gray-900 overflow-hidden">
+            <div className="text-center py-6 sm:py-6 lg:py-8 px-4 border-b-0 sm:border-b border-gray-100 dark:border-gray-800">
+              <Skeleton className="h-6 sm:h-8 w-48 mx-auto mb-2" />
+              <Skeleton className="h-4 w-36 mx-auto" />
+            </div>
+
+            <div className="flex gap-2 sm:gap-3 lg:gap-4 overflow-x-auto px-4 sm:px-6 lg:px-8 py-4 pb-8">
+              {[...Array(5)].map((_, i) => (
+                <div key={i} className="flex-shrink-0 w-[160px] sm:w-[180px] lg:w-[220px] xl:w-[260px]">
+                  <div className="border border-gray-100 rounded-lg overflow-hidden">
+                    <Skeleton className="h-[180px] sm:h-[200px] lg:h-[240px] xl:h-[280px] w-full" />
+                    <div className="p-3 space-y-2">
+                      <Skeleton className="h-4 w-full" />
+                      <Skeleton className="h-4 w-3/4" />
+                      <Skeleton className="h-6 w-20" />
+                      <Skeleton className="h-9 w-full" />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Features Section Skeleton */}
+      <section className="relative overflow-hidden">
+        <div className="relative max-w-[1600px] mx-auto px-4 sm:px-4 lg:px-6 xl:px-8 py-6 sm:py-6 lg:py-8">
+          <div className="bg-white dark:bg-gray-900 rounded-none sm:rounded-3xl shadow-none sm:shadow-2xl overflow-hidden border-0 sm:border-2 sm:border-gray-100 sm:dark:border-gray-800">
+            <div className="p-4 sm:p-6 lg:p-8 xl:p-12">
+              <div className="text-center mb-6 sm:mb-8 lg:mb-12">
+                <Skeleton className="h-8 sm:h-10 w-64 mx-auto mb-3" />
+                <Skeleton className="h-1 w-24 mx-auto" />
+              </div>
+
+              <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6 lg:gap-8">
+                {[...Array(4)].map((_, i) => (
+                  <div key={i} className="text-center space-y-3">
+                    <Skeleton className="h-14 w-14 rounded-full mx-auto" />
+                    <Skeleton className="h-5 w-32 mx-auto" />
+                    <Skeleton className="h-4 w-full" />
+                    <Skeleton className="h-4 w-5/6 mx-auto" />
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* CTA Section Skeleton */}
+      <section className="relative overflow-hidden py-6 sm:py-6 lg:py-8">
+        <div className="relative max-w-[1600px] mx-auto px-4 sm:px-4 lg:px-6 xl:px-8">
+          <div className="bg-black rounded-2xl sm:rounded-3xl p-6 sm:p-8 lg:p-12 xl:p-16 text-center">
+            <Skeleton className="h-10 sm:h-12 w-3/4 mx-auto mb-4 bg-gray-800" />
+            <Skeleton className="h-6 w-1/2 mx-auto mb-6 bg-gray-800" />
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center max-w-sm sm:max-w-none mx-auto">
+              <Skeleton className="h-12 w-full sm:w-48 bg-gray-800" />
+              <Skeleton className="h-12 w-full sm:w-48 bg-gray-800" />
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  )
+}
 
 // Map icon types to actual icons
 const iconMap: Record<string, LucideIcon> = {
@@ -158,58 +330,8 @@ const ProductCarousel = ({ featuredProducts }: { featuredProducts: any[] }) => {
   const { items: reduxProducts = [] } = useAppSelector((state) => state.products)
   const t = useTranslations()
   
-  // Use featured products if available, otherwise use redux products or mock data
-  const mockProducts = [
-    {
-      id: 1,
-      _id: "1",
-      name: "Premium T-Shirt Collection",
-      price: 24.99,
-      basePrice: 24.99,
-      image: "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=800&q=80",
-      colors: ["#000000", "#FFFFFF", "#FF0000", "#0000FF"],
-    },
-    {
-      id: 2,
-      _id: "2",
-      name: "Business Card Package",
-      price: 39.99,
-      basePrice: 39.99,
-      image: "https://images.unsplash.com/photo-1589829545856-d10d557cf95f?w=800&q=80",
-      colors: ["#F0F0F0", "#2C3E50", "#E74C3C", "#3498DB"],
-    },
-    {
-      id: 3,
-      _id: "3",
-      name: "Custom Hoodies",
-      price: 45.99,
-      basePrice: 45.99,
-      image: "https://images.unsplash.com/photo-1556821840-3a63f95609a7?w=800&q=80",
-      colors: ["#34495E", "#95A5A6", "#E67E22", "#27AE60"],
-    },
-    {
-      id: 4,
-      _id: "4",
-      name: "Sticker Pack",
-      price: 12.99,
-      basePrice: 12.99,
-      image: "https://images.unsplash.com/photo-1558655146-d09347e92766?w=800&q=80",
-      colors: ["#9B59B6", "#F39C12", "#1ABC9C", "#C0392B"],
-    },
-    {
-      id: 5,
-      _id: "5",
-      name: "Custom Mugs",
-      price: 15.99,
-      basePrice: 15.99,
-      image: "https://images.unsplash.com/photo-1514228742587-6b1558fcca3d?w=800&q=80",
-      colors: ["#FFFFFF", "#2C3E50", "#E74C3C", "#F39C12"],
-    }
-  ]
-  
-  const products = featuredProducts.length > 0 ? featuredProducts : 
-                  reduxProducts.length > 0 ? reduxProducts.slice(0, 5) : 
-                  mockProducts
+  // Only use actual products, no mock data
+  const products = featuredProducts.length > 0 ? featuredProducts : reduxProducts.slice(0, 5)
   
   const nextSlide = () => {
     setCurrentIndex((prev) => (prev + 1) % products.length)
@@ -272,25 +394,38 @@ const ProductCarousel = ({ featuredProducts }: { featuredProducts: any[] }) => {
                   onClick={() => router.push(`/products?collection=${currentProduct.id}`)}
                   className="block relative h-48 sm:h-64 lg:h-80 xl:h-96 mb-4 sm:mb-4 lg:mb-6 overflow-hidden bg-white dark:bg-gray-900 cursor-pointer group rounded-lg sm:rounded-2xl shadow-md sm:shadow-lg sm:border-2 sm:border-black sm:dark:border-white"
                 >
-                  {/* Collection preview grid */}
-                  <div className="absolute inset-0 p-4 grid grid-cols-2 gap-2">
-                    {currentProduct.products?.slice(0, 4).map((product: any, idx: number) => (
-                      <div key={idx} className="relative bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-md">
-                        {product.image ? (
-                          <Image
-                            src={getProductImage(product)}
-                            alt=""
-                            fill
-                            className="object-contain p-2"
-                          />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center">
-                            <Package className="h-8 w-8 text-gray-400" />
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
+                  {/* Collection preview - custom image or product grid */}
+                  {currentProduct.image ? (
+                    // Custom collection image
+                    <div className="absolute inset-0">
+                      <Image
+                        src={currentProduct.image}
+                        alt={currentProduct.name}
+                        fill
+                        className="object-cover"
+                      />
+                    </div>
+                  ) : (
+                    // Product grid fallback
+                    <div className="absolute inset-0 p-4 grid grid-cols-2 gap-2">
+                      {currentProduct.products?.slice(0, 4).map((product: any, idx: number) => (
+                        <div key={idx} className="relative bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-md">
+                          {product.image ? (
+                            <Image
+                              src={getProductImage(product)}
+                              alt=""
+                              fill
+                              className="object-contain p-2"
+                            />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center">
+                              <Package className="h-8 w-8 text-gray-400" />
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
 
                   {/* Collection overlay info */}
                   <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black to-transparent p-4">
@@ -626,18 +761,32 @@ export default function DynamicHomepage() {
   const t = useTranslations()
   const pathname = usePathname()
 
+  // Debug: Log Redux products state
+  useEffect(() => {
+    console.log('🔍 Redux products state:', products.length, 'products')
+    if (products.length > 0) {
+      console.log('First product:', products[0])
+    }
+  }, [products])
+
   // Extract current locale from pathname
   const currentLocale = pathname.startsWith('/sv') ? 'sv' : 'en'
 
-  const [config, setConfig] = useState<SiteConfiguration | null>(getDefaultConfig(t))
+  const [config, setConfig] = useState<SiteConfiguration | null>(null)
   const [featuredProducts, setFeaturedProducts] = useState<any[]>([])
   const [bestSellerProducts, setBestSellerProducts] = useState<any[]>([])
   const [customSectionsData, setCustomSectionsData] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [dataReady, setDataReady] = useState(false)
   
   // Map product IDs from config to actual products when both are available
   useEffect(() => {
+    console.log('📊 Product mapping check - Config exists:', !!config, 'Products count:', products.length)
+
     if (config && products.length > 0) {
+      console.log('🔄 Mapping products - Config:', config.featuredProducts?.length || 0, 'featured, Products:', products.length)
+      console.log('📦 Products:', products.slice(0, 3).map(p => ({ id: p.id || p._id, name: p.name })))
+
       // Map featured products and collections
       if (config.featuredProducts && config.featuredProducts.length > 0) {
         const mappedFeatured = config.featuredProducts
@@ -673,9 +822,13 @@ export default function DynamicHomepage() {
           .sort((a, b) => (a.order || 0) - (b.order || 0))
 
         setFeaturedProducts(mappedFeatured)
-        console.log("Mapped featured products and collections:", mappedFeatured)
+        console.log("✅ Mapped featured products:", mappedFeatured.length)
+      } else {
+        // Fallback: Use first 4 products as featured if no config
+        console.log('⚠️ No featured products in config, using first 4 products as fallback')
+        setFeaturedProducts(products.slice(0, 4))
       }
-      
+
       // Map best sellers
       if (config.bestSellers && config.bestSellers.length > 0) {
         const mappedBestSellers = config.bestSellers
@@ -691,9 +844,13 @@ export default function DynamicHomepage() {
           })
           .filter(Boolean)
           .sort((a, b) => (a.order || 0) - (b.order || 0))
-        
+
         setBestSellerProducts(mappedBestSellers)
-        console.log("Mapped best sellers:", mappedBestSellers)
+        console.log("✅ Mapped best sellers:", mappedBestSellers.length)
+      } else {
+        // Fallback: Use products as best sellers if no config
+        console.log('⚠️ No best sellers in config, using products as fallback')
+        setBestSellerProducts(products.slice(0, 8))
       }
       
       // Map custom sections
@@ -719,57 +876,151 @@ export default function DynamicHomepage() {
   }, [config, products])
   
   useEffect(() => {
-    dispatch(fetchCategories())
-    dispatch(fetchProducts({ page: 1, limit: 100 })) // Fetch more products
-    
-    // Fetch site configuration
-    fetch("/api/admin/site-configuration?configKey=homepage")
-      .then(res => res.json())
-      .then(data => {
-        // Ensure we have a valid config structure
-        if (data && data.heroHeadline) {
-          setConfig(data)
-          
-          // Process featured products from configuration
-          if (data.featuredProducts && data.featuredProducts.length > 0) {
-            // We'll map these IDs to actual products after products are loaded
-            console.log("Featured product IDs from config:", data.featuredProducts)
-          }
-          
-          // Process best sellers from configuration
-          if (data.bestSellers && data.bestSellers.length > 0) {
-            console.log("Best seller IDs from config:", data.bestSellers)
-          }
-        } else {
-          // Use default configuration if API returns invalid data
-          setConfig(getDefaultConfig(t))
-        }
-        setLoading(false)
-      })
-      .catch(err => {
-        console.error("Error fetching configuration:", err)
-        // Use default configuration on error
+    const loadData = async () => {
+      console.log('🚀 [Homepage] Starting data load...')
+
+      // CRITICAL: Force show page after 2 minutes for MongoDB Atlas cold starts
+      const forceShowTimeout = setTimeout(() => {
+        console.warn('⏱️ [Homepage] FORCE TIMEOUT - Showing page anyway')
         setConfig(getDefaultConfig(t))
+        setDataReady(true)
         setLoading(false)
-      })
+      }, 120000)
+
+      try {
+        // Step 1: Fetch products with timeout (reduced to 6 for faster initial load)
+        console.log('📦 [Homepage] Fetching products...')
+        let productsResult
+        try {
+          productsResult = await Promise.race([
+            dispatch(fetchProducts({ page: 1, limit: 6 })).unwrap(),
+            new Promise((_, reject) => setTimeout(() => reject(new Error('Products timeout')), 10000))
+          ])
+          console.log('✅ [Homepage] Products fetched:', productsResult)
+        } catch (prodError) {
+          console.error('❌ [Homepage] Products fetch failed:', prodError)
+          productsResult = { products: [], pagination: { page: 1, limit: 6, total: 0, totalPages: 0 } }
+        }
+
+        console.log('📂 [Homepage] Fetching categories...')
+        try {
+          await Promise.race([
+            dispatch(fetchCategories()).unwrap(),
+            new Promise((_, reject) => setTimeout(() => reject(new Error('Categories timeout')), 2000))
+          ])
+          console.log('✅ [Homepage] Categories fetched')
+        } catch (catError) {
+          console.error('❌ [Homepage] Categories fetch failed:', catError)
+        }
+
+        clearTimeout(forceShowTimeout)
+
+        // Step 2: Fetch config (can fail without breaking page)
+        let configData = getDefaultConfig(t)
+        try {
+          console.log('⚙️ [Homepage] Fetching config...')
+          const configResponse = await fetch("/api/admin/site-configuration?configKey=homepage")
+          if (configResponse.ok) {
+            const data = await configResponse.json()
+            if (data && data.heroHeadline) {
+              configData = data
+              console.log('✅ [Homepage] Config loaded from API')
+            }
+          }
+        } catch (configError) {
+          console.warn('⚠️ [Homepage] Config fetch failed, using defaults:', configError)
+        }
+
+        setConfig(configData)
+        console.log('✅ [Homepage] Config set:', configData)
+
+        // IMMEDIATELY map products while we have them
+        let fetchedProducts = []
+        if (Array.isArray(productsResult)) {
+          fetchedProducts = productsResult
+        } else if (productsResult.products && Array.isArray(productsResult.products)) {
+          fetchedProducts = productsResult.products
+        } else if (productsResult.items && Array.isArray(productsResult.items)) {
+          fetchedProducts = productsResult.items
+        }
+
+        console.log('🗺️ [Homepage] Mapping products immediately')
+        console.log('   - productsResult type:', typeof productsResult)
+        console.log('   - Is array?:', Array.isArray(productsResult))
+        console.log('   - Has products key?:', !!productsResult?.products)
+        console.log('   - Extracted products count:', fetchedProducts.length)
+        console.log('   - First product:', fetchedProducts[0])
+
+        if (fetchedProducts.length === 0) {
+          console.warn('⚠️ [Homepage] No products fetched! Setting empty arrays')
+          setFeaturedProducts([])
+          setBestSellerProducts([])
+        } else {
+          // Map featured products
+          if (configData.featuredProducts && configData.featuredProducts.length > 0) {
+            console.log('📋 [Homepage] Mapping from config featured products:', configData.featuredProducts.length)
+            const mapped = configData.featuredProducts
+              .map((fp: any) => {
+                if (fp.type === 'collection') return fp
+                const product = fetchedProducts.find((p: any) => p._id === fp.productId || p.id === fp.productId)
+                return product ? { ...product, badge: fp.badge, badgeColor: fp.badgeColor, order: fp.order } : null
+              })
+              .filter(Boolean)
+              .sort((a: any, b: any) => (a.order || 0) - (b.order || 0))
+            setFeaturedProducts(mapped)
+            console.log('✅ [Homepage] Featured products mapped:', mapped.length)
+          } else {
+            console.log('📋 [Homepage] No config, using first 4 products as featured')
+            const fallback = fetchedProducts.slice(0, 4)
+            setFeaturedProducts(fallback)
+            console.log('✅ [Homepage] Featured products set:', fallback.length)
+          }
+
+          // Map best sellers
+          if (configData.bestSellers && configData.bestSellers.length > 0) {
+            console.log('📋 [Homepage] Mapping from config best sellers:', configData.bestSellers.length)
+            const mapped = configData.bestSellers
+              .map((bs: any) => {
+                const product = fetchedProducts.find((p: any) => p._id === bs.productId || p.id === bs.productId)
+                return product ? { ...product, order: bs.order } : null
+              })
+              .filter(Boolean)
+              .sort((a: any, b: any) => (a.order || 0) - (b.order || 0))
+            setBestSellerProducts(mapped)
+            console.log('✅ [Homepage] Best sellers mapped:', mapped.length)
+          } else {
+            console.log('📋 [Homepage] No config, using first 8 products as best sellers')
+            const fallback = fetchedProducts.slice(0, 8)
+            setBestSellerProducts(fallback)
+            console.log('✅ [Homepage] Best sellers set:', fallback.length)
+          }
+        }
+
+        // Mark data as ready
+        setDataReady(true)
+        console.log('✅ [Homepage] All data ready, page will render')
+
+      } catch (error) {
+        console.error('❌ [Homepage] Fatal error loading data:', error)
+        // Even on error, set default config and mark as ready
+        setConfig(getDefaultConfig(t))
+        setDataReady(true)
+      } finally {
+        setLoading(false)
+        console.log('✅ [Homepage] Loading complete')
+      }
+    }
+
+    loadData()
   }, [dispatch, t])
   
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-gray-900"></div>
-      </div>
-    )
+  // Show skeleton until all data is ready
+  if (loading || !dataReady || !config) {
+    console.log('⏳ [Homepage] Showing skeleton - loading:', loading, 'dataReady:', dataReady, 'config:', !!config)
+    return <HomepageSkeleton />
   }
-  
-  // Ensure config is always available
-  if (!config) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-gray-900"></div>
-      </div>
-    )
-  }
+
+  console.log('🎨 [Homepage] Rendering page with products:', products.length)
 
   const displayBestSellers = bestSellerProducts.length > 0 ? bestSellerProducts : products
 

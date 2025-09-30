@@ -180,6 +180,30 @@ export function CollectionEditor({
               />
             </div>
 
+            {/* Collection Image */}
+            <div>
+              <Label htmlFor="collectionImage">Collection Image URL (Optional)</Label>
+              <Input
+                id="collectionImage"
+                value={collection.image || ""}
+                onChange={(e) => setCollection({ ...collection, image: e.target.value })}
+                placeholder="https://example.com/image.jpg or /path/to/image.jpg"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Add a custom hero image for this collection. If left empty, a grid of products will be shown.
+              </p>
+              {collection.image && (
+                <div className="mt-2 relative w-full h-32 bg-gray-100 rounded border">
+                  <Image
+                    src={collection.image}
+                    alt="Collection preview"
+                    fill
+                    className="object-cover rounded"
+                  />
+                </div>
+              )}
+            </div>
+
             {/* Badge Color */}
             <div>
               <Label>Badge Style (Optional)</Label>
@@ -307,25 +331,44 @@ export function CollectionEditor({
                       <p className="text-sm font-medium">
                         {collection.products.length} Products in this collection
                       </p>
+                      {collection.image && (
+                        <p className="text-xs text-gray-500 mt-1">
+                          <ImageIcon className="inline h-3 w-3 mr-1" />
+                          Custom image set
+                        </p>
+                      )}
                     </div>
-                    <div className="grid grid-cols-2 gap-1 w-24">
-                      {collection.products.slice(0, 4).map((product, idx) => (
-                        <div key={idx} className="aspect-square relative bg-gray-100 rounded">
-                          {product.image ? (
-                            <Image
-                              src={getProductImage(product)}
-                              alt=""
-                              fill
-                              className="object-contain p-1"
-                            />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center">
-                              <Package className="h-4 w-4 text-gray-400" />
-                            </div>
-                          )}
-                        </div>
-                      ))}
-                    </div>
+                    {collection.image ? (
+                      // Show custom image if set
+                      <div className="w-32 h-32 relative bg-gray-100 rounded border-2 border-gray-200">
+                        <Image
+                          src={collection.image}
+                          alt="Collection image"
+                          fill
+                          className="object-cover rounded"
+                        />
+                      </div>
+                    ) : (
+                      // Show product grid otherwise
+                      <div className="grid grid-cols-2 gap-1 w-24">
+                        {collection.products.slice(0, 4).map((product, idx) => (
+                          <div key={idx} className="aspect-square relative bg-gray-100 rounded">
+                            {product.image ? (
+                              <Image
+                                src={getProductImage(product)}
+                                alt=""
+                                fill
+                                className="object-contain p-1"
+                              />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center">
+                                <Package className="h-4 w-4 text-gray-400" />
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </Card>
               </div>

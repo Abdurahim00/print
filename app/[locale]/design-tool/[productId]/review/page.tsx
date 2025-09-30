@@ -108,10 +108,7 @@ export default function ReviewPage() {
     const loadData = async () => {
       try {
         setLoading(true)
-        
-        // Wait a bit for any pending saves to complete
-        await new Promise(resolve => setTimeout(resolve, 200))
-        
+
         // Debug: Log all localStorage keys for this product
         console.log('🔍 Debugging localStorage for product:', productId)
         const foundKeys: string[] = []
@@ -626,41 +623,43 @@ export default function ReviewPage() {
   
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      {/* Header */}
+      {/* Header - Responsive */}
       <div className="bg-white dark:bg-gray-800 border-b">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
+        <div className="container mx-auto px-2 sm:px-4 py-3 sm:py-4">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
+            <div className="flex items-center gap-2 sm:gap-4 w-full sm:w-auto">
               <Button
                 variant="ghost"
+                size="sm"
                 onClick={() => {
                   const locale = window.location.pathname.split('/')[1] || 'en'
                   router.push(`/${locale}/design-tool/${productId}/step/${designs.length || 1}`)
                 }}
+                className="h-8 sm:h-10"
               >
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                Back to Design
+                <ArrowLeft className="mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4" />
+                <span className="text-xs sm:text-sm">Back</span>
               </Button>
               <div>
-                <h1 className="text-xl font-bold">Review Your Designs</h1>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
+                <h1 className="text-sm sm:text-xl font-bold">Review Your Designs</h1>
+                <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
                   {product.name}
                 </p>
               </div>
             </div>
-            
-            <div className="flex items-center gap-4">
+
+            <div className="flex items-center justify-between sm:justify-end gap-3 sm:gap-4 w-full sm:w-auto">
               <Button
                 variant="outline"
                 size="sm"
                 onClick={refreshData}
-                className="text-xs"
+                className="text-[10px] sm:text-xs h-7 sm:h-8"
               >
-                🔄 Refresh
+                🔄 <span className="hidden sm:inline ml-1">Refresh</span>
               </Button>
               <div className="text-right">
-                <p className="text-sm text-gray-600 dark:text-gray-400">Total Price</p>
-                <p className="text-2xl font-bold">{calculateTotalPrice().toFixed(2)} kr</p>
+                <p className="text-[10px] sm:text-sm text-gray-600 dark:text-gray-400">Total Price</p>
+                <p className="text-lg sm:text-2xl font-bold">{calculateTotalPrice().toFixed(2)} kr</p>
               </div>
             </div>
           </div>
@@ -692,7 +691,7 @@ export default function ReviewPage() {
             </CardContent>
           </Card>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-6 sm:mb-8">
             {designs.map((design) => (
               <Card key={design.stepNumber} className="overflow-hidden">
                 <CardHeader>
@@ -715,8 +714,8 @@ export default function ReviewPage() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  {/* Design Preview */}
-                  <div className="bg-gray-100 dark:bg-gray-800 rounded-lg mb-4 relative overflow-hidden flex items-center justify-center" style={{ width: '600px', height: '600px' }}>
+                  {/* Design Preview - Responsive with maintained aspect ratio */}
+                  <div className="bg-gray-100 dark:bg-gray-800 rounded-lg mb-4 relative overflow-hidden flex items-center justify-center w-full aspect-square max-w-[600px] mx-auto">
                     {product && design.canvasJSON?.objects?.length > 0 ? (
                       <>
                     {/* Product Image Background */}
@@ -881,16 +880,16 @@ export default function ReviewPage() {
                     )}
                   </div>
                   
-                  {/* Actions */}
-                  <div className="flex gap-2 mt-4">
+                  {/* Actions - Responsive */}
+                  <div className="flex flex-col sm:flex-row gap-2 mt-4">
                     <Button
                       variant="outline"
                       size="sm"
                       className="flex-1"
                       onClick={() => handleEditDesign(design.stepNumber)}
                     >
-                      <Edit className="mr-2 h-4 w-4" />
-                      Edit
+                      <Edit className="mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4" />
+                      <span className="text-xs sm:text-sm">Edit</span>
                     </Button>
                     <Button
                       variant="outline"
@@ -898,17 +897,18 @@ export default function ReviewPage() {
                       className="flex-1"
                       onClick={() => handleDownloadDesign(design)}
                     >
-                      <Download className="mr-2 h-4 w-4" />
-                      Download
+                      <Download className="mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4" />
+                      <span className="text-xs sm:text-sm">Download</span>
                     </Button>
                     <Button
                       variant="outline"
                       size="sm"
-                      className="px-3 text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200 hover:border-red-300"
+                      className="sm:px-3 text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200 hover:border-red-300"
                       onClick={() => handleRemoveDesign(design.stepNumber)}
                       title={`Remove ${design.angle} design`}
                     >
-                      <Trash2 className="h-4 w-4" />
+                      <Trash2 className="h-3 w-3 sm:h-4 sm:w-4 sm:mr-0" />
+                      <span className="sm:hidden ml-1 text-xs">Remove</span>
                     </Button>
                   </div>
                 </CardContent>
@@ -972,33 +972,35 @@ export default function ReviewPage() {
           </Card>
         )}
         
-        {/* Action Buttons */}
-        <div className="flex justify-between">
+        {/* Action Buttons - Responsive */}
+        <div className="flex flex-col-reverse sm:flex-row justify-between gap-3 sm:gap-4">
           <Button
             variant="outline"
             onClick={() => {
               const locale = window.location.pathname.split('/')[1] || 'en'
               router.push(`/${locale}/design-tool/${productId}/step/1`)
             }}
+            className="w-full sm:w-auto"
           >
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Continue Designing
+            <ArrowLeft className="mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4" />
+            <span className="text-xs sm:text-sm">Continue Designing</span>
           </Button>
-          
+
           <Button
             size="lg"
             onClick={handleAddToCart}
             disabled={designs.length === 0 || isAddingToCart}
+            className="w-full sm:w-auto"
           >
             {isAddingToCart ? (
               <>
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
-                Adding to Cart...
+                <div className="animate-spin rounded-full h-3 w-3 sm:h-4 sm:w-4 border-b-2 border-white mr-1 sm:mr-2" />
+                <span className="text-xs sm:text-sm">Adding to Cart...</span>
               </>
             ) : (
               <>
-                <ShoppingCart className="mr-2 h-5 w-5" />
-                Add to Cart
+                <ShoppingCart className="mr-1 sm:mr-2 h-4 w-4 sm:h-5 sm:w-5" />
+                <span className="text-xs sm:text-sm">Add to Cart</span>
               </>
             )}
           </Button>

@@ -1,25 +1,57 @@
 import { NextRequest, NextResponse } from "next/server"
 import { ProductService } from "@/lib/services/productService"
 import { getLocalizedProduct } from "@/lib/utils/translations"
+import { startKeepWarm } from "@/lib/keep-warm"
+
+// Start keeping MongoDB connection warm
+if (process.env.NODE_ENV === 'production') {
+  startKeepWarm()
+}
 
 // Use edge runtime for better performance
 export const runtime = 'nodejs'
-// Cache for 60 seconds on CDN, revalidate in background
-export const revalidate = 60
+// Cache for 5 minutes on CDN, revalidate in background
+export const revalidate = 300
+// Enable dynamic caching
+export const dynamic = 'force-cache'
+
+// Mock data for designable products
+const mockDesignableProducts = [
+  {
+    id: 'mock-1',
+    _id: 'mock-1',
+    name: 'Custom T-Shirt',
+    description: 'Design your own t-shirt',
+    image: 'https://via.placeholder.com/400x400?text=T-Shirt',
+    frontImage: 'https://via.placeholder.com/400x400?text=T-Shirt',
+    price: 199,
+    designCostPerCm2: 0.5
+  },
+  {
+    id: 'mock-2',
+    _id: 'mock-2',
+    name: 'Custom Mug',
+    description: 'Design your own mug',
+    image: 'https://via.placeholder.com/400x400?text=Mug',
+    frontImage: 'https://via.placeholder.com/400x400?text=Mug',
+    price: 99,
+    designCostPerCm2: 0.3
+  }
+]
 
 export async function GET(request: NextRequest) {
   console.log('[API /products] GET request received')
   try {
     const { searchParams } = new URL(request.url)
-    
+
     // Pagination parameters - support fetching products in reasonable chunks
     const page = parseInt(searchParams.get('page') || '1')
     const limit = Math.min(parseInt(searchParams.get('limit') || '100'), 5000) // Max 5000 to avoid MongoDB memory issues
     const skip = (page - 1) * limit
-    
+
     // Get locale parameter
     const locale = searchParams.get('locale') || 'en'
-    
+
     // Filter parameters
     const categoryId = searchParams.get('categoryId')
     const subcategoryId = searchParams.get('subcategoryId')
@@ -28,6 +60,20 @@ export async function GET(request: NextRequest) {
     const minPrice = searchParams.get('minPrice')
     const maxPrice = searchParams.get('maxPrice')
     const designableOnly = searchParams.get('designableOnly') === 'true'
+
+    // TEMPORARY BYPASS: Return mock data for designable products
+    if (designableOnly) {
+      console.log('[API /products] ⚡ QUICK MODE: Returning mock designable products')
+      return NextResponse.json({
+        products: mockDesignableProducts,
+        pagination: {
+          page: 1,
+          limit: mockDesignableProducts.length,
+          total: mockDesignableProducts.length,
+          totalPages: 1
+        }
+      })
+    }
     
     // Build filter object
     const filter: any = {}

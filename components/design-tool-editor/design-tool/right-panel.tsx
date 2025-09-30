@@ -42,17 +42,17 @@ export function RightPanel({ isMobile = false }: { isMobile?: boolean }) {
     // If no product is selected, show a guidance message
     if (!selectedProduct) {
       return (
-        <div className="flex flex-col items-center justify-center h-full p-6">
+        <div className="flex flex-col items-center justify-center h-full p-3 sm:p-6">
           <div className="text-center text-gray-500">
-            <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-gray-50 flex items-center justify-center">
-              <Shirt className="w-12 h-12 text-gray-400" />
+            <div className="w-12 h-12 sm:w-20 sm:h-20 mx-auto mb-3 sm:mb-6 rounded-full bg-gray-50 flex items-center justify-center">
+              <Shirt className="w-8 h-8 sm:w-12 sm:h-12 text-gray-400" />
             </div>
-            <h3 className="text-lg font-medium mb-2">Start Your Design</h3>
-            <p className="text-sm text-gray-400 mb-6">Select a product from the left toolbar to begin designing</p>
-            <Button 
+            <h3 className="text-sm sm:text-lg font-medium mb-1 sm:mb-2">Start Your Design</h3>
+            <p className="text-xs sm:text-sm text-gray-400 mb-3 sm:mb-6">Select a product from the left toolbar to begin designing</p>
+            <Button
               onClick={() => dispatch(setShowProductModal(true))}
               variant="outline"
-              className="border-gray-200 text-gray-700 hover:bg-gray-50"
+              className="border-gray-200 text-gray-700 hover:bg-gray-50 text-xs sm:text-sm h-8 sm:h-auto"
             >
               Browse Products
             </Button>
@@ -310,23 +310,23 @@ export function RightPanel({ isMobile = false }: { isMobile?: boolean }) {
 
   if (isMobile) {
     return (
-      <div className="bg-white border-t border-gray-200 max-h-72 flex flex-col">
-        <div className="p-3 border-b border-gray-200 flex-shrink-0">
-          <Button 
+      <div className="bg-white border-t border-gray-200 max-h-64 sm:max-h-72 flex flex-col">
+        <div className="p-2 sm:p-3 border-b border-gray-200 flex-shrink-0">
+          <Button
             onClick={handleSaveDesign}
-            className="w-full bg-black hover:bg-gray-800 text-white transition-all duration-200 hover:scale-105"
+            className="w-full bg-black hover:bg-gray-800 text-white transition-all duration-200 hover:scale-105 h-9 sm:h-10"
             size="sm"
             disabled={isSaving || !selectedProduct}
           >
             {isSaving ? (
               <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Saving...
+                <Loader2 className="w-3 h-3 sm:w-4 sm:h-4 mr-1.5 sm:mr-2 animate-spin" />
+                <span className="text-xs sm:text-sm">Saving...</span>
               </>
             ) : (
               <>
-                <Save className="w-4 h-4 mr-2" />
-                Save Design
+                <Save className="w-3 h-3 sm:w-4 sm:h-4 mr-1.5 sm:mr-2" />
+                <span className="text-xs sm:text-sm">Save Design</span>
               </>
             )}
           </Button>

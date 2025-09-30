@@ -3,8 +3,22 @@ import { MongoClient, type Db } from "mongodb"
 const uri = process.env.MONGODB_URI || "mongodb://localhost:27017"
 
 const options = {
-  serverSelectionTimeoutMS: 5000, // Timeout after 5 seconds
-  connectTimeoutMS: 10000,
+  // Connection timeouts
+  serverSelectionTimeoutMS: 30000, // Increased to 30 seconds for Atlas cold starts
+  connectTimeoutMS: 30000,
+  socketTimeoutMS: 30000,
+
+  // Connection pooling - reuse connections efficiently
+  maxPoolSize: 10, // Max 10 connections in pool
+  minPoolSize: 2,  // Keep 2 connections always ready
+  maxIdleTimeMS: 30000, // Keep connections alive for 30s
+
+  // Retry logic
+  retryWrites: true,
+  retryReads: true,
+
+  // Compression to reduce network payload
+  compressors: ['zlib'],
 }
 
 let client: MongoClient
@@ -33,6 +47,11 @@ if (process.env.NODE_ENV === "development") {
 export default clientPromise
 
 export async function getDatabase(): Promise<Db> {
+  const start = Date.now()
+  console.log('[MongoDB] ⏱️ Getting database connection...')
   const client = await clientPromise
-  return client.db("printwrap-pro")
+  const db = client.db("printwrap-pro")
+  const connectionTime = Date.now() - start
+  console.log(`[MongoDB] ⏱️ Database connection took ${connectionTime}ms`)
+  return db
 }

@@ -80,6 +80,8 @@ export interface ProductDocument {
   updatedAt: Date;
   hasVariations?: boolean;
   variations?: Variation[];
+  // Available sizes for products without variations
+  availableSizes?: string[]; // e.g., ["XS", "S", "M", "L", "XL", "XXL"]
   // If true, product is eligible for global/app coupons and will have discounts applied
   eligibleForCoupons?: boolean;
   type?: string; // Product type (e.g., 'stickers', 't-shirt', etc.)
@@ -131,6 +133,8 @@ export interface Product {
   updatedAt?: Date;
   hasVariations?: boolean;
   variations?: Variation[];
+  // Available sizes for products without variations
+  availableSizes?: string[]; // e.g., ["XS", "S", "M", "L", "XL", "XXL"]
   // Mirrors ProductDocument. If true, this product participates in coupon discounts
   eligibleForCoupons?: boolean;
   type?: string; // Product type (e.g., 'stickers', 't-shirt', etc.)

@@ -1,7 +1,7 @@
 "use client"
 
 import { Card, CardContent, CardFooter } from "@/components/ui/card"
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useState, useRef } from "react"
 import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks"
 import { useTranslations } from "next-intl"
 import { fetchProducts, fetchCategoryCounts } from "@/lib/redux/slices/productsSlice"
@@ -94,10 +94,11 @@ export function ProductsView({ categorySlug, subcategorySlug, collectionId, desi
   const [selectedSubcategoryFilter, setSelectedSubcategoryFilter] = useState<string | null>(searchParams.get('filterSubcategory'))
   const [showDesignableOnly, setShowDesignableOnly] = useState(designableOnly || searchParams.get('designable') === 'true')
   const [expandedCategories, setExpandedCategories] = useState<string[]>([])
-  const [priceRange, setPriceRange] = useState({ 
-    min: parseInt(searchParams.get('minPrice') || '0'), 
-    max: parseInt(searchParams.get('maxPrice') || '10000') 
+  const [priceRange, setPriceRange] = useState({
+    min: parseInt(searchParams.get('minPrice') || '0'),
+    max: parseInt(searchParams.get('maxPrice') || '10000')
   })
+  const isFetchingRef = useRef(false)
   const [currentPage, setCurrentPageState] = useState(parseInt(searchParams.get('page') || '1'))
   
   // Helper function to update page and URL together
@@ -168,7 +169,13 @@ export function ProductsView({ categorySlug, subcategorySlug, collectionId, desi
     }
 
     const loadProducts = async () => {
+      if (isFetchingRef.current) {
+        console.log('[ProductsView] Already fetching, skipping duplicate request')
+        return
+      }
+
       try {
+        isFetchingRef.current = true
         setLoadTimeout(false) // Reset timeout when making a new request
 
         // Get the category and subcategory from URL if present
@@ -209,6 +216,8 @@ export function ProductsView({ categorySlug, subcategorySlug, collectionId, desi
         await dispatch(fetchProducts(fetchParams))
       } catch (err) {
         console.error('Failed to load products:', err)
+      } finally {
+        isFetchingRef.current = false
       }
     }
 

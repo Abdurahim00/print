@@ -2,6 +2,7 @@
 
 import { useParams, useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
+import * as React from "react"
 import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks"
 import { setSelectedProduct, setViewMode } from "@/lib/redux/designToolSlices/designSlice"
 import { StepBasedCanvas } from "@/components/design-tool-editor/step-based-canvas"
@@ -33,16 +34,34 @@ export default function DesignStepPage() {
   const currentAngle = stepToAngle[stepNumber as keyof typeof stepToAngle]
   
   useEffect(() => {
+    let mounted = true
+    const controller = new AbortController()
+
     const loadProduct = async () => {
       try {
-        setLoading(true)
-        
-        // Load product if not already loaded
+        // Only fetch if product not loaded or different product
         if (!selectedProduct || selectedProduct.id !== productId) {
-          const response = await fetch(`/api/products/${productId}`)
-          if (!response.ok) throw new Error('Failed to load product')
-          
+          setLoading(true)
+
+          console.log('🔄 Fetching product:', productId)
+
+          // Add timeout to fetch
+          const timeoutId = setTimeout(() => controller.abort(), 10000) // 10 second timeout
+
+          const response = await fetch(`/api/products/${productId}`, {
+            signal: controller.signal
+          })
+
+          clearTimeout(timeoutId)
+
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`)
+          }
+
           const product = await response.json()
+
+          if (!mounted) return
+
           console.log('📦 Loaded product:', product)
           console.log('🖼️ Product images:', {
             image: product.image,
@@ -52,48 +71,54 @@ export default function DesignStepPage() {
             rightImage: product.rightImage,
             variations: product.variations
           })
+
           dispatch(setSelectedProduct(product))
-          
-          // Auto-continue with existing designs (no dialog)
-          if (stepNumber === 1) {
-            const isFromReview = document.referrer.includes('/review')
-            const hasExistingDesigns = localStorage.getItem(`design_${productId}_step_1_area`)
-            
-            if (!isFromReview && hasExistingDesigns) {
-              // Automatically continue with existing designs
-              console.log('🔄 Continuing with existing designs automatically')
-            }
-          }
+        } else {
+          console.log('✅ Product already loaded, skipping fetch')
         }
-        
+
         // Set the view mode for this step
-        if (currentAngle) {
+        if (mounted && currentAngle) {
           dispatch(setViewMode(currentAngle))
         }
-        
-        setLoading(false)
-      } catch (err) {
-        console.error('Error loading product:', err)
-        setError('Failed to load product')
+
+        if (mounted) {
+          setLoading(false)
+        }
+      } catch (err: any) {
+        if (!mounted) return
+
+        if (err.name === 'AbortError') {
+          console.error('⏱️ Product fetch timeout')
+          setError('Loading timeout - please try again')
+        } else {
+          console.error('❌ Error loading product:', err)
+          setError('Failed to load product')
+        }
         setLoading(false)
       }
     }
-    
+
     loadProduct()
-  }, [productId, stepNumber, dispatch])
-  
-  // Calculate total steps based on available angles
-  const getTotalSteps = () => {
+
+    return () => {
+      mounted = false
+      controller.abort()
+    }
+  }, [productId, currentAngle, selectedProduct?.id, dispatch])
+
+  // Calculate total steps based on available angles - memoized to prevent infinite loops
+  const totalSteps = React.useMemo(() => {
     if (!selectedProduct) return 1
-    
+
     let steps = 0
-    
+
     // Check for individual angle images first
     if (selectedProduct.frontImage || selectedProduct.image) steps++
     if (selectedProduct.backImage) steps++
     if (selectedProduct.leftImage) steps++
     if (selectedProduct.rightImage) steps++
-    
+
     console.log('📊 Product angles:', {
       front: selectedProduct.frontImage || selectedProduct.image,
       back: selectedProduct.backImage,
@@ -102,12 +127,12 @@ export default function DesignStepPage() {
       hasVariations: selectedProduct.hasVariations,
       variations: selectedProduct.variations?.length || 0
     })
-    
+
     // For products with variations, check the first variation
     if (selectedProduct.hasVariations && selectedProduct.variations?.[0]) {
       const variation = selectedProduct.variations[0]
       if (variation.images) {
-        const variationSteps = variation.images.filter((img: any) => 
+        const variationSteps = variation.images.filter((img: any) =>
           img.angle && img.url && img.url.trim() !== ''
         ).length
         if (variationSteps > 0) {
@@ -116,17 +141,15 @@ export default function DesignStepPage() {
         }
       }
     }
-    
+
     // If no angles found but we have a main image, at least show front
     if (steps === 0 && (selectedProduct.image || selectedProduct.frontImage)) {
       steps = 1
     }
-    
+
     console.log('📊 Total steps calculated:', steps)
     return Math.max(steps, 1)
-  }
-  
-  const totalSteps = getTotalSteps()
+  }, [selectedProduct])
   
   // Validate step number
   useEffect(() => {

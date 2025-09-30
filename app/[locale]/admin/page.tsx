@@ -58,11 +58,13 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [products, setProducts] = useState<any[]>([])
+  const [users, setUsers] = useState<any[]>([])
   const [activeTab, setActiveTab] = useState("hero")
 
   useEffect(() => {
     fetchConfiguration()
     fetchProducts()
+    fetchUsers()
   }, [])
 
   const fetchConfiguration = async () => {
@@ -85,6 +87,56 @@ export default function AdminPage() {
       setProducts(data.products || [])
     } catch (error) {
       console.error("Error fetching products:", error)
+    }
+  }
+
+  const fetchUsers = async () => {
+    try {
+      const response = await fetch("/api/users")
+      const data = await response.json()
+      setUsers(data || [])
+    } catch (error) {
+      console.error("Error fetching users:", error)
+    }
+  }
+
+  const updateUserRole = async (userId: string, role: string) => {
+    try {
+      const response = await fetch(`/api/users/${userId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ role })
+      })
+
+      if (response.ok) {
+        toast.success("User role updated successfully")
+        fetchUsers()
+      } else {
+        toast.error("Failed to update user role")
+      }
+    } catch (error) {
+      console.error("Error updating user role:", error)
+      toast.error("Failed to update user role")
+    }
+  }
+
+  const deleteUser = async (userId: string) => {
+    if (!confirm("Are you sure you want to delete this user?")) return
+
+    try {
+      const response = await fetch(`/api/users/${userId}`, {
+        method: "DELETE"
+      })
+
+      if (response.ok) {
+        toast.success("User deleted successfully")
+        fetchUsers()
+      } else {
+        toast.error("Failed to delete user")
+      }
+    } catch (error) {
+      console.error("Error deleting user:", error)
+      toast.error("Failed to delete user")
     }
   }
 
@@ -272,13 +324,14 @@ export default function AdminPage() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-6">
+        <TabsList className="grid w-full grid-cols-7">
           <TabsTrigger value="hero">Hero</TabsTrigger>
           <TabsTrigger value="stats">Stats</TabsTrigger>
           <TabsTrigger value="features">Features</TabsTrigger>
           <TabsTrigger value="featured">Featured</TabsTrigger>
           <TabsTrigger value="bestsellers">Best Sellers</TabsTrigger>
           <TabsTrigger value="cta">CTA</TabsTrigger>
+          <TabsTrigger value="users">Users</TabsTrigger>
         </TabsList>
 
         <TabsContent value="hero">
@@ -738,6 +791,56 @@ export default function AdminPage() {
                     placeholder="/signup"
                   />
                 </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="users">
+          <Card>
+            <CardHeader>
+              <CardTitle>User Management</CardTitle>
+              <CardDescription>Manage user accounts and roles</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {users.length === 0 ? (
+                  <p className="text-sm text-slate-500">No users found</p>
+                ) : (
+                  <div className="space-y-2">
+                    {users.map((user: any) => (
+                      <div key={user._id || user.id} className="flex items-center justify-between p-4 border rounded-lg">
+                        <div className="flex-1">
+                          <p className="font-medium">{user.name || 'Unnamed User'}</p>
+                          <p className="text-sm text-slate-500">{user.email}</p>
+                          <p className="text-xs text-slate-400">ID: {user._id || user.id}</p>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <Select
+                            value={user.role || 'customer'}
+                            onValueChange={(value) => updateUserRole(user._id || user.id, value)}
+                          >
+                            <SelectTrigger className="w-32">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="customer">Customer</SelectItem>
+                              <SelectItem value="admin">Admin</SelectItem>
+                              <SelectItem value="moderator">Moderator</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => deleteUser(user._id || user.id)}
+                          >
+                            <X className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>

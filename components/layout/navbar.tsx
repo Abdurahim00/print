@@ -98,9 +98,26 @@ export function Navbar() {
         // Fetch persisted user cart from DB
         const userId = (session.user as any).id
         const fetchUserCart = async () => {
-          const res = await fetch(`/api/cart?userId=${encodeURIComponent(userId)}`, { cache: "no-store" })
-          const data = await res.json()
-          return (data?.items ?? []) as CartItem[]
+          try {
+            const res = await fetch(`/api/cart?userId=${encodeURIComponent(userId)}`, {
+              cache: "no-store",
+              signal: AbortSignal.timeout(10000) // 10 second timeout
+            })
+            if (!res.ok) {
+              console.error('Cart fetch failed:', res.status)
+              return []
+            }
+            const text = await res.text()
+            if (!text) {
+              console.error('Empty response from cart API')
+              return []
+            }
+            const data = JSON.parse(text)
+            return (data?.items ?? []) as CartItem[]
+          } catch (error) {
+            console.error('Failed to fetch cart:', error)
+            return []
+          }
         }
 
         const persistUserCart = async (items: CartItem[]) => {

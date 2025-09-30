@@ -62,15 +62,22 @@ export function StepBasedCanvas({ product, stepNumber, angle }: StepBasedCanvasP
       if (!canvas || canvas.disposed) {
         return false
       }
-      
+
       // Canvas is ready
       canvasReadyRef.current = true
       setCanvasReady(true)
-      
+
+      // Debounce pricing updates to prevent infinite loops
+      let pricingTimeout: NodeJS.Timeout | null = null
       const updatePricing = () => {
-        console.log('💰 Real-time pricing update triggered')
-        // Force immediate recalculation and re-render
-        forceUpdate({})
+        if (pricingTimeout) {
+          clearTimeout(pricingTimeout)
+        }
+        pricingTimeout = setTimeout(() => {
+          console.log('💰 Real-time pricing update triggered')
+          // Force immediate recalculation and re-render
+          forceUpdate({})
+        }, 50) // Debounce by 50ms for faster response
       }
       
       // Add event listeners for immediate updates
@@ -392,15 +399,13 @@ export function StepBasedCanvas({ product, stepNumber, angle }: StepBasedCanvasP
             localStorage.setItem(areaKey, savedArea.toString())
             console.log(`📏 Loaded design area for step ${stepNumber}: ${savedArea} cm²`)
             
-            // After canvas loads, restore the saved area again to prevent it from being overwritten
-            setTimeout(() => {
-              if (mountedRef.current && savedArea > 0) {
-                console.log(`📏 Restoring area after canvas load: ${savedArea} cm²`)
-                setLocalDesignArea(savedArea)
-                dispatch(setDesignAreaCm2(savedArea))
-                localStorage.setItem(areaKey, savedArea.toString())
-              }
-            }, 500)
+            // After canvas loads, restore the saved area immediately
+            if (mountedRef.current && savedArea > 0) {
+              console.log(`📏 Restoring area after canvas load: ${savedArea} cm²`)
+              setLocalDesignArea(savedArea)
+              dispatch(setDesignAreaCm2(savedArea))
+              localStorage.setItem(areaKey, savedArea.toString())
+            }
           }
           if (designData.designAreaPercentage) {
             dispatch(setDesignAreaPercentage(designData.designAreaPercentage))
@@ -477,17 +482,37 @@ export function StepBasedCanvas({ product, stepNumber, angle }: StepBasedCanvasP
   // Immediate save function for navigation
   const saveImmediately = useCallback(() => {
     if (!mountedRef.current || !product?.id) return
-    
+
     const canvas = getFabricCanvas()
     if (!canvas || canvas.disposed) return
-    
+
     try {
-      const canvasJSON = canvas.toJSON()
+      // CRITICAL FIX: Include custom properties like 'src' for images
+      const canvasJSON = canvas.toJSON(['src', 'crossOrigin', 'selectable', 'evented'])
+
+      // Ensure all image objects have their src properly saved
+      if (canvasJSON.objects) {
+        canvasJSON.objects = canvasJSON.objects.map((obj: any) => {
+          if (obj.type === 'image' && !obj.src) {
+            console.warn('⚠️ Image object missing src, attempting to recover')
+            // Try to get src from the actual canvas object
+            const canvasObj = canvas.getObjects().find((o: any) =>
+              o.type === 'image' && o.left === obj.left && o.top === obj.top
+            )
+            if (canvasObj && (canvasObj as any)._element?.src) {
+              obj.src = (canvasObj as any)._element.src
+              console.log('✅ Recovered image src:', obj.src.substring(0, 50))
+            }
+          }
+          return obj
+        })
+      }
+
       const storageKey = `design_${product.id}_step_${stepNumber}`
-      
+
       // Use the current local design area
       const currentArea = localDesignArea
-      
+
       const designData = {
         productId: product.id,
         stepNumber,
@@ -498,14 +523,17 @@ export function StepBasedCanvas({ product, stepNumber, angle }: StepBasedCanvasP
         productColor: productColor,
         timestamp: Date.now()
       }
-      
+
       localStorage.setItem(storageKey, JSON.stringify(designData))
-      
+
       // Also save the area separately for quick access
       const areaKey = `design_${product.id}_step_${stepNumber}_area`
       localStorage.setItem(areaKey, currentArea.toString())
-      
-      console.log(`⚡ IMMEDIATE SAVE for step ${stepNumber} (${angle}) with area: ${currentArea} cm²`)
+
+      console.log(`⚡ IMMEDIATE SAVE for step ${stepNumber} (${angle}) with area: ${currentArea} cm²`, {
+        objectCount: canvasJSON.objects?.length || 0,
+        hasImages: canvasJSON.objects?.some((o: any) => o.type === 'image') || false
+      })
     } catch (error) {
       console.error('Error in immediate save:', error)
     }
@@ -538,7 +566,7 @@ export function StepBasedCanvas({ product, stepNumber, angle }: StepBasedCanvasP
         if (mountedRef.current) {
           saveStepDesign()
         }
-      }, 500) // Save after 500ms of inactivity for faster saves
+      }, 300) // Save after 300ms of inactivity for faster saves
     }
     
     // Listen to canvas events - including real-time updates
@@ -616,7 +644,7 @@ export function StepBasedCanvas({ product, stepNumber, angle }: StepBasedCanvasP
       if (!canvas && retryCount < maxRetries) {
         retryCount++
         console.log(`⏳ Canvas not ready for boundaries, retrying... (${retryCount}/${maxRetries})`)
-        setTimeout(applyBoundaries, 300)
+        requestAnimationFrame(applyBoundaries)
         return
       }
       
@@ -658,16 +686,16 @@ export function StepBasedCanvas({ product, stepNumber, angle }: StepBasedCanvasP
     
     const checkCanvasAndLoad = () => {
       if (!mountedRef.current) return
-      
+
       const canvas = getFabricCanvas()
       if (canvas && mountedRef.current) {
         loadStepDesign()
       } else if (mountedRef.current) {
-        // Retry after a short delay
-        setTimeout(checkCanvasAndLoad, 100)
+        // Retry immediately with requestAnimationFrame for faster loading
+        requestAnimationFrame(checkCanvasAndLoad)
       }
     }
-    
+
     checkCanvasAndLoad()
   }, [getFabricCanvas, loadStepDesign])
   
@@ -843,15 +871,19 @@ export function StepBasedCanvas({ product, stepNumber, angle }: StepBasedCanvasP
       const currentTotalKey = `design_${product.id}_step_${stepNumber}_total`;
       localStorage.setItem(currentTotalKey, runningTotal.toString());
 
-      // Log detailed breakdown
-      console.log('💰 Cumulative Price Calculation:');
-      if (stepNumber === 1) {
-        console.log(`   Base Price: ${basePrice.toFixed(2)} SEK`);
-      } else {
-        console.log(`   Previous Total (Step ${stepNumber - 1}): ${previousTotal.toFixed(2)} SEK`);
+      // Only log if the price actually changed significantly (to avoid console spam)
+      const lastLoggedPrice = (window as any)[`_lastPrice_${product.id}_${stepNumber}`] || 0;
+      if (Math.abs(runningTotal - lastLoggedPrice) > 0.01) {
+        (window as any)[`_lastPrice_${product.id}_${stepNumber}`] = runningTotal;
+        console.log('💰 Cumulative Price Calculation:');
+        if (stepNumber === 1) {
+          console.log(`   Base Price: ${basePrice.toFixed(2)} SEK`);
+        } else {
+          console.log(`   Previous Total (Step ${stepNumber - 1}): ${previousTotal.toFixed(2)} SEK`);
+        }
+        console.log(`   Current Step ${stepNumber} Design: ${currentStepArea.toFixed(2)} cm² = ${currentStepCost.toFixed(2)} SEK`);
+        console.log(`   Running Total: ${runningTotal.toFixed(2)} SEK`);
       }
-      console.log(`   Current Step ${stepNumber} Design: ${currentStepArea.toFixed(2)} cm² = ${currentStepCost.toFixed(2)} SEK`);
-      console.log(`   Running Total: ${runningTotal.toFixed(2)} SEK`);
 
       return runningTotal;
     } catch (error) {

@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Separator } from "@/components/ui/separator"
+import { Label } from "@/components/ui/label"
 import { useToast } from "@/hooks/use-toast"
 import {
   Breadcrumb,
@@ -43,6 +44,7 @@ interface ProductDetailViewProps {
     images?: string[]
     variants?: any[]
     sizes?: string[]
+    availableSizes?: string[]
     sizePrices?: any
     brand?: string
     sku?: string
@@ -218,11 +220,13 @@ export function ProductDetailView({
   const mainImage = getMainImage()
   
   // Get available sizes
-  const availableSizes = product.sizes && product.sizes.length > 0 
-    ? product.sizes
-    : (product.sizePrices && Object.keys(product.sizePrices).length > 0 
-        ? Object.keys(product.sizePrices)
-        : [])
+  const availableSizes = product.availableSizes && product.availableSizes.length > 0
+    ? product.availableSizes
+    : (product.sizes && product.sizes.length > 0
+      ? product.sizes
+      : (product.sizePrices && Object.keys(product.sizePrices).length > 0
+          ? Object.keys(product.sizePrices)
+          : []))
   
   // Initialize selected variant
   useEffect(() => {
@@ -322,6 +326,15 @@ export function ProductDetailView({
         color: selectedVariant.color,
         image: selectedVariant.variant_image || selectedVariant.image || selectedVariant.images?.[0]
       }
+    }
+
+    // Add size information if selected
+    if (selectedSize) {
+      cartItem.selectedSizes = [{
+        size: selectedSize,
+        quantity: quantity,
+        price: currentPrice > 0 ? currentPrice : (product.price || product.basePrice || 0)
+      }]
     }
 
     console.log('Cart item being added:', cartItem)
@@ -564,14 +577,14 @@ export function ProductDetailView({
                 </Label>
                 <div className="grid grid-cols-4 sm:grid-cols-5 gap-3">
                   {product.variants.map((variant: any, idx: number) => {
-                    const variantImage = variant.variant_image || variant.image || 
-                                       variant.color?.swatch_image || 
-                                       (variant.images && variant.images[0]?.url) || 
+                    const variantImage = variant.variant_image || variant.image ||
+                                       variant.color?.swatch_image ||
+                                       (variant.images && variant.images[0]?.url) ||
                                        product.image
                     const variantName = variant.variant_name || variant.color?.name || `Option ${idx + 1}`
-                    const isSelected = selectedVariant?.id === variant.id || 
+                    const isSelected = selectedVariant?.id === variant.id ||
                                      (selectedVariant?.variant_name === variant.variant_name)
-                    
+
                     return (
                       <button
                         key={variant.id || `variant-${idx}`}
@@ -593,7 +606,7 @@ export function ProductDetailView({
                               sizes="64px"
                             />
                           ) : (
-                            <div 
+                            <div
                               className="w-full h-full bg-gray-200"
                             />
                           )}
@@ -612,8 +625,34 @@ export function ProductDetailView({
                 </div>
               </div>
             )}
-            
-            
+
+            {/* Size Selector */}
+            {availableSizes.length > 0 && (
+              <div className="space-y-3">
+                <Label className="font-bold">
+                  Size: {selectedSize || 'Select Size'}
+                </Label>
+                <div className="flex flex-wrap gap-2">
+                  {availableSizes.map((size) => {
+                    const isSelected = selectedSize === size
+                    return (
+                      <button
+                        key={size}
+                        onClick={() => setSelectedSize(size)}
+                        className={`px-4 py-2 text-sm font-bold rounded-md border-2 transition-all ${
+                          isSelected
+                            ? 'bg-black text-white border-black dark:bg-white dark:text-black dark:border-white'
+                            : 'bg-white text-black border-gray-300 hover:border-black dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:border-white'
+                        }`}
+                      >
+                        {size}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
+
             {/* Quantity */}
             <div className="space-y-3">
               <Label className="font-bold">Quantity</Label>

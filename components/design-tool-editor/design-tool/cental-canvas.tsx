@@ -122,27 +122,57 @@ export function CentralCanvas() {
   // Set client-side flag and detect mobile device
   useEffect(() => {
     setIsClient(true)
-    
-    // Detect mobile device and set scale
+
+    // Detect mobile device and set scale - IMPROVED FOR RESPONSIVE
     const checkMobile = () => {
       const width = window.innerWidth
-      const mobile = width < 768 // Tailwind's md breakpoint
+      const height = window.innerHeight
+
+      // More nuanced mobile detection
+      // Mobile: < 640px (sm breakpoint)
+      // Tablet: 640px - 1024px (sm to lg)
+      // Desktop: >= 1024px
+      const mobile = width < 1024 // Consider tablets as "mobile" for canvas scaling
       setIsMobile(mobile)
-      
-      // Calculate scale for mobile to fit canvas in viewport
+
+      // Calculate scale to fit canvas in available viewport
       if (mobile) {
-        // For mobile, scale down to fit screen width with padding
-        const maxWidth = width - 32 // 16px padding on each side
-        const scale = Math.min(maxWidth / 600, 1) // Never scale up, only down
-        setCanvasScale(scale)
+        // Account for UI elements more accurately
+        const leftToolbarWidth = width < 640 ? 0 : 80 // Hidden on mobile
+        const horizontalPadding = width < 640 ? 16 : 32 // Less padding on mobile
+        const bottomPanelHeight = 288 // Bottom panel height (increased estimate)
+        const topUIHeight = 100 // Angle selector + padding
+
+        const availableWidth = width - leftToolbarWidth - horizontalPadding
+        const availableHeight = height - bottomPanelHeight - topUIHeight
+
+        // Scale to fit both width and height, never scale up
+        const scaleX = availableWidth / 600
+        const scaleY = availableHeight / 600
+        const scale = Math.min(scaleX, scaleY, 1) // Use smaller dimension, max 1
+
+        // More generous minimum scale
+        const finalScale = Math.max(scale, 0.25)
+
+        console.log('📱 Canvas scaling:', {
+          width,
+          height,
+          availableWidth,
+          availableHeight,
+          scaleX,
+          scaleY,
+          finalScale
+        })
+
+        setCanvasScale(finalScale)
       } else {
-        setCanvasScale(1) // Desktop/tablet uses full size
+        setCanvasScale(1) // Desktop uses full size
       }
     }
-    
+
     checkMobile()
     window.addEventListener('resize', checkMobile)
-    
+
     // Cleanup
     const cleanup = () => window.removeEventListener('resize', checkMobile)
     
@@ -342,7 +372,12 @@ export function CentralCanvas() {
             }
             return res
           })
-          .then(res => res.json())
+          .then(res => {
+            if (!res.ok) {
+              throw new Error(`Failed to fetch product: ${res.status}`)
+            }
+            return res.json()
+          })
           .then(productData => {
             if (productData && productData.id) {
               console.log('🔄 [CentralCanvas] Product restored from API:', productData.name)
@@ -468,15 +503,15 @@ export function CentralCanvas() {
           })
           .catch(error => {
             console.error('Error fetching product for restoration:', error)
-            dispatch(setLoadingProduct(false))
           })
           .finally(() => {
-            // Always clear loading state
-            setTimeout(() => dispatch(setLoadingProduct(false)), 300) // Small delay for smooth transition
+            // Always clear loading state immediately
+            dispatch(setLoadingProduct(false))
           })
       }
     } catch (error) {
       console.error('Error in product restoration logic:', error)
+      dispatch(setLoadingProduct(false))
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isClient, selectedProduct?.id])
@@ -1333,7 +1368,7 @@ export function CentralCanvas() {
   }
 
   return (
-    <div className="flex-1 flex flex-col bg-gradient-to-br from-gray-50 via-white to-gray-50 overflow-hidden relative">
+    <div className="flex-1 flex flex-col bg-gradient-to-br from-gray-50 via-white to-gray-50 overflow-hidden relative w-full h-full">
       {/* Load saved design component */}
       {/* <LoadSavedDesign onDesignLoaded={handleDesignLoaded} /> */}
       
@@ -1354,20 +1389,20 @@ export function CentralCanvas() {
       )}
       
       {/* Main Canvas Area - Full height with minimal padding */}
-      <div className="flex-1 flex items-center justify-center p-2 lg:p-4">
-        <div className="relative w-full h-full max-w-4xl max-h-full flex flex-col">
+      <div className="flex-1 flex items-center justify-center p-1 sm:p-2 lg:p-4 overflow-hidden">
+        <div className="relative w-full h-full flex flex-col" style={{ maxWidth: '100%', maxHeight: '100%' }}>
           {/* Angle Selector Above Canvas */}
           {selectedProduct && angles && angles.length > 0 && !isLoadingProduct && (
-            <div className="flex justify-center mb-2">
-              <div className="bg-white/90 backdrop-blur-sm rounded-lg p-2 shadow-md border border-gray-200/60">
-                <div className="flex gap-1">
+            <div className="flex justify-center mb-1 sm:mb-2">
+              <div className="bg-white/90 backdrop-blur-sm rounded-lg p-1 sm:p-2 shadow-md border border-gray-200/60">
+                <div className="flex gap-0.5 sm:gap-1">
                   {angles.map((angle: string) => (
                     <Button
                       key={angle}
                       variant={viewMode === angle ? "default" : "outline"}
                       size="sm"
                       onClick={() => handleViewChange(angle)}
-                      className="capitalize px-3 py-1 text-xs"
+                      className="capitalize px-2 sm:px-3 py-0.5 sm:py-1 text-[10px] sm:text-xs h-7 sm:h-auto"
                     >
                       {angle}
                     </Button>
@@ -1379,40 +1414,50 @@ export function CentralCanvas() {
           
           {/* Main Container - Relative positioning with base/product image */}
           <div className="flex-1 relative bg-white/90 backdrop-blur-sm rounded-2xl overflow-hidden border border-gray-200/60 shadow-xl min-h-0">
-            
-            {/* Base/Product Image - Background layer */}
+
+            {/* Base/Product Image - Background layer - FIXED TO SCALE WITH CANVAS */}
             {selectedProduct && currentImage && !isLoadingProduct ? (
               <>
                 <div className="absolute inset-0 flex items-center justify-center" style={{ zIndex: 1 }}>
-                  <div 
-                    className="flex items-center justify-center" 
-                    style={{ 
-                      width: isMobile ? `${600 * canvasScale}px` : '600px', 
-                      height: isMobile ? `${600 * canvasScale}px` : '600px', 
-                      position: 'relative' 
+                  <div
+                    className="relative"
+                    style={{
+                      width: isMobile ? `${600 * canvasScale}px` : '600px',
+                      height: isMobile ? `${600 * canvasScale}px` : '600px',
+                      aspectRatio: '1/1'
                     }}
                   >
-                    <img
-                      key={`product-image-${viewMode}-${currentImage}`}
-                      src={currentImage}
-                      alt={selectedProduct.name}
-                      className="object-contain drop-shadow-lg"
-                      style={{ 
-                        maxWidth: '100%', 
-                        maxHeight: '100%',
-                        filter: viewMode === "back" ? "brightness(0.85) saturate(1.1)" : "saturate(1.1)",
-                        transform: viewMode === "left" ? "rotateY(25deg)" : 
-                                viewMode === "right" ? "rotateY(-25deg)" : "none"
+                    <div
+                      className="absolute inset-0 flex items-center justify-center"
+                      style={{
+                        width: '600px',
+                        height: '600px',
+                        transform: isMobile ? `scale(${canvasScale})` : 'none',
+                        transformOrigin: 'center center'
                       }}
-                      onError={(e) => {
-                        console.error('❌ [CentralCanvas] Image failed to load:', currentImage);
-                        const target = e.target as HTMLImageElement;
-                        target.src = '/placeholder.jpg';
-                      }}
-                      onLoad={() => {
-                        console.log('✅ [CentralCanvas] Image loaded successfully:', currentImage);
-                      }}
-                    />
+                    >
+                      <img
+                        key={`product-image-${viewMode}-${currentImage}`}
+                        src={currentImage}
+                        alt={selectedProduct.name}
+                        className="object-contain drop-shadow-lg"
+                        style={{
+                          width: '600px',
+                          height: '600px',
+                          filter: viewMode === "back" ? "brightness(0.85) saturate(1.1)" : "saturate(1.1)",
+                          transform: viewMode === "left" ? "rotateY(25deg)" :
+                                  viewMode === "right" ? "rotateY(-25deg)" : "none"
+                        }}
+                        onError={(e) => {
+                          console.error('❌ [CentralCanvas] Image failed to load:', currentImage);
+                          const target = e.target as HTMLImageElement;
+                          target.src = '/placeholder.jpg';
+                        }}
+                        onLoad={() => {
+                          console.log('✅ [CentralCanvas] Image loaded successfully:', currentImage);
+                        }}
+                      />
+                    </div>
                   </div>
                 </div>
                 
@@ -1434,33 +1479,33 @@ export function CentralCanvas() {
                 })()}
               </>
             ) : !isLoadingProduct ? (
-              /* Show instructions when no product selected and not loading */
-              <div className="absolute inset-0 flex items-center justify-center p-4 lg:p-8" style={{ zIndex: 1 }}>
+              /* Show instructions when no product selected and not loading */}
+              <div className="absolute inset-0 flex items-center justify-center p-2 sm:p-4 lg:p-8" style={{ zIndex: 1 }}>
                 <div className="text-center text-gray-400">
-                  <p className="text-xl font-medium mb-2">Start by selecting a product</p>
-                  <p className="text-sm text-gray-400 max-w-md">Click the product icon in the left toolbar to browse available products</p>
+                  <p className="text-base sm:text-xl font-medium mb-1 sm:mb-2">Start by selecting a product</p>
+                  <p className="text-xs sm:text-sm text-gray-400 max-w-md px-2">Click the product icon in the left toolbar to browse available products</p>
                 </div>
               </div>
             ) : null}
 
             {/* Sub Container - Contains canvas and all design layers */}
             <div className="absolute inset-0 flex items-center justify-center" style={{ zIndex: 10 }}>
-              <div 
-                className="relative w-full h-full max-w-[600px] max-h-[600px]" 
-                style={{ 
-                  position: 'absolute', 
-                  top: '50%', 
-                  left: '50%', 
-                  transform: 'translate(-50%, -50%)',
+              <div
+                className="relative"
+                style={{
+                  width: isMobile ? `${600 * canvasScale}px` : '600px',
+                  height: isMobile ? `${600 * canvasScale}px` : '600px',
                   aspectRatio: '1/1'
                 }}
               >
-                
-                {/* Canvas Container - Responsive */}
-                <div 
-                  className="absolute inset-0 flex items-center justify-center" 
-                  style={{ 
+
+                {/* Canvas Container - Fixed 600x600 size */}
+                <div
+                  className="absolute inset-0 flex items-center justify-center"
+                  style={{
                     zIndex: 20,
+                    width: '600px',
+                    height: '600px',
                     transform: isMobile ? `scale(${canvasScale})` : 'none',
                     transformOrigin: 'center center'
                   }}
@@ -1468,27 +1513,14 @@ export function CentralCanvas() {
                   <canvas
                     ref={canvasRef}
                     id="design-canvas"
-                    style={{ 
-                      width: '100%', 
-                      height: '100%', 
+                    width={600}
+                    height={600}
+                    style={{
+                      width: '600px',
+                      height: '600px',
                       position: 'relative',
                       zIndex: 10
                     }}
-                    // className="cursor-crosshair bg-transparent transition-all duration-300 ease-in-out"
-                    // style={{ 
-                    //   border: shouldShowCanvasBorder() 
-                    //     ? "2px dashed #3b82f6" 
-                    //     : "2px dashed transparent",
-                    //   borderRadius: "8px",
-                    //   boxShadow: shouldShowCanvasBorder() 
-                    //     ? "0 0 0 1px rgba(59, 130, 246, 0.1), 0 4px 6px -1px rgba(0, 0, 0, 0.1)" 
-                    //     : "0 0 0 1px transparent, 0 2px 4px -1px rgba(0, 0, 0, 0.02)",
-                    //   backgroundColor: shouldShowCanvasBorder() 
-                    //     ? "rgba(255, 255, 255, 0.05)" 
-                    //     : "transparent"
-                    // }}
-                    // width={300}
-                    // height={300}
                   />
                 </div>
 
@@ -1499,7 +1531,7 @@ export function CentralCanvas() {
           
           {/* Variation Selector - Show for products with variations */}
           {selectedProduct?.hasVariations && selectedProduct.variations?.length > 0 && (
-            <div className="flex-shrink-0 mt-3 lg:mt-4">
+            <div className="flex-shrink-0 mt-2 sm:mt-3 lg:mt-4">
               <VariationSelector
                 product={selectedProduct}
                 onVariationChange={(variation) => {
@@ -1515,15 +1547,15 @@ export function CentralCanvas() {
                     }])
                   }
                 }}
-                className="mb-3"
+                className="mb-2 sm:mb-3"
               />
             </div>
           )}
-          
+
           {/* Product Angles - Compact design at bottom */}
           {selectedProduct && angles && angles.length > 0 && (
-            <div className="flex-shrink-0 mt-3 lg:mt-4">
-             
+            <div className="flex-shrink-0 mt-2 sm:mt-3 lg:mt-4">
+
               <ProductAnglesSelector
                 angles={angles}
                 selectedAngle={viewMode}

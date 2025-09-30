@@ -74,19 +74,23 @@ export function DesignToolContainer() {
   return (
     <div className="flex flex-col h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50 overflow-hidden">
       <div className="flex flex-1 overflow-hidden">
-        <LeftToolbar />
+        {/* Left Toolbar - Hidden on mobile, shown on tablet+ */}
+        <div className="hidden sm:block">
+          <LeftToolbar />
+        </div>
 
-        <div className="flex-1 flex flex-col xl:flex-row overflow-hidden">
+        <div className="flex-1 flex flex-col lg:flex-row overflow-hidden min-w-0">
           <CentralCanvas />
 
-          <div className="hidden xl:block flex-shrink-0">
+          {/* Desktop Right Panel */}
+          <div className="hidden lg:block flex-shrink-0">
             <RightPanel />
           </div>
         </div>
       </div>
 
-      {/* Mobile and tablet right panel */}
-      <div className="xl:hidden border-t border-gray-200 bg-white flex-shrink-0">
+      {/* Mobile/Tablet Bottom Panel */}
+      <div className="lg:hidden border-t border-gray-200 bg-white flex-shrink-0">
         <RightPanel isMobile={true} />
       </div>
 

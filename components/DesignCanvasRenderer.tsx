@@ -249,8 +249,8 @@ export function DesignCanvasRenderer({ canvasJSON, productImage, angle }: Design
       // Append canvas to container
       containerElement.appendChild(canvasElement)
       
-      // Wait for canvas to be properly mounted
-      await new Promise(resolve => setTimeout(resolve, 100))
+      // Minimal wait for canvas to be properly mounted
+      await new Promise(resolve => setTimeout(resolve, 10))
 
       // Create Fabric.js canvas
       const canvas = new fabric.Canvas(canvasElement, {
@@ -303,8 +303,8 @@ export function DesignCanvasRenderer({ canvasJSON, productImage, angle }: Design
       try {
         await new Promise<void>((resolve, reject) => {
           const timeoutId = setTimeout(() => {
-            reject(new Error('Canvas JSON loading timeout after 10 seconds'))
-          }, 10000)
+            reject(new Error('Canvas JSON loading timeout after 3 seconds'))
+          }, 3000)
 
           canvas.loadFromJSON(validatedCanvasJSON, () => {
             clearTimeout(timeoutId)
@@ -471,59 +471,15 @@ export function DesignCanvasRenderer({ canvasJSON, productImage, angle }: Design
                   console.log(`🔍 [DesignCanvasRenderer] ${angle} - Render pass completed`)
                 }
                 
-                // Check if there are any image objects that need special handling
-                const imageObjects = objects.filter((obj: any) => obj.type === 'image')
-                if (imageObjects.length > 0) {
-                  console.log(`🔍 [DesignCanvasRenderer] ${angle} - Found ${imageObjects.length} image objects, ensuring proper loading...`)
-                  
-                  // Wait for all images to load before final render
-                  const imageLoadPromises = imageObjects.map((imgObj: any) => {
-                    return new Promise<void>((resolve) => {
-                      if (imgObj.src) {
-                        const img = new Image()
-                        img.crossOrigin = 'anonymous'
-                        img.onload = () => {
-                          console.log(`🔍 [DesignCanvasRenderer] ${angle} - Image loaded:`, imgObj.src)
-                          resolve()
-                        }
-                        img.onerror = (error) => {
-                          console.error(`❌ [DesignCanvasRenderer] ${angle} - Image load error:`, error, imgObj.src)
-                          resolve() // Continue even if image fails to load
-                        }
-                        img.src = imgObj.src
-                      } else {
-                        resolve()
-                      }
-                    })
-                  })
-                  
-                  Promise.all(imageLoadPromises).then(() => {
-                    console.log(`🔍 [DesignCanvasRenderer] ${angle} - All images processed, performing final render`)
-                    performRender()
-                    
-                    // Additional render passes for reliability
-                    requestAnimationFrame(() => {
-                      performRender()
-                      
-                      setTimeout(() => {
-                        performRender()
-                        console.log(`🔍 [DesignCanvasRenderer] ${angle} - Final render completed`)
-                      }, 100)
-                    })
-                  })
-                } else {
-                  // No image objects, proceed with normal rendering
+                // Render immediately without waiting for images
+                // Images will render asynchronously as they load
                 performRender()
-                
+
+                // Single additional render pass for reliability
                 requestAnimationFrame(() => {
                   performRender()
-                  
-                  setTimeout(() => {
-                    performRender()
-                    console.log(`🔍 [DesignCanvasRenderer] ${angle} - Final render completed`)
-                  }, 100)
+                  console.log(`✅ [DesignCanvasRenderer] ${angle} - Render completed`)
                 })
-                }
               }
 
               console.log(`✅ [DesignCanvasRenderer] ${angle} - Canvas rendered successfully`)
@@ -580,12 +536,9 @@ export function DesignCanvasRenderer({ canvasJSON, productImage, angle }: Design
   useEffect(() => {
     if (containerReady && canvasJSON && !isRendered && !isInitializing) {
       console.log(`🔍 [DesignCanvasRenderer] ${angle} - Container ready, initializing canvas`)
-      
-      const timer = setTimeout(() => {
-        initializeCanvas()
-      }, 150)
-      
-      return () => clearTimeout(timer)
+
+      // Initialize immediately without delay
+      initializeCanvas()
     }
   }, [containerReady, canvasJSON, angle, isRendered, isInitializing, initializeCanvas])
 

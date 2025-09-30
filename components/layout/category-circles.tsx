@@ -82,18 +82,18 @@ export function CategoryCircles() {
           </Button>
 
           {/* Scrollable container */}
-          <div 
+          <div
             ref={scrollContainerRef}
-            className="flex gap-6 overflow-x-auto scrollbar-hide scroll-smooth flex-1"
+            className="flex gap-6 overflow-x-auto scrollbar-hide scroll-smooth flex-1 justify-center"
             style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
           >
             {/* All Products */}
-            <Link 
+            <Link
               href="/products"
               className="shrink-0 flex flex-col items-center gap-2 group cursor-pointer"
             >
               <div className="w-16 h-16 rounded-full bg-gray-100 dark:bg-gray-900 flex items-center justify-center text-2xl group-hover:bg-gray-200 dark:group-hover:bg-gray-800 transition-colors shadow-sm group-hover:shadow-md">
-                🛍️
+                <span className="leading-none">🛍️</span>
               </div>
               <span className="text-xs font-medium text-gray-700 dark:text-gray-300 group-hover:text-black dark:group-hover:text-gray-400 transition-colors">
                 {language === 'en' ? 'All' : 'Alla'}
@@ -108,7 +108,7 @@ export function CategoryCircles() {
                 className="shrink-0 flex flex-col items-center gap-2 group cursor-pointer"
               >
                 <div className="w-16 h-16 rounded-full bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 flex items-center justify-center text-2xl group-hover:border-black dark:group-hover:border-gray-400 transition-all shadow-sm group-hover:shadow-md group-hover:scale-105">
-                  {getCategoryIcon(category.name)}
+                  <span className="leading-none">{getCategoryIcon(category.name)}</span>
                 </div>
                 <span className="text-xs font-medium text-gray-700 dark:text-gray-300 group-hover:text-black dark:group-hover:text-gray-400 transition-colors text-center max-w-[70px]">
                   {category.name}

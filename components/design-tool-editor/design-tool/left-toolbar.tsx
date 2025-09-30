@@ -142,32 +142,32 @@ export function LeftToolbar() {
   }
 
   return (
-    <div className="w-20 lg:w-24 bg-white/95 backdrop-blur-sm border-r border-gray-200/80 flex flex-col items-center py-4 lg:py-6 shadow-lg">
+    <div className="w-16 sm:w-20 lg:w-24 bg-white/95 backdrop-blur-sm border-r border-gray-200/80 flex flex-col items-center py-3 sm:py-4 lg:py-6 shadow-lg">
       <TooltipProvider>
         {/* Main Tools */}
-        <div className="space-y-2 lg:space-y-3">
+        <div className="space-y-1.5 sm:space-y-2 lg:space-y-3">
           {tools.map((tool) => {
             const Icon = tool.icon
             const isSelected = selectedTool === tool.id
-            
+
             return (
               <Tooltip key={tool.id}>
                 <TooltipTrigger asChild>
                   <Button
                     variant={isSelected ? "default" : "ghost"}
                     size="icon"
-                    className={`w-16 h-20 lg:w-20 lg:h-24 flex flex-col items-center justify-center gap-1 rounded-2xl transition-all duration-300 shadow-sm hover:shadow-md p-2 ${
-                      isSelected 
-                        ? "bg-black hover:bg-gray-800 text-white shadow-lg scale-105 hover:scale-110" 
+                    className={`w-12 h-14 sm:w-16 sm:h-20 lg:w-20 lg:h-24 flex flex-col items-center justify-center gap-0.5 sm:gap-1 rounded-xl sm:rounded-2xl transition-all duration-300 shadow-sm hover:shadow-md p-1.5 sm:p-2 ${
+                      isSelected
+                        ? "bg-black hover:bg-gray-800 text-white shadow-lg scale-105 hover:scale-110"
                         : "hover:bg-gray-50 hover:scale-105 text-gray-600 hover:text-gray-800"
                     }`}
                     onClick={() => handleToolSelect(tool.id)}
                   >
-                    <Icon className="w-5 h-5 lg:w-6 lg:h-6" />
-                    <span className="text-[10px] lg:text-xs font-medium">{tool.label}</span>
+                    <Icon className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6" />
+                    <span className="text-[8px] sm:text-[10px] lg:text-xs font-medium">{tool.label}</span>
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent side="right" className="bg-gray-900 text-white border-gray-700">
+                <TooltipContent side="right" className="bg-gray-900 text-white border-gray-700 hidden sm:block">
                   <p className="font-medium">{tool.label}</p>
                   <p className="text-xs text-gray-300">{tool.description}</p>
                 </TooltipContent>
@@ -176,24 +176,24 @@ export function LeftToolbar() {
           })}
         </div>
 
-        <Separator className="my-4 lg:my-6 w-8 lg:w-10 bg-gradient-to-r from-transparent via-gray-300 to-transparent" />
+        <Separator className="my-2 sm:my-4 lg:my-6 w-6 sm:w-8 lg:w-10 bg-gradient-to-r from-transparent via-gray-300 to-transparent" />
 
         {/* History Controls */}
-        <div className="space-y-2 lg:space-y-3">
+        <div className="space-y-1.5 sm:space-y-2 lg:space-y-3">
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
                 variant="ghost"
                 size="icon"
-                className="w-16 h-20 lg:w-20 lg:h-24 flex flex-col items-center justify-center gap-1 rounded-2xl transition-all duration-300 hover:bg-gray-50 hover:scale-105 disabled:opacity-30 disabled:hover:scale-100 disabled:hover:bg-transparent text-gray-600 hover:text-gray-800 shadow-sm hover:shadow-md p-2"
+                className="w-12 h-14 sm:w-16 sm:h-20 lg:w-20 lg:h-24 flex flex-col items-center justify-center gap-0.5 sm:gap-1 rounded-xl sm:rounded-2xl transition-all duration-300 hover:bg-gray-50 hover:scale-105 disabled:opacity-30 disabled:hover:scale-100 disabled:hover:bg-transparent text-gray-600 hover:text-gray-800 shadow-sm hover:shadow-md p-1.5 sm:p-2"
                 onClick={() => handleUndo(fabricCanvas)}
                 disabled={!canUndo || !fabricCanvas}
               >
-                <Undo2 className="w-4 h-4 lg:w-5 lg:h-5" />
-                <span className="text-[10px] lg:text-xs font-medium">Undo</span>
+                <Undo2 className="w-3 h-3 sm:w-4 sm:h-4 lg:w-5 lg:h-5" />
+                <span className="text-[8px] sm:text-[10px] lg:text-xs font-medium">Undo</span>
               </Button>
             </TooltipTrigger>
-            <TooltipContent side="right" className="bg-gray-900 text-white border-gray-700">
+            <TooltipContent side="right" className="bg-gray-900 text-white border-gray-700 hidden sm:block">
               <p className="font-medium">Undo (Ctrl+Z)</p>
             </TooltipContent>
           </Tooltip>
@@ -203,15 +203,15 @@ export function LeftToolbar() {
               <Button
                 variant="ghost"
                 size="icon"
-                className="w-16 h-20 lg:w-20 lg:h-24 flex flex-col items-center justify-center gap-1 rounded-2xl transition-all duration-300 hover:bg-gray-50 hover:scale-105 disabled:opacity-30 disabled:hover:scale-100 disabled:hover:bg-transparent text-gray-600 hover:text-gray-800 shadow-sm hover:shadow-md p-2"
+                className="w-12 h-14 sm:w-16 sm:h-20 lg:w-20 lg:h-24 flex flex-col items-center justify-center gap-0.5 sm:gap-1 rounded-xl sm:rounded-2xl transition-all duration-300 hover:bg-gray-50 hover:scale-105 disabled:opacity-30 disabled:hover:scale-100 disabled:hover:bg-transparent text-gray-600 hover:text-gray-800 shadow-sm hover:shadow-md p-1.5 sm:p-2"
                 onClick={() => handleRedo(fabricCanvas)}
                 disabled={!canRedo || !fabricCanvas}
               >
-                <Redo2 className="w-4 h-4 lg:w-5 lg:h-5" />
-                <span className="text-[10px] lg:text-xs font-medium">Redo</span>
+                <Redo2 className="w-3 h-3 sm:w-4 sm:h-4 lg:w-5 lg:h-5" />
+                <span className="text-[8px] sm:text-[10px] lg:text-xs font-medium">Redo</span>
               </Button>
             </TooltipTrigger>
-            <TooltipContent side="right" className="bg-gray-900 text-white border-gray-700">
+            <TooltipContent side="right" className="bg-gray-900 text-white border-gray-700 hidden sm:block">
               <p className="font-medium">Redo (Ctrl+Y)</p>
             </TooltipContent>
           </Tooltip>

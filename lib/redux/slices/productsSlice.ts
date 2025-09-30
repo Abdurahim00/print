@@ -70,12 +70,14 @@ export const fetchDesignableProducts = createAsyncThunk(
 export const fetchProducts = createAsyncThunk(
   "products/fetchProducts",
   async (params: FetchProductsParams = {}) => {
+    console.log('🔵 [fetchProducts] Thunk called with params:', params)
     try {
       const queryParams = new URLSearchParams()
-      
+
       // Add pagination params - fetch products in reasonable chunks
       queryParams.append('page', (params.page || 1).toString())
       queryParams.append('limit', (params.limit || 20).toString()) // Fetch 20 products per page for performance
+      console.log('🔵 [fetchProducts] Query params:', queryParams.toString())
       
       // Add filter params
       if (params.categoryId) queryParams.append('categoryId', params.categoryId)
@@ -100,23 +102,40 @@ export const fetchProducts = createAsyncThunk(
         return cached.data
       }
       
-      const response = await fetch(`/api/products?${queryParams}`)
-      if (!response.ok) {
-        throw new Error("Failed to fetch products")
+      // Add timeout to prevent hanging (increased for MongoDB Atlas cold starts)
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 90000) // 90 second timeout for cold starts
+
+      try {
+        const response = await fetch(`/api/products?${queryParams}`, {
+          signal: controller.signal
+        })
+        clearTimeout(timeoutId)
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch products")
+        }
+        const data = await response.json()
+
+        // Cache the response
+        productCache.set(cacheKey, { data, timestamp: Date.now() })
+
+        // Clean up old cache entries
+        if (productCache.size > 20) {
+          const oldestKey = productCache.keys().next().value
+          productCache.delete(oldestKey)
+        }
+
+        console.log("Products fetched:", data)
+        return data
+      } catch (fetchError: any) {
+        clearTimeout(timeoutId)
+        if (fetchError.name === 'AbortError') {
+          console.error('Product fetch timeout')
+          throw new Error('Product fetch timeout')
+        }
+        throw fetchError
       }
-      const data = await response.json()
-      
-      // Cache the response
-      productCache.set(cacheKey, { data, timestamp: Date.now() })
-      
-      // Clean up old cache entries
-      if (productCache.size > 20) {
-        const oldestKey = productCache.keys().next().value
-        productCache.delete(oldestKey)
-      }
-      
-      console.log("Products fetched:", data)
-      return data
     } catch (error) {
       console.error("Error fetching products:", error)
       throw error

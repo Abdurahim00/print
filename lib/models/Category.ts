@@ -1,0 +1,48 @@
+import type { ObjectId } from "mongodb"
+
+export interface CategoryDocument {
+  _id?: ObjectId
+  name: string
+  nameTranslations?: {
+    en?: string
+    sv?: string
+  }
+  slug: string
+  description?: string
+  descriptionTranslations?: {
+    en?: string
+    sv?: string
+  }
+  isActive: boolean
+  createdAt: Date
+  updatedAt: Date
+  // Design capabilities
+  isDesignable?: boolean
+  designableAreas?: string[] // ['front', 'back', 'sleeve', 'chest', 'wrap']
+  designTechniques?: string[] // ['print', 'embroidery', 'sublimation', 'engraving']
+  // Design pricing
+  designUpchargePercent?: number // Legacy: Percentage to add when design is added (e.g., 15 for 15%)
+  designUpchargePerCm2?: number // New: Price per square centimeter of design area (e.g., 0.5 kr per cm²)
+  useMetricPricing?: boolean // If true, use per cm² pricing instead of percentage
+}
+
+export interface SubcategoryDocument {
+  _id?: ObjectId
+  categoryId: ObjectId | string
+  name: string
+  swedishName?: string
+  nameTranslations?: {
+    en?: string
+    sv?: string
+  }
+  slug: string
+  isActive: boolean
+  createdAt: Date
+  updatedAt: Date
+  // Design capabilities (can override parent category)
+  isDesignable?: boolean
+  designableAreas?: string[]
+  designTechniques?: string[]
+  inheritDesignSettings?: boolean // If true, use parent category's design settings
+}
+

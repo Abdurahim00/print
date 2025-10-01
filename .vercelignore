@@ -1,0 +1,49 @@
+# Large data files
+60k.json
+new_raw.txt
+products-backup-*.json
+*.backup.json
+
+# Scripts and dev files
+scripts/
+fix-categories.log
+test-*.html
+test-*.js
+
+# Environment files (Vercel uses dashboard env vars)
+.env
+.env.local
+.env.production
+
+# Development files
+node_modules/
+.next/
+out/
+.git/
+.github/
+.vscode/
+
+# Documentation
+README.md
+*.md
+
+# Test files
+*.test.js
+*.spec.js
+__tests__/
+coverage/
+
+# Temporary files
+*.log
+*.tmp
+tmp/
+temp/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Python files (from import scripts)
+*.py
+__pycache__/
+*.pyc

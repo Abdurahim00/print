@@ -1,0 +1,98 @@
+[
+{
+    "Url": "https://www.prendo.se/med-tryck/varumarken/projob/projob-trojor-skjortor-pikeer/81850118-138330/projob-sweatshirt-100-bomull",
+    "Title": "ProJob - Sweatshirt 100% bomull",
+    "description": "Sweatshirt i bomull med ribbstickad mudd i nederkant samt ärmslut.",
+    "image_urls": [],
+    "Sizes": [
+        "XS",
+        "S",
+        "M",
+        "L",
+        "XL",
+        "XXL",
+        "3XL",
+        "4XL"
+    ],
+    "Article_no": "642124-58",
+    "price_before_tax": "507.50 kr/st",
+    "price_after_tax": "1 015.00 kr",
+    "brand_info": "Projob\nProjob är ett nytt och fräscht varumärke med anor långt tillbaka. Arbetskläder ska stå emot många påfrestningar. Projob använder starka, väl beprövade material i sina kläder och synar dem noggrant i sömmarna.\nVisa samtliga produkter frånProjob",
+    "product_info": {
+        "Pris/st": "507.50",
+        "Artikelnummer": "642124-58",
+        "Dam/Herr": "Herr",
+        "Material": "100% bomull - 280 g/m2",
+        "Vikt": "280 g/m²",
+        "Certifikat": "OekoTex",
+        "Skötselråd": "Normal maskintvätt vid grader 60, Blekning är inte tillåtet, Strykning. Högsta tillåtna temperatur 110 grader, Ej kemtvätt, Torktumla på låg temperatur",
+        "Leveranstid": "1-2 dagar utan tryck",
+        "Prisinformation": "Alla priser är SEK inkl. moms."
+    },
+    "variants_dict": [
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/81850118-138330/projob-sweatshirt-100-bomull",
+            "variant_name": "Marin",
+            "variant_image": "https://static.unpr.io/itemimage/691/products/full/IMAGE-67fe5d16bc038.jpg"
+        },
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/81850118-138331/projob-sweatshirt-100-bomull",
+            "variant_name": "Grå",
+            "variant_image": "https://static.unpr.io/itemimage/691/products/full/IMAGE-67fe5d16d6ae3.jpg"
+        },
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/81850118-138332/projob-sweatshirt-100-bomull",
+            "variant_name": "Svart",
+            "variant_image": "https://static.unpr.io/itemimage/691/products/full/IMAGE-67fe5d1742506.jpg"
+        }
+    ]
+},
+{
+    "Url": "https://www.prendo.se/med-tryck/varumarken/projob/projob-trojor-skjortor-pikeer/81897760-138452/projob-hoodjacka-funktion",
+    "Title": "ProJob - Hoodjacka funktion",
+    "description": "Hoodjacka i skönt tekniskt funktionsmaterial som värmer. Tight passform för maximal rörelsefrihet och komfort. Sidfickor med dragkedja, den ena med öppning för handsfree. Tvåvägsdragkedja framtill med hakskydd för att förhindra skav mot hakan. Reglerbar huva och midja med snodd. Två innerfickor. Tumgrepp i ärmslut.",
+    "image_urls": [],
+    "Sizes": [
+        "XS",
+        "S",
+        "M",
+        "L",
+        "XL",
+        "XXL",
+        "3XL",
+        "4XL"
+    ],
+    "Article_no": "643314-99",
+    "price_before_tax": "1 332.50 kr/st",
+    "price_after_tax": "1 332.50 kr",
+    "brand_info": "Projob\nProjob är ett nytt och fräscht varumärke med anor långt tillbaka. Arbetskläder ska stå emot många påfrestningar. Projob använder starka, väl beprövade material i sina kläder och synar dem noggrant i sömmarna.\nVisa samtliga produkter frånProjob",
+    "product_info": {
+        "Pris/st": "1 332.50",
+        "Artikelnummer": "643314-99",
+        "Dam/Herr": "Herr",
+        "Material": "100% polyester - 265 g/m²",
+        "Vikt": "265 g/m²",
+        "Skötselråd": "Normal maskintvätt vid grader 40, Blekning är inte tillåtet, Torktumla på låg temperatur, Strykning. Högsta tillåtna temperatur 110 grader, Ej kemtvätt",
+        "Leveranstid": "1-2 dagar utan tryck",
+        "Prisinformation": "Alla priser är SEK inkl. moms."
+    },
+    "variants_dict": [
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/81897760-138449/projob-hoodjacka-funktion",
+            "variant_name": "Röd",
+            "variant_image": "https://static.unpr.io/itemimage/691/products/full/IMAGE-67fe5d4c610b8.jpg"
+        },
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/81897760-138450/projob-hoodjacka-funktion",
+            "variant_name": "Marin",
+            "variant_image": "https://static.unpr.io/itemimage/691/products/full/IMAGE-67fe5d4cc648d.jpg"
+        },
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/81897760-138451/projob-hoodjacka-funktion",
+            "variant_name": "Grå",
+            "variant_image": "https://static.unpr.io/itemimage/691/products/full/IMAGE-67fe5d4d209cc.jpg"
+        },
+        {
+            "variant_url": "https://www.prendo.se/med-tryck/giveaways/nyckelringar/nyckelringar-led/81897760-138452/projob-hoodjacka-funktion",
+            "variant_name": "Svart",
+            "variant_im

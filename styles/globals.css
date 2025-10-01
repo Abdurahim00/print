@@ -1,0 +1,90 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 0 0% 3.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 3.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 3.9%;
+    --primary: 0 0% 0%; /* black */
+    --primary-foreground: 0 0% 100%; /* White text on black */
+    --secondary: 0 0% 96.1%;
+    --secondary-foreground: 0 0% 0%; /* Black text on light bg */
+    --muted: 0 0% 96.1%;
+    --muted-foreground: 0 0% 30%; /* Black muted text */
+    --accent: 0 0% 0%; /* Black accent */
+    --accent-foreground: 0 0% 100%; /* White text on accent */
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 0 0% 85%; /* Light gray border */
+    --input: 0 0% 85%; /* Light gray input */
+    --ring: 0 0% 0%; /* Black ring */
+    --chart-1: 0 0% 0%; /* Main black chart color */
+    --chart-2: 0 0% 30%; /* Lighter gray */
+    --chart-3: 0 0% 10%; /* Darker black */
+    --chart-4: 0 0% 40%; /* Desaturated gray */
+    --chart-5: 0 0% 70%; /* Very light gray */
+    --radius: 0.5rem;
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 0 0% 0%; /* Black sidebar text */
+    --sidebar-primary: 0 0% 0%; /* Black sidebar primary */
+    --sidebar-primary-foreground: 0 0% 100%; /* White on black */
+    --sidebar-accent: 0 0% 95%; /* Very light gray accent */
+    --sidebar-accent-foreground: 0 0% 0%; /* Black text */
+    --sidebar-border: 0 0% 85%; /* Light gray border */
+    --sidebar-ring: 0 0% 0%; /* Black ring */
+  }
+  .dark {
+    --background: 0 0% 10%; /* Dark gray background */
+    --foreground: 0 0% 98%;
+    --card: 0 0% 12%; /* Dark gray card */
+    --card-foreground: 0 0% 98%;
+    --popover: 0 0% 10%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 0 0% 0%; /* black */
+    --primary-foreground: 0 0% 100%; /* White text on black */
+    --secondary: 0 0% 20%; /* Darker gray secondary */
+    --secondary-foreground: 0 0% 98%;
+    --muted: 0 0% 20%;
+    --muted-foreground: 0 0% 70%; /* Light gray muted text */
+    --accent: 0 0% 0%; /* Black accent */
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 0 0% 25%; /* Dark gray border */
+    --input: 0 0% 25%; /* Dark gray input */
+    --ring: 0 0% 50%; /* Gray ring for dark mode */
+    --chart-1: 0 0% 60%; /* Bright gray chart */
+    --chart-2: 0 0% 80%; /* Very light gray */
+    --chart-3: 0 0% 40%; /* Medium gray */
+    --chart-4: 0 0% 70%; /* Muted light gray */
+    --chart-5: 0 0% 90%; /* Almost white gray */
+    --sidebar-background: 0 0% 15%; /* Dark gray sidebar */
+    --sidebar-foreground: 0 0% 95.9%;
+    --sidebar-primary: 0 0% 0%; /* black */
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 0 0% 25%; /* Dark gray sidebar accent */
+    --sidebar-accent-foreground: 0 0% 95.9%;
+    --sidebar-border: 0 0% 25%; /* Dark gray sidebar border */
+    --sidebar-ring: 0 0% 50%; /* Gray ring */
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}

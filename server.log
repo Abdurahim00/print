@@ -1,0 +1,96 @@
+
+> my-v0-project@0.1.0 dev
+> npx next dev
+
+ ⚠ Port 3000 is in use, trying 3001 instead.
+  ▲ Next.js 14.2.32
+  - Local:        http://localhost:3001
+  - Environments: .env
+
+ ✓ Starting...
+[Error: EPERM: operation not permitted, open 'C:\Users\abdur\Desktop\merchy\print\.next\trace'] {
+  errno: -4048,
+  code: 'EPERM',
+  syscall: 'open',
+  path: 'C:\\Users\\abdur\\Desktop\\merchy\\print\\.next\\trace'
+}
+ ✓ Ready in 1380ms
+ ✓ Compiled /api/products in 190ms (61 modules)
+[API /products] GET request received
+[API /products] Calling ProductService.getPaginatedProducts with: { filter: {}, skip: 0, limit: 100, sortBy: 'featured', fields: [] }
+[ProductService.getPaginatedProducts] Starting with options: { filter: {}, skip: 0, limit: 100, sortBy: 'featured', fields: [] }
+[MongoDB] ⏱️ Getting database connection...
+[MongoDB] ⏱️ Database connection took 2081ms
+[ProductService] Filter received: {}
+[ProductService] MongoDB query: {}
+[ProductService] Final MongoDB query: {}
+[ProductService] ⏱️ Starting MongoDB query...
+Error fetching products: MongoNetworkTimeoutError: connection 1 to 159.41.196.68:27017 timed out
+    at Timeout._onTimeout (C:\Users\abdur\Desktop\merchy\print\node_modules\mongodb\lib\cmap\connection.js:125:26)
+    at listOnTimeout (node:internal/timers:569:17)
+    at process.processTimers (node:internal/timers:512:7) {
+  errorLabelSet: Set(1) { 'RetryableWriteError' },
+  beforeHandshake: false,
+  [cause]: undefined
+}
+ GET /api/products?page=1 500 in 65264ms
+[API /products] GET request received
+[API /products] Calling ProductService.getPaginatedProducts with: { filter: {}, skip: 0, limit: 100, sortBy: 'featured', fields: [] }
+[ProductService.getPaginatedProducts] Starting with options: { filter: {}, skip: 0, limit: 100, sortBy: 'featured', fields: [] }
+[MongoDB] ⏱️ Getting database connection...
+[MongoDB] ⏱️ Database connection took 0ms
+[ProductService] Filter received: {}
+[ProductService] MongoDB query: {}
+[ProductService] Final MongoDB query: {}
+[ProductService] ⏱️ Starting MongoDB query...
+[ProductService] ⏱️ MongoDB query took 4428ms
+[ProductService] Query results: 6 products found, 6 total
+[ProductService] First product: { name: 'Hoodie', id: new ObjectId('68daa6e8cd3dc1da8d5a7cbb') }
+✅ [ProductService] Using 'variations' field for Hoodie (1 items with colors)
+✅ [ProductService] Using 'variations' field for shirt (1 items with colors)
+✅ [ProductService] Using 'variations' field for shirt (2 items with colors)
+[ProductService] 💾 Cached products for future requests
+[API /products] Result from ProductService: { productCount: 6, total: 6 }
+[API /products] Sending response with 6 products
+ GET /api/products?page=1 200 in 4445ms
+ ✓ Compiled in 28ms
+ ✓ Compiled /api/products in 184ms (62 modules)
+[API /products] GET request received
+[API /products] Calling ProductService.getPaginatedProducts with: { filter: {}, skip: 0, limit: 100, sortBy: 'featured', fields: [] }
+[ProductService.getPaginatedProducts] Starting with options: { filter: {}, skip: 0, limit: 100, sortBy: 'featured', fields: [] }
+[MongoDB] ⏱️ Getting database connection...
+[MongoDB] ⏱️ Database connection took 0ms
+[ProductService] Filter received: {}
+[ProductService] MongoDB query: {}
+[ProductService] Final MongoDB query: {}
+[ProductService] ⏱️ Starting MongoDB query...
+[ProductService] ⏱️ MongoDB query took 4703ms
+[ProductService] Query results: 6 products found, 6 total
+[ProductService] First product: { name: 'Hoodie', id: new ObjectId('68daa6e8cd3dc1da8d5a7cbb') }
+✅ [ProductService] Using 'variations' field for Hoodie (1 items with colors)
+✅ [ProductService] Using 'variations' field for shirt (1 items with colors)
+✅ [ProductService] Using 'variations' field for shirt (2 items with colors)
+[ProductService] 💾 Cached products for future requests
+[API /products] Result from ProductService: { productCount: 6, total: 6 }
+[API /products] Sending response with 6 products
+ GET /api/products?page=1 200 in 11488ms
+[API /products] GET request received
+[API /products] Calling ProductService.getPaginatedProducts with: { filter: {}, skip: 0, limit: 6, sortBy: 'featured', fields: [] }
+[ProductService.getPaginatedProducts] Starting with options: { filter: {}, skip: 0, limit: 6, sortBy: 'featured', fields: [] }
+[MongoDB] ⏱️ Getting database connection...
+[MongoDB] ⏱️ Database connection took 0ms
+[ProductService] Filter received: {}
+[ProductService] MongoDB query: {}
+[ProductService] Final MongoDB query: {}
+[ProductService] ⏱️ Starting MongoDB query...
+[ProductService] ⏱️ MongoDB query took 4624ms
+[ProductService] Query results: 6 products found, 6 total
+[ProductService] First product: { name: 'Hoodie', id: new ObjectId('68daa6e8cd3dc1da8d5a7cbb') }
+✅ [ProductService] Using 'variations' field for Hoodie (1 items with colors)
+✅ [ProductService] Using 'variations' field for shirt (1 items with colors)
+✅ [ProductService] Using 'variations' field for shirt (2 items with colors)
+[ProductService] 💾 Cached products for future requests
+[API /products] Result from ProductService: { productCount: 6, total: 6 }
+[API /products] Sending response with 6 products
+ GET /api/products?page=1&limit=6 200 in 4636ms
+ ✓ Compiled in 27ms

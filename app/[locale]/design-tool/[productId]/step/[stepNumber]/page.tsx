@@ -203,19 +203,19 @@ export default function DesignStepPage() {
   }
   
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 overflow-x-hidden max-w-screen">
       {/* Header */}
       <div className="bg-white dark:bg-gray-800 border-b">
-        <div className="container mx-auto px-4 py-3">
+        <div className="container mx-auto px-2 sm:px-4 py-2 sm:py-3">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 sm:gap-4">
               <Link href="/products">
                 <Button variant="ghost" size="sm">
-                  <ArrowLeft className="h-4 w-4" />
+                  <ArrowLeft className="h-3 w-3 sm:h-4 sm:w-4" />
                 </Button>
               </Link>
               <div>
-                <h1 className="text-lg font-semibold">
+                <h1 className="text-xs sm:text-sm md:text-base lg:text-lg font-semibold truncate">
                   {selectedProduct.name} - {currentAngle.charAt(0).toUpperCase() + currentAngle.slice(1)} Side
                 </h1>
               </div>
@@ -223,16 +223,16 @@ export default function DesignStepPage() {
           </div>
         </div>
       </div>
-      
+
       {/* Main Canvas */}
-      <div className="flex-1">
-        <StepBasedCanvas 
+      <div className="flex-1 overflow-hidden">
+        <StepBasedCanvas
           product={selectedProduct}
           stepNumber={stepNumber}
           angle={currentAngle}
         />
       </div>
-      
+
       {/* Navigation */}
       <StepNavigation
         currentStep={stepNumber}
@@ -243,7 +243,7 @@ export default function DesignStepPage() {
           if (typeof window !== 'undefined' && (window as any).saveCurrentDesign) {
             (window as any).saveCurrentDesign()
           }
-          
+
           // Give time for the immediate save to complete
           setTimeout(() => {
             const locale = window.location.pathname.split('/')[1] || 'en'
@@ -259,7 +259,7 @@ export default function DesignStepPage() {
           if (typeof window !== 'undefined' && (window as any).saveCurrentDesign) {
             (window as any).saveCurrentDesign()
           }
-          
+
           // Give time for the immediate save to complete
           setTimeout(() => {
             const locale = window.location.pathname.split('/')[1] || 'en'

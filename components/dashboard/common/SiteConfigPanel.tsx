@@ -1296,27 +1296,43 @@ export function SiteConfigPanel() {
                       
                       <div className="grid grid-cols-2 gap-3">
                         <div>
-                          <Label>Section Title</Label>
+                          <Label>Section Title ({currentLanguage === 'en' ? 'English' : 'Svenska'})</Label>
                           <Input
-                            value={section.title}
+                            value={
+                              typeof section.title === 'string'
+                                ? section.title
+                                : section.title[currentLanguage]
+                            }
                             onChange={(e) => {
                               const newSections = [...config.customSections]
-                              newSections[sectionIndex].title = e.target.value
+                              const currentVal = section.title
+                              const newVal = typeof currentVal === 'string'
+                                ? { en: currentLanguage === 'en' ? e.target.value : currentVal, sv: currentLanguage === 'sv' ? e.target.value : currentVal }
+                                : { ...currentVal, [currentLanguage]: e.target.value }
+                              newSections[sectionIndex].title = newVal
                               setConfig({ ...config, customSections: newSections })
                             }}
-                            placeholder="Section Title"
+                            placeholder={currentLanguage === 'en' ? "Section Title" : "Sektionens Titel"}
                           />
                         </div>
                         <div>
-                          <Label>Section Subtitle</Label>
+                          <Label>Section Subtitle ({currentLanguage === 'en' ? 'English' : 'Svenska'})</Label>
                           <Input
-                            value={section.subtitle}
+                            value={
+                              typeof section.subtitle === 'string'
+                                ? section.subtitle
+                                : section.subtitle[currentLanguage]
+                            }
                             onChange={(e) => {
                               const newSections = [...config.customSections]
-                              newSections[sectionIndex].subtitle = e.target.value
+                              const currentVal = section.subtitle
+                              const newVal = typeof currentVal === 'string'
+                                ? { en: currentLanguage === 'en' ? e.target.value : currentVal, sv: currentLanguage === 'sv' ? e.target.value : currentVal }
+                                : { ...currentVal, [currentLanguage]: e.target.value }
+                              newSections[sectionIndex].subtitle = newVal
                               setConfig({ ...config, customSections: newSections })
                             }}
-                            placeholder="Section subtitle"
+                            placeholder={currentLanguage === 'en' ? "Section subtitle" : "Sektionens underrubrik"}
                           />
                         </div>
                       </div>

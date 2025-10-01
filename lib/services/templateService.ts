@@ -14,6 +14,7 @@ export class TemplateService {
       image: data.image,
       price: data.price,
       category: data.category,
+      canvasJSON: data.canvasJSON || null,
       createdAt: new Date(),
       updatedAt: new Date(),
     }
@@ -55,6 +56,7 @@ export class TemplateService {
     if (data.image !== undefined) updateData.image = data.image
     if (data.price !== undefined) updateData.price = data.price
     if (data.category !== undefined) updateData.category = data.category
+    if (data.canvasJSON !== undefined) updateData.canvasJSON = data.canvasJSON
 
     const result = await collection.updateOne(
       { id: data.id },

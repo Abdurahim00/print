@@ -72,10 +72,10 @@ export function DesignToolContainer() {
   }, [productId, variantId, products, loading, dispatch])
 
   return (
-    <div className="flex flex-col h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50 overflow-hidden">
-      <div className="flex flex-1 overflow-hidden">
-        {/* Left Toolbar - Hidden on mobile, shown on tablet+ */}
-        <div className="hidden sm:block">
+    <div className="flex flex-col h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50 overflow-hidden touch-manipulation">
+      <div className="flex flex-1 overflow-hidden min-h-0">
+        {/* Left Toolbar - Always visible but responsive sizing */}
+        <div className="flex-shrink-0">
           <LeftToolbar />
         </div>
 
@@ -83,14 +83,14 @@ export function DesignToolContainer() {
           <CentralCanvas />
 
           {/* Desktop Right Panel */}
-          <div className="hidden lg:block flex-shrink-0">
+          <div className="hidden lg:block flex-shrink-0 overflow-hidden">
             <RightPanel />
           </div>
         </div>
       </div>
 
-      {/* Mobile/Tablet Bottom Panel */}
-      <div className="lg:hidden border-t border-gray-200 bg-white flex-shrink-0">
+      {/* Mobile/Tablet Bottom Panel - Fixed height, scrollable content */}
+      <div className="lg:hidden border-t border-gray-200 bg-white flex-shrink-0 overflow-hidden">
         <RightPanel isMobile={true} />
       </div>
 

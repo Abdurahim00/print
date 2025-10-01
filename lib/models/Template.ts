@@ -5,6 +5,7 @@ export interface TemplateDocument {
   image: string
   price: number | "free"
   category: string
+  canvasJSON?: any // Fabric.js canvas JSON data
   createdAt?: Date
   updatedAt?: Date
 }
@@ -15,6 +16,7 @@ export interface Template {
   image: string
   price: number | "free"
   category: string
+  canvasJSON?: any // Fabric.js canvas JSON data
   createdAt?: Date
   updatedAt?: Date
 }
@@ -24,6 +26,7 @@ export interface CreateTemplateData {
   image: string
   price: number | "free"
   category: string
+  canvasJSON?: any // Fabric.js canvas JSON data
 }
 
 export interface UpdateTemplateData {
@@ -32,4 +35,5 @@ export interface UpdateTemplateData {
   image?: string
   price?: number | "free"
   category?: string
+  canvasJSON?: any // Fabric.js canvas JSON data
 } 

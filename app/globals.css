@@ -263,11 +263,84 @@
     background: #555;
   }
 
-  /* Better mobile tap targets */
+  /* Better mobile tap targets and touch support */
   @media (max-width: 640px) {
     button, a, [role="button"] {
       min-height: 44px;
       min-width: 44px;
+    }
+  }
+
+  /* Prevent bounce scrolling on iOS */
+  .touch-manipulation {
+    touch-action: manipulation;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Smooth scrolling with momentum on mobile */
+  .overscroll-contain {
+    overscroll-behavior: contain;
+  }
+
+  /* Prevent text selection during canvas interaction */
+  .design-canvas-container {
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+  }
+
+  /* Responsive canvas wrapper */
+  .canvas-wrapper {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Improved responsive breakpoints for design tool */
+  @media (max-width: 375px) {
+    .design-tool-container {
+      font-size: 14px;
+    }
+  }
+
+  @media (min-width: 376px) and (max-width: 639px) {
+    .design-tool-container {
+      font-size: 15px;
+    }
+  }
+
+  @media (min-width: 640px) and (max-width: 1023px) {
+    .design-tool-container {
+      font-size: 16px;
+    }
+  }
+
+  /* Ensure product images and canvas don't overflow */
+  .design-product-image {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+  }
+
+  /* Prevent horizontal scroll in design tool */
+  .design-tool-canvas-area {
+    max-width: 100vw;
+    overflow-x: hidden;
+  }
+
+  /* Prevent any overflow on mobile */
+  @media (max-width: 1023px) {
+    body:has(.design-tool-canvas-area) {
+      overflow-x: hidden;
+      max-width: 100vw;
+    }
+
+    .design-tool-canvas-area * {
+      max-width: 100%;
     }
   }
 }

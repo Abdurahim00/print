@@ -199,34 +199,6 @@ export function TextPanel() {
   return (
     <div className="flex flex-col h-full">
       <div className="flex-1 overflow-y-auto scrollbar-thin p-3 lg:p-4 space-y-3 lg:space-y-4">
-        {/* Instructions when text tool is selected but no text is selected */}
-        {selectedTool === "text" &&
-          (!selectedObject || (selectedObject.type !== "text" && selectedObject.type !== "i-text")) && (
-            <div className="bg-gradient-to-br from-blue-50 to-gray-50 border border-blue-200/60 rounded-2xl p-5 mb-6 shadow-sm">
-              <div className="flex items-center space-x-3 text-blue-800 mb-3">
-                <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-                  <Type className="w-4 h-4" />
-                </div>
-                <span className="font-semibold">Text Tool Active</span>
-              </div>
-              <p className="text-sm text-blue-700 mb-4 leading-relaxed">
-                Click the Text tool (T) again to add text to your design. Each click creates a new text element that you can customize.
-              </p>
-              <div className="bg-blue-100/50 rounded-xl p-4 border border-blue-200/40">
-                <p className="text-xs text-blue-800 font-semibold mb-2 flex items-center">
-                  <span className="text-base mr-2">💡</span>
-                  Text Editing Tips:
-                </p>
-                <ul className="text-xs text-blue-700 space-y-1.5 leading-relaxed">
-                  <li>• Drag corner handles to resize while maintaining proportions</li>
-                  <li>• Font size adjusts automatically when scaling</li>
-                  <li>• Size range: 8px - 200px</li>
-                  <li>• Double-click text to edit directly on canvas</li>
-                </ul>
-              </div>
-            </div>
-          )}
-
       {/* Text Input and Controls - Only show when text is selected */}
       {selectedObject && (selectedObject.type === "text" || selectedObject.type === "i-text") && (
         <>

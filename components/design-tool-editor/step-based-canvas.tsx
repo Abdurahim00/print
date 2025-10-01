@@ -29,7 +29,8 @@ export function StepBasedCanvas({ product, stepNumber, angle }: StepBasedCanvasP
   const selectedTool = useAppSelector((state) => state.design.selectedTool)
   const productColor = useAppSelector((state) => state.design.productColor)
   const designAreaCm2Redux = useAppSelector((state) => state.design.designAreaCm2)
-  const [canvasScale, setCanvasScale] = useState(1)
+  // Canvas scale is always 1 - CSS handles visual scaling
+  const canvasScale = 1
   const [isMobile, setIsMobile] = useState(false)
   const [currentImage, setCurrentImage] = useState<string>("")
   const [isImageLoading, setIsImageLoading] = useState(true)
@@ -267,18 +268,9 @@ export function StepBasedCanvas({ product, stepNumber, angle }: StepBasedCanvasP
     const handleResize = () => {
       const width = window.innerWidth
       setIsMobile(width < 768)
-      
-      if (width < 640) {
-        setCanvasScale(0.5)
-      } else if (width < 768) {
-        setCanvasScale(0.7)
-      } else if (width < 1024) {
-        setCanvasScale(0.85)
-      } else {
-        setCanvasScale(1)
-      }
+      // No canvas scaling needed - CSS handles it
     }
-    
+
     handleResize()
     window.addEventListener('resize', handleResize)
     return () => window.removeEventListener('resize', handleResize)
@@ -1266,38 +1258,38 @@ export function StepBasedCanvas({ product, stepNumber, angle }: StepBasedCanvasP
       {/* Main Canvas Area */}
       <div className="flex-1 flex flex-col bg-gray-100 dark:bg-gray-900">
         {/* Live Price Display */}
-        <div className="bg-white dark:bg-gray-800 border-b px-4 py-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="text-sm text-gray-600">
+        <div className="bg-white dark:bg-gray-800 border-b px-2 sm:px-4 py-2 sm:py-3">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0">
+            <div className="flex items-center gap-2 sm:gap-4 w-full sm:w-auto">
+              <div className="text-xs sm:text-sm text-gray-600 truncate">
                 Step {stepNumber}: {angle.charAt(0).toUpperCase() + angle.slice(1)} Side
               </div>
               {/* Step indicator with area */}
-              <div className="flex items-center gap-1 text-xs">
+              <div className="flex items-center gap-0.5 sm:gap-1 text-[10px] sm:text-xs">
                 {[1, 2, 3, 4].map(step => {
                   const stepAngle = step === 1 ? 'Front' : step === 2 ? 'Back' : step === 3 ? 'Left' : 'Right'
                   const areaKey = `design_${product?.id}_step_${step}_area`
                   const savedArea = typeof window !== 'undefined' ? localStorage.getItem(areaKey) : null
                   const area = step === stepNumber ? localDesignArea : (savedArea ? parseFloat(savedArea) : 0)
                   return (
-                    <div 
+                    <div
                       key={step}
-                      className={`px-2 py-1 rounded ${
-                        step === stepNumber ? 'bg-primary text-white' : 
+                      className={`px-1.5 sm:px-2 py-0.5 sm:py-1 rounded ${
+                        step === stepNumber ? 'bg-primary text-white' :
                         area > 0 ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-400'
                       }`}
                       title={`${stepAngle}: ${area.toFixed(1)} cm²`}
                     >
                       {step}
-                      {area > 0 && <span className="ml-1">✓</span>}
+                      {area > 0 && <span className="ml-0.5 sm:ml-1">✓</span>}
                     </div>
                   )
                 })}
               </div>
             </div>
-            
+
             {/* Live Price Display */}
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 sm:gap-4 w-full sm:w-auto">
               {/* Clear Design Button */}
               {getTotalDesignArea() > 0 && (
                 <button
@@ -1422,145 +1414,184 @@ export function StepBasedCanvas({ product, stepNumber, angle }: StepBasedCanvasP
                       }, 200)
                     }
                   }}
-                  className="px-3 py-1 text-xs bg-red-100 hover:bg-red-200 text-red-700 rounded"
+                  className="px-2 sm:px-3 py-0.5 sm:py-1 text-[10px] sm:text-xs bg-red-100 hover:bg-red-200 text-red-700 rounded whitespace-nowrap"
                   title="Clear all designs"
                 >
-                  Clear All
+                  <span className="hidden sm:inline">Clear All</span>
+                  <span className="sm:hidden">Clear</span>
                 </button>
               )}
-              
-              {/* Helper function for consistent price formatting */}
-              {(() => {
-                const formatPriceWithDot = (price: number) => {
-                  return `${roundToTwoDecimals(price).toFixed(2).replace(',', '.')} kr`;
-                };
-                
-                return stepNumber === 1 && (
-                  <div className="text-sm">
-                    <span className="text-gray-600">Base Price:</span>
-                    <span className="ml-2 font-medium">{formatPriceWithDot(product?.price || 0)}</span>
-                  </div>
-                );
-              })()}
-              
-              {/* Previous Steps Design Costs */}
-              {stepNumber > 1 && Array.from({ length: stepNumber - 1 }, (_, i) => i + 1).map(step => {
-                const areaKey = `design_${product?.id}_step_${step}_area`
-                const savedArea = localStorage.getItem(areaKey)
-                if (savedArea) {
-                  const area = roundToTwoDecimals(parseFloat(savedArea))
-                  const stepCost = roundToTwoDecimals(area * (product?.designCostPerCm2 || 0.5))
-                  return (
-                    <div key={step} className="text-sm">
-                      <span className="text-gray-600">Step {step} Design:</span>
-                      <span className="ml-2 font-medium">
-                        +{`${roundToTwoDecimals(stepCost).toFixed(2).replace(',', '.')} kr`}
+
+              {/* Price breakdown container */}
+              <div className="flex flex-col gap-0.5 sm:gap-1">
+                {/* Helper function for consistent price formatting */}
+                {(() => {
+                  const formatPriceWithDot = (price: number) => {
+                    return `${roundToTwoDecimals(price).toFixed(2).replace(',', '.')} kr`;
+                  };
+
+                  return stepNumber === 1 && (
+                    <div className="text-xs sm:text-sm">
+                      <span className="text-gray-600">Base:</span>
+                      <span className="ml-1 sm:ml-2 font-medium">{formatPriceWithDot(product?.price || 0)}</span>
+                    </div>
+                  );
+                })()}
+
+                {/* Previous Steps Design Costs */}
+                {stepNumber > 1 && Array.from({ length: stepNumber - 1 }, (_, i) => i + 1).map(step => {
+                  const areaKey = `design_${product?.id}_step_${step}_area`
+                  const savedArea = localStorage.getItem(areaKey)
+                  if (savedArea) {
+                    const area = roundToTwoDecimals(parseFloat(savedArea))
+                    const stepCost = roundToTwoDecimals(area * (product?.designCostPerCm2 || 0.5))
+                    return (
+                      <div key={step} className="text-xs sm:text-sm">
+                        <span className="text-gray-600">S{step}:</span>
+                        <span className="ml-1 sm:ml-2 font-medium">
+                          +{`${roundToTwoDecimals(stepCost).toFixed(2).replace(',', '.')} kr`}
+                        </span>
+                        <span className="text-[10px] sm:text-xs text-gray-500 ml-0.5 sm:ml-1">
+                          ({area.toFixed(1)} cm²)
+                        </span>
+                      </div>
+                    )
+                  }
+                  return null
+                })}
+
+                {/* Current Step Design Cost */}
+                {(() => {
+                  const designArea = roundToTwoDecimals(getDesignAreaSafe())
+                  const hasDesign = designArea > 0
+
+                  return hasDesign && (
+                    <div className="text-xs sm:text-sm">
+                      <span className="text-gray-600">S{stepNumber}:</span>
+                      <span className="ml-1 sm:ml-2 font-medium">
+                        +{`${roundToTwoDecimals((product?.designCostPerCm2 || 0.5) * designArea).toFixed(2).replace(',', '.')} kr`}
                       </span>
-                      <span className="text-xs text-gray-500 ml-1">
-                        ({area.toFixed(2)} cm²)
+                      <span className="text-[10px] sm:text-xs text-gray-500 ml-0.5 sm:ml-1">
+                        ({designArea.toFixed(1)} cm²)
                       </span>
                     </div>
                   )
-                }
-                return null
-              })}
-              
-              {/* Current Step Design Cost */}
-              {(() => {
-                const designArea = roundToTwoDecimals(getDesignAreaSafe())
-                const hasDesign = designArea > 0
-                
-                return hasDesign && (
-                  <div className="text-sm">
-                    <span className="text-gray-600">Step {stepNumber} Design:</span>
-                    <span className="ml-2 font-medium">
-                      +{`${roundToTwoDecimals((product?.designCostPerCm2 || 0.5) * designArea).toFixed(2).replace(',', '.')} kr`}
-                    </span>
-                    <span className="text-xs text-gray-500 ml-1">
-                      ({designArea.toFixed(2)} cm²)
-                    </span>
-                  </div>
-                )
-              })()}
-              
-              {/* Running Total */}
-              <div className="text-sm font-bold border-t mt-1 pt-1">
-                <span className="text-gray-700">Running Total:</span>
-                <span className="ml-2 text-primary">{`${roundToTwoDecimals(calculatePrice()).toFixed(2).replace(',', '.')} kr`}</span>
+                })()}
+
+                {/* Running Total */}
+                <div className="text-xs sm:text-sm font-bold border-t mt-0.5 sm:mt-1 pt-0.5 sm:pt-1">
+                  <span className="text-gray-700">Total:</span>
+                  <span className="ml-1 sm:ml-2 text-primary">{`${roundToTwoDecimals(calculatePrice()).toFixed(2).replace(',', '.')} kr`}</span>
+                </div>
               </div>
             </div>
           </div>
         </div>
         
-        {/* Canvas Container */}
-        <div className="flex-1 flex items-center justify-center p-4 lg:p-8">
-        <div className="relative">
-          {/* Live Design Info Badge */}
-          {(() => {
-            // Calculate values safely inside render
-            const designArea = getDesignAreaSafe()
-            const hasDesign = designArea > 0
-            
-            return hasDesign && (
-              <div className="absolute top-0 left-0 bg-blue-600 text-white px-3 py-1 rounded-br-lg text-xs font-medium z-20">
-                {designArea.toFixed(1)} cm² ink coverage
-              </div>
-            )
-          })()}
-          {/* Product Image Background */}
-          <div 
-            className="absolute inset-0 flex items-center justify-center"
-            style={{ 
-              width: isMobile ? `${600 * canvasScale}px` : '600px',
-              height: isMobile ? `${600 * canvasScale}px` : '600px',
-              backgroundColor: '#f3f4f6'
-            }}
-          >
-            {currentImage ? (
-              <>
-                <img
-                  src={currentImage}
-                  alt={`${product.name} - ${angle} view`}
-                  className="max-w-full max-h-full object-contain"
-                  onLoad={() => {
-                    console.log('✅ Image loaded successfully:', currentImage)
-                    setIsImageLoading(false)
-                  }}
-                  onError={(e) => {
-                    console.error('❌ Failed to load image:', currentImage, e)
-                    setIsImageLoading(false)
-                  }}
-                  style={{ 
-                    opacity: isImageLoading ? 0 : 1,
-                    transition: 'opacity 0.3s ease-in-out'
-                  }}
-                />
-                {isImageLoading && (
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        {/* Canvas Container - Responsive CSS-first approach */}
+        <div className="flex-1 flex items-center justify-center p-2 sm:p-4 md:p-6 lg:p-8 overflow-hidden">
+          <div className="relative w-full h-full max-w-full max-h-full flex flex-col overflow-hidden">
+            {/* Live Design Info Badge */}
+            {(() => {
+              // Calculate values safely inside render
+              const designArea = getDesignAreaSafe()
+              const hasDesign = designArea > 0
+
+              return hasDesign && (
+                <div className="absolute top-0 left-0 bg-blue-600 text-white px-2 py-1 sm:px-3 sm:py-1 rounded-br-lg text-[10px] sm:text-xs font-medium z-20">
+                  {designArea.toFixed(1)} cm² ink coverage
+                </div>
+              )
+            })()}
+
+            {/* Product Image Background */}
+            <div
+              className="absolute inset-0 flex items-center justify-center p-2 sm:p-4"
+              style={{
+                zIndex: 1,
+                pointerEvents: 'none'
+              }}
+            >
+              <div
+                className="relative flex items-center justify-center"
+                style={{
+                  aspectRatio: '1/1',
+                  maxWidth: '100%',
+                  maxHeight: '100%'
+                }}
+              >
+                {currentImage ? (
+                  <>
+                    <img
+                      src={currentImage}
+                      alt={`${product.name} - ${angle} view`}
+                      className="object-contain drop-shadow-lg"
+                      onLoad={() => {
+                        console.log('✅ Image loaded successfully:', currentImage)
+                        setIsImageLoading(false)
+                      }}
+                      onError={(e) => {
+                        console.error('❌ Failed to load image:', currentImage, e)
+                        setIsImageLoading(false)
+                      }}
+                      style={{
+                        display: 'block',
+                        width: '100%',
+                        height: '100%',
+                        maxWidth: '600px',
+                        maxHeight: '600px',
+                        opacity: isImageLoading ? 0 : 1,
+                        transition: 'opacity 0.3s ease-in-out'
+                      }}
+                    />
+                    {isImageLoading && (
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <div className="animate-spin rounded-full h-6 w-6 sm:h-8 sm:w-8 border-b-2 border-primary"></div>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <div className="text-gray-400 text-center p-4">
+                    <p className="text-xs sm:text-sm">No image available</p>
+                    <p className="text-[10px] sm:text-xs mt-2">Product: {product?.name}</p>
                   </div>
                 )}
-              </>
-            ) : (
-              <div className="text-gray-400 text-center">
-                <p>No image available</p>
-                <p className="text-sm mt-2">Product: {product?.name}</p>
               </div>
-            )}
+            </div>
+
+            {/* Fabric Canvas */}
+            <div
+              className="absolute inset-0 flex items-center justify-center p-2 sm:p-4"
+              style={{
+                zIndex: 10,
+                pointerEvents: 'auto'
+              }}
+            >
+              <div
+                className="relative flex items-center justify-center"
+                style={{
+                  aspectRatio: '1/1',
+                  maxWidth: '100%',
+                  maxHeight: '100%'
+                }}
+              >
+                <canvas
+                  ref={canvasRef}
+                  id={canvasId}
+                  width={600}
+                  height={600}
+                  style={{
+                    display: 'block',
+                    width: '600px',
+                    height: '600px',
+                    maxWidth: '100%',
+                    maxHeight: '100%',
+                    objectFit: 'contain'
+                  }}
+                />
+              </div>
+            </div>
           </div>
-          
-          {/* Fabric Canvas */}
-          <canvas
-            ref={canvasRef}
-            id={canvasId}
-            style={{
-              width: '100%',
-              height: '100%',
-              position: 'relative',
-              zIndex: 10
-            }}
-          />
-        </div>
         </div>
       </div>
       

@@ -1014,7 +1014,7 @@ export const useFabricCanvas = (canvasId: string, scaleOptions?: { isMobile?: bo
     // Lock the viewport to prevent any zoom or pan transformations
     canvas.setViewportTransform([1, 0, 0, 1, 0, 0])
     canvas.setZoom(1)
-    
+
     // Disable mouse wheel zoom to maintain consistent coordinates
     canvas.on('mouse:wheel', (e) => {
       e.e.preventDefault()

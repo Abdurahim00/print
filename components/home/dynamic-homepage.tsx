@@ -1254,11 +1254,11 @@ export default function DynamicHomepage() {
             >
               <div className="text-center py-8 sm:py-12 px-4">
                 <h2 className="text-3xl sm:text-5xl font-black text-black dark:text-white mb-4 uppercase tracking-wider">
-                  {section.title}
+                  {typeof section.title === 'object' ? section.title[currentLocale] || section.title.en : section.title}
                 </h2>
                 <div className="h-1 w-24 bg-gradient-to-r from-brand-green via-brand-yellow via-brand-orange to-brand-red mx-auto mb-4" />
                 <p className="text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
-                  {section.subtitle}
+                  {typeof section.subtitle === 'object' ? section.subtitle[currentLocale] || section.subtitle.en : section.subtitle}
                 </p>
               </div>
 

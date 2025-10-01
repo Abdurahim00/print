@@ -27,7 +27,6 @@ export function LeftToolbar() {
   const { handleUndo, handleRedo, addText } = useFabricCanvas("design-canvas")
 
   const tools = [
-    { id: "product", icon: Shirt, label: "Product", description: "Select and configure products" },
     { id: "text", icon: Type, label: "Text", description: "Add and edit text elements" },
     { id: "template", icon: FileText, label: "Templates", description: "Browse and apply design templates" },
     { id: "upload", icon: Upload, label: "Upload", description: "Upload custom images and graphics" },
@@ -142,10 +141,10 @@ export function LeftToolbar() {
   }
 
   return (
-    <div className="w-16 sm:w-20 lg:w-24 bg-white/95 backdrop-blur-sm border-r border-gray-200/80 flex flex-col items-center py-3 sm:py-4 lg:py-6 shadow-lg">
+    <div className="w-14 sm:w-16 md:w-20 lg:w-24 bg-white/95 backdrop-blur-sm border-r border-gray-200/80 flex flex-col items-center py-2 sm:py-3 md:py-4 lg:py-6 shadow-lg overflow-y-auto scrollbar-hide">
       <TooltipProvider>
         {/* Main Tools */}
-        <div className="space-y-1.5 sm:space-y-2 lg:space-y-3">
+        <div className="space-y-1 sm:space-y-1.5 md:space-y-2 lg:space-y-3 w-full flex flex-col items-center">
           {tools.map((tool) => {
             const Icon = tool.icon
             const isSelected = selectedTool === tool.id
@@ -156,15 +155,15 @@ export function LeftToolbar() {
                   <Button
                     variant={isSelected ? "default" : "ghost"}
                     size="icon"
-                    className={`w-12 h-14 sm:w-16 sm:h-20 lg:w-20 lg:h-24 flex flex-col items-center justify-center gap-0.5 sm:gap-1 rounded-xl sm:rounded-2xl transition-all duration-300 shadow-sm hover:shadow-md p-1.5 sm:p-2 ${
+                    className={`w-10 h-12 sm:w-12 sm:h-14 md:w-14 md:h-16 lg:w-20 lg:h-24 flex flex-col items-center justify-center gap-0.5 sm:gap-1 rounded-lg sm:rounded-xl md:rounded-2xl transition-all duration-300 shadow-sm hover:shadow-md p-1 sm:p-1.5 md:p-2 ${
                       isSelected
                         ? "bg-black hover:bg-gray-800 text-white shadow-lg scale-105 hover:scale-110"
                         : "hover:bg-gray-50 hover:scale-105 text-gray-600 hover:text-gray-800"
                     }`}
                     onClick={() => handleToolSelect(tool.id)}
                   >
-                    <Icon className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6" />
-                    <span className="text-[8px] sm:text-[10px] lg:text-xs font-medium">{tool.label}</span>
+                    <Icon className="w-4 h-4 sm:w-4 sm:h-4 md:w-5 md:h-5 lg:w-6 lg:h-6 flex-shrink-0" />
+                    <span className="text-[7px] sm:text-[8px] md:text-[10px] lg:text-xs font-medium truncate max-w-full px-0.5">{tool.label}</span>
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent side="right" className="bg-gray-900 text-white border-gray-700 hidden sm:block">
@@ -176,21 +175,21 @@ export function LeftToolbar() {
           })}
         </div>
 
-        <Separator className="my-2 sm:my-4 lg:my-6 w-6 sm:w-8 lg:w-10 bg-gradient-to-r from-transparent via-gray-300 to-transparent" />
+        <Separator className="my-1.5 sm:my-2 md:my-4 lg:my-6 w-6 sm:w-6 md:w-8 lg:w-10 bg-gradient-to-r from-transparent via-gray-300 to-transparent flex-shrink-0" />
 
         {/* History Controls */}
-        <div className="space-y-1.5 sm:space-y-2 lg:space-y-3">
+        <div className="space-y-1 sm:space-y-1.5 md:space-y-2 lg:space-y-3 w-full flex flex-col items-center">
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
                 variant="ghost"
                 size="icon"
-                className="w-12 h-14 sm:w-16 sm:h-20 lg:w-20 lg:h-24 flex flex-col items-center justify-center gap-0.5 sm:gap-1 rounded-xl sm:rounded-2xl transition-all duration-300 hover:bg-gray-50 hover:scale-105 disabled:opacity-30 disabled:hover:scale-100 disabled:hover:bg-transparent text-gray-600 hover:text-gray-800 shadow-sm hover:shadow-md p-1.5 sm:p-2"
+                className="w-10 h-12 sm:w-12 sm:h-14 md:w-14 md:h-16 lg:w-20 lg:h-24 flex flex-col items-center justify-center gap-0.5 sm:gap-1 rounded-lg sm:rounded-xl md:rounded-2xl transition-all duration-300 hover:bg-gray-50 hover:scale-105 disabled:opacity-30 disabled:hover:scale-100 disabled:hover:bg-transparent text-gray-600 hover:text-gray-800 shadow-sm hover:shadow-md p-1 sm:p-1.5 md:p-2"
                 onClick={() => handleUndo(fabricCanvas)}
                 disabled={!canUndo || !fabricCanvas}
               >
-                <Undo2 className="w-3 h-3 sm:w-4 sm:h-4 lg:w-5 lg:h-5" />
-                <span className="text-[8px] sm:text-[10px] lg:text-xs font-medium">Undo</span>
+                <Undo2 className="w-3 h-3 sm:w-3 sm:h-3 md:w-4 md:h-4 lg:w-5 lg:h-5 flex-shrink-0" />
+                <span className="text-[7px] sm:text-[8px] md:text-[10px] lg:text-xs font-medium truncate max-w-full px-0.5">Undo</span>
               </Button>
             </TooltipTrigger>
             <TooltipContent side="right" className="bg-gray-900 text-white border-gray-700 hidden sm:block">
@@ -203,12 +202,12 @@ export function LeftToolbar() {
               <Button
                 variant="ghost"
                 size="icon"
-                className="w-12 h-14 sm:w-16 sm:h-20 lg:w-20 lg:h-24 flex flex-col items-center justify-center gap-0.5 sm:gap-1 rounded-xl sm:rounded-2xl transition-all duration-300 hover:bg-gray-50 hover:scale-105 disabled:opacity-30 disabled:hover:scale-100 disabled:hover:bg-transparent text-gray-600 hover:text-gray-800 shadow-sm hover:shadow-md p-1.5 sm:p-2"
+                className="w-10 h-12 sm:w-12 sm:h-14 md:w-14 md:h-16 lg:w-20 lg:h-24 flex flex-col items-center justify-center gap-0.5 sm:gap-1 rounded-lg sm:rounded-xl md:rounded-2xl transition-all duration-300 hover:bg-gray-50 hover:scale-105 disabled:opacity-30 disabled:hover:scale-100 disabled:hover:bg-transparent text-gray-600 hover:text-gray-800 shadow-sm hover:shadow-md p-1 sm:p-1.5 md:p-2"
                 onClick={() => handleRedo(fabricCanvas)}
                 disabled={!canRedo || !fabricCanvas}
               >
-                <Redo2 className="w-3 h-3 sm:w-4 sm:h-4 lg:w-5 lg:h-5" />
-                <span className="text-[8px] sm:text-[10px] lg:text-xs font-medium">Redo</span>
+                <Redo2 className="w-3 h-3 sm:w-3 sm:h-3 md:w-4 md:h-4 lg:w-5 lg:h-5 flex-shrink-0" />
+                <span className="text-[7px] sm:text-[8px] md:text-[10px] lg:text-xs font-medium truncate max-w-full px-0.5">Redo</span>
               </Button>
             </TooltipTrigger>
             <TooltipContent side="right" className="bg-gray-900 text-white border-gray-700 hidden sm:block">
